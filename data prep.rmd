@@ -1,4 +1,4 @@
----
+# ---
 title: "A972 - data prep"
 output: 
   html_document:
@@ -1150,8 +1150,7 @@ make_summary <- function(data) {
 ```
 
 ```{r}
-measure_names <- get_measures() %>% make_summary() %>% pull(measure) %>% unique()
-pack_data <- set_names(rep(4, length(measure_names)), measure_names)
+
 get_measures(d_l) %>%
   make_summary() %>%
   kbl() %>%
