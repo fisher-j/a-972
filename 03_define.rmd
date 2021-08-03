@@ -1,0 +1,56 @@
+---
+title: "Define new data"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+```
+
+## Defining live/dead trees
+
+Status and condition codes provided do not necessarily define mortality, because a broken tree, depending on species may still be alive or dead. I'll define dead trees as:
+
+1. snags or down snags (status -9 to -5, and 5 to 9)
+2. trees broken below dbh and uprooted trees (status 30, 32)
+3. any non-sprouting species broken above dbh (status 31)
+4. any sprouting species broken below 3 meters
+
+
+```{r define-live}
+
+d_l <- d_l %>%
+  mutate(
+    live = case_when(
+      status %in% c(5:9, -5:-9)                                  ~ FALSE,
+      status %in% c(30, 32)                                      ~ FALSE,
+      (spp %in% c("PSMEM", "PISI") & status == 31)               ~ FALSE,
+      (spp %in% c("SESE3", "ALRU") & status == 31 & ht < 3)      ~ FALSE,
+      (spp %in% c("SESE3", "ALRU") & status == 31 & lag(ht) < 3) ~ FALSE,
+      TRUE                                                       ~ TRUE
+    )
+  )
+
+# Do any trees go from being dead to being alive?
+nrow(filter(group_by(d_l, tree_id), any(!live & lead(live))))
+
+# update post-harvest data
+p_h <- filter(d_l, year > "init")
+```
+
+## Define diameter increment
+
+I looked at increment earlier to try to suss out bad dbh entries. Here I will formally add annual diameter increment to the long-form dataset. Each observation will be associated with a p1 and p2 increment. These are 5-year increments. Should I divide this number by 5?
+
+```{r}
+# Add increment data and update post-harvest data
+d_l <- d_l %>%
+  group_by(tree_id) %>%
+  mutate(
+    inc_1 = nth(lead(dbh) - dbh, 2, order_by = year),
+    inc_2 = nth(lead(dbh) - dbh, 3, order_by = year)
+  ) %>%
+  ungroup()
+
+p_h <- filter(d_l, year > "init")
+
+```

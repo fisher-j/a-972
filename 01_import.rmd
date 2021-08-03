@@ -1,0 +1,213 @@
+---
+title: "Import data"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+```
+
+```{r extra-functions, include=FALSE}
+source("scripts/extra_functions.r")
+```
+
+## libraries
+
+```{r libraries}
+library("tidyverse")
+library(kableExtra)
+```
+
+# Import Data
+
+I'll start by importing tree data from all three periods as well as the tree list. These will be stored in four appropriately named data frames. While importing, I'll rename some columns, select useful columns and remove the "spare" observations. I combine condition codes into a single column.
+
+```{r}
+
+tree_2008 <- read.csv("./original/tblA972_TreeData2008.txt",
+                           na.strings = "") %>%
+  select(tree_id = TreeID, dbh = DBH, ht = HTt, cr = CR,
+        status = Status, bear = BearDmg, rot = Rot, notes = Notes) %>%
+        filter(!grepl("^SPR1", tree_id)) %>%
+  as_tibble()
+
+tree_2013 <- read.csv("./original/tblA972_TreeData2013.txt",
+                           na.strings = "") %>%
+  select(tree_id = TreeID, dbh = DBH, ht = Ht, cr = CR, cc = CC,
+         status = Status, bear = BearDmg, ConCode.A:ConCode.E,
+         notes = Notes) %>%
+  unite(cond, starts_with("ConCode"), sep = ",", na.rm = TRUE) %>%
+  filter(!grepl("^SPR1", tree_id)) %>%
+  as_tibble()
+
+tree_2018 <- read.csv("./original/tblA972_TreeData2018.txt",
+                           na.strings = "") %>%
+  select(tree_id = TreeID, dbh = DBH, ht = HTt, cr = CR,
+         status = Status, ConCode.A:ConCode.E, bear = BearDmg,
+         notes = Notes) %>%
+  unite(cond, starts_with("ConCode"), sep = ",", na.rm = TRUE) %>%
+  filter(!grepl("^SPR1", tree_id)) %>%
+  as_tibble()
+
+tree_list_all <- read.csv("./original/tblA972_Trees.txt", na.strings = "") %>%
+  select(plot = Plot_ID, tree_id = TreeID, spp = Species,
+         h_dist = H_Dist, azi = Azimuth) %>%
+  filter(!grepl("^SPR1", tree_id)) %>%
+  as_tibble()
+```
+
+# Initial data cleaning
+
+## Status column
+I'll remove bad data indicated by status -99, -999, or -9999. These occur in 2013. 
+
+
+```{r}
+bad_id <- tree_2013$tree_id[tree_2013$status %in% c(-99, -999, -9999)]
+data.frame(id = bad_id,
+           notes_08 = tree_2008$notes[tree_2008$tree_id %in% bad_id],
+           notes_13 = tree_2013$notes[tree_2013$tree_id %in% bad_id])
+tree_2008 <- tree_2008[!tree_2008$tree_id %in% bad_id, ]
+tree_2013 <- tree_2013[!tree_2013$tree_id %in% bad_id, ]
+tree_2018 <- tree_2018[!tree_2018$tree_id %in% bad_id, ]
+tree_list_all <- tree_list_all[!tree_list_all$tree_id %in% bad_id, ]
+
+
+```
+
+I'll also look at trees with status == 99, and determine if they (a) died after harvest, and thus are period 1 mortality, or (b) died before harvest, and were snags. I also give status=1 to ingrowth in 2018 (where status was NA). Finally, some down, windthrown trees (broken below dbh or uprooted) continue to have dbh recorded (44), and others do not (115). I'm not sure how to handle this for now.
+
+```{r}
+# Deal with status 99
+tree_2008[tree_2008$status == 99, "status"]
+tree_2008[tree_2008$status == 99, "status"] <- c(5, 5, 1, 1)
+
+# Deal with status=NA in 2018
+tree_2018[is.na(tree_2018$status), "status"] <- 1
+
+```
+
+Changing status of one "split" tree from "live" to "broken above dbh" and one snag from -5 to 5.
+
+```{r}
+tree_2013[tree_2013$tree_id == "4L40.3255", "status"] <- 31
+tree_2018[tree_2018$tree_id == "1L40.3661", "status"] <- 5
+```
+
+Change status of several windthrow trees from 1 to 30 or 31, based on condition codes. These are strange because, subsequent dbh for these trees continue to increase, despite them being windthrown. I'm not sure what to make of this. 
+
+```{r}
+bad_windthrow_13 <- tree_2013$status == 1 & grepl("30|31|32", tree_2013$cond)
+new_status_13 <- str_extract(tree_2013$cond[bad_windthrow_13], "30|31|32")
+tree_2013[bad_windthrow_13, "status"] <- as.numeric(new_status_13)
+
+bad_windthrow_18 <- tree_2018$status == 1 & grepl("30|31|32", tree_2018$cond)
+new_status_18 <- str_extract(tree_2018$cond[bad_windthrow_18], "30|31|32")
+tree_2018[bad_windthrow_18, "status"] <- as.numeric(new_status_18)
+```
+
+## Cut trees
+The 2008 data needs to be broken into initial and post cut conditions. To separate these I'll use the Status column ("15" and "16" indicate cut). Initial conditions will include cut and uncut trees. I'll make sure tree_2008 doesn't have any remaining cut trees, then I'll check subsequent measurement periods to make sure there are no more remaining cut trees. Finally, I'll remove harvested trees from tree_list_all.
+
+While ids (with a "C") don't indicate any unexpected cut trees in subsequent years, year 2013 has two cut trees indicated by status 16. One of these, 2L80.3731 is listed as windthrown prior to harvest in 2008, this tree should be omitted as it is not representative of treatment effects. Tree 3H40.3195 was listed as alive in 2008 and then as cut in 2013, I'm going to assume it was actually cut in 2008 (when it was 5.5 inches).
+
+```{r}
+init_2008 <- tree_2008
+tree_2008 <- tree_2008[!init_2008$status %in% c(15, 16), ]
+
+# check for possible unmatched cut trees in tree_2008
+# (id's with "C" in second part)
+pattern <- "\\w+\\.([Cc]\\d+)|(\\d+[Cc])"
+tree_2008[grepl(pattern, tree_2008[["tree_id"]]), ]
+
+# Check if there are trees with "C" in subsequent years. There are not.
+tree_2013[grepl(pattern, tree_2013[["tree_id"]]), ]
+tree_2018[grepl(pattern, tree_2018[["tree_id"]]), ]
+
+# Check for status 15 or 16 in subsequent years: 2 cut trees in 2013
+tree_2013[tree_2013$status %in% c(15, 16), ]
+tree_2018[tree_2018$status %in% c(15, 16), ]
+
+# remove pre-harvest windthrown tree
+bad_id <- "2L80.3731"
+tree_2008 <- tree_2008[!tree_2008$tree_id %in% bad_id, ]
+tree_2013 <- tree_2013[!tree_2013$tree_id %in% bad_id, ]
+tree_2018 <- tree_2018[!tree_2018$tree_id %in% bad_id, ]
+tree_list_all <- tree_list_all[!tree_list_all$tree_id %in% bad_id, ]
+
+# assume 3H40.3195 was actually cut in 2008
+cut_13 <- "3H40.3195"
+tree_2013 <- tree_2013[!tree_2013$tree_id %in% cut_13, ]
+tree_2008 <- tree_2008[!tree_2008$tree_id %in% cut_13, ]
+new_data <- list(tree_id = paste0(cut_13, "C"), status = 16)
+init_2008[init_2008$tree_id %in% cut_13, c("tree_id", "status")] <- new_data
+tree_list_all[tree_list_all$tree_id %in% cut_13, "tree_id"] <- new_data$tree_id
+
+# get ids of cut trees and remove from tree list
+cut_ids <- init_2008$tree_id[init_2008$status %in% c(15, 16)]
+tree_list <- tree_list_all[!tree_list_all$tree_id %in% cut_ids, ]
+```
+
+## Bear/rot column
+Covert bear damage and rot to TRUE/FALSE, rather than Y/N or 1/(missing)
+
+```{r}
+init_2008$bear <- if_else(init_2008$bear == "Y", TRUE, FALSE)
+init_2008$rot <- if_else(init_2008$rot == "Y", TRUE, FALSE)
+tree_2008$bear <- if_else(tree_2008$bear == "Y", TRUE, FALSE)
+tree_2008$rot <- if_else(tree_2008$rot == "Y", TRUE, FALSE)
+tree_2013$bear <- if_else(tree_2013$bear == 1, TRUE, FALSE, missing = FALSE)
+tree_2018$bear <- if_else(tree_2018$bear == 1, TRUE, FALSE, missing = FALSE)
+```
+
+In 2018, "bear" column does not agree with bear damage recorded in "condition codes," I'll default to using the condition codes and adjust "bear" accordingly.
+
+```{r}
+any(tree_2018$bear == FALSE & str_detect(tree_2018$cond, "17|18|19"))
+tree_2018[str_detect(tree_2018$cond, "17|18|19"), "bear"] <- TRUE
+```
+
+## Initial Complete dataset
+
+I'll check to make sure all tree_ids for all measurement years are represented in the tree list and vice-versa. Then I'll make a long format dataset where each observation has one row by simply attaching each dataset together, end to end and adding a column for the year. This format should be efficient for producing summary statistics. I am including initial conditions in this dataset and convert to metric. I also fix notes that have multiple lines.
+
+```{r}
+all_years <- list(`init` = init_2008, `08` = tree_2008,
+                   `13` = tree_2013, `18` = tree_2018)
+after_harvest <- all_years[names(all_years) != "init"]
+ids <- lapply(after_harvest, "[[", "tree_id")
+ids <- Reduce(union, ids)
+# check extra tree_list ids
+setdiff(tree_list$tree_id, ids)
+# check extra measurement data ids
+setdiff(ids, tree_list$tree_id)
+
+# long format dataset (includes initial conditions)
+# and convert to metric
+treatments <- paste("H40", "L40", "H80", "L80", "C", sep = "|")
+d_l <- bind_rows(all_years, .id = "year")
+d_l <- left_join(tree_list_all, d_l, by = "tree_id") %>%
+  mutate(treatment = str_extract(plot, treatments), .after = plot) %>%
+  mutate(h_dist = h_dist / 3.281, dbh = dbh * 2.54, ht = ht / 3.281) %>%
+  mutate(year = factor(year, levels = names(all_years), ordered = TRUE))
+
+d_l <- d_l %>%
+  mutate(notes = gsub("\n.*", "", notes),
+         cond = replace_na(cond, ""))
+
+```
+
+## Ingrowth
+
+Ingrowth is important for metrics such as structural diversity, understory diversity and others, but might skew metrics relating to the growth of dominant trees of interest. Here I remove ingrowth from the main dataset.
+
+```{r}
+ingrowth <- d_l %>%
+  group_by(tree_id) %>%
+  filter(min(year) > "08") %>%
+  ungroup()
+
+d_l <- d_l %>%
+  group_by(tree_id) %>%
+  filter(min(year) < "13") %>%
+  ungroup()
+```

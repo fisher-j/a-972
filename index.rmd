@@ -1,0 +1,11 @@
+---
+title: "A-972 10-year Data Analysis"
+author: Judson Fisher
+date: "`r format(Sys.Date(), '%m/%d/%Y')`"
+---
+
+# Welcome
+
+Welcome to the webpage for the A-972 10-year data analysis. The following pages document the steps I've taken in R to clean and analyze the A-972 dataset.
+
+

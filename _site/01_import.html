@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Import data</title>
+
+<script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">A-972 10-year Study</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="01_import.html">Data import</a>
+</li>
+<li>
+  <a href="02_data_cleaning.html">Data cleaning</a>
+</li>
+<li>
+  <a href="03_define.html">Define new variables</a>
+</li>
+<li>
+  <a href="04_summary.html">Data summaries and figures</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Import data</h1>
+
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#libraries">libraries</a></li>
+<li><a href="#import-data">Import Data</a></li>
+<li><a href="#initial-data-cleaning">Initial data cleaning</a>
+<ul>
+<li><a href="#status-column">Status column</a></li>
+<li><a href="#cut-trees">Cut trees</a></li>
+<li><a href="#bearrot-column">Bear/rot column</a></li>
+<li><a href="#initial-complete-dataset">Initial Complete dataset</a></li>
+<li><a href="#ingrowth">Ingrowth</a></li>
+</ul></li>
+</ul>
+</div>
+
+<div id="libraries" class="section level2">
+<h2>libraries</h2>
+<pre class="r"><code>library(&quot;tidyverse&quot;)
+library(kableExtra)</code></pre>
+</div>
+<div id="import-data" class="section level1">
+<h1>Import Data</h1>
+<p>I’ll start by importing tree data from all three periods as well as the tree list. These will be stored in four appropriately named data frames. While importing, I’ll rename some columns, select useful columns and remove the “spare” observations. I combine condition codes into a single column.</p>
+<pre class="r"><code>tree_2008 &lt;- read.csv(&quot;./original/tblA972_TreeData2008.txt&quot;,
+                           na.strings = &quot;&quot;) %&gt;%
+  select(tree_id = TreeID, dbh = DBH, ht = HTt, cr = CR,
+        status = Status, bear = BearDmg, rot = Rot, notes = Notes) %&gt;%
+        filter(!grepl(&quot;^SPR1&quot;, tree_id)) %&gt;%
+  as_tibble()
+
+tree_2013 &lt;- read.csv(&quot;./original/tblA972_TreeData2013.txt&quot;,
+                           na.strings = &quot;&quot;) %&gt;%
+  select(tree_id = TreeID, dbh = DBH, ht = Ht, cr = CR, cc = CC,
+         status = Status, bear = BearDmg, ConCode.A:ConCode.E,
+         notes = Notes) %&gt;%
+  unite(cond, starts_with(&quot;ConCode&quot;), sep = &quot;,&quot;, na.rm = TRUE) %&gt;%
+  filter(!grepl(&quot;^SPR1&quot;, tree_id)) %&gt;%
+  as_tibble()
+
+tree_2018 &lt;- read.csv(&quot;./original/tblA972_TreeData2018.txt&quot;,
+                           na.strings = &quot;&quot;) %&gt;%
+  select(tree_id = TreeID, dbh = DBH, ht = HTt, cr = CR,
+         status = Status, ConCode.A:ConCode.E, bear = BearDmg,
+         notes = Notes) %&gt;%
+  unite(cond, starts_with(&quot;ConCode&quot;), sep = &quot;,&quot;, na.rm = TRUE) %&gt;%
+  filter(!grepl(&quot;^SPR1&quot;, tree_id)) %&gt;%
+  as_tibble()
+
+tree_list_all &lt;- read.csv(&quot;./original/tblA972_Trees.txt&quot;, na.strings = &quot;&quot;) %&gt;%
+  select(plot = Plot_ID, tree_id = TreeID, spp = Species,
+         h_dist = H_Dist, azi = Azimuth) %&gt;%
+  filter(!grepl(&quot;^SPR1&quot;, tree_id)) %&gt;%
+  as_tibble()</code></pre>
+</div>
+<div id="initial-data-cleaning" class="section level1">
+<h1>Initial data cleaning</h1>
+<div id="status-column" class="section level2">
+<h2>Status column</h2>
+<p>I’ll remove bad data indicated by status -99, -999, or -9999. These occur in 2013.</p>
+<pre class="r"><code>bad_id &lt;- tree_2013$tree_id[tree_2013$status %in% c(-99, -999, -9999)]
+data.frame(id = bad_id,
+           notes_08 = tree_2008$notes[tree_2008$tree_id %in% bad_id],
+           notes_13 = tree_2013$notes[tree_2013$tree_id %in% bad_id])</code></pre>
+<pre><code>##           id       notes_08                        notes_13
+## 1 3H40.C0230 Tagged as 4052  Duplicate record, tree not cut
+## 2  3H80.3816              X              could not relocate
+## 3 4L80.C1938   Dead pre cut dead pre cut - remove from data
+## 4    C4.4667  BEETLE DAMAGE             switch to tag #4667</code></pre>
+<pre class="r"><code>tree_2008 &lt;- tree_2008[!tree_2008$tree_id %in% bad_id, ]
+tree_2013 &lt;- tree_2013[!tree_2013$tree_id %in% bad_id, ]
+tree_2018 &lt;- tree_2018[!tree_2018$tree_id %in% bad_id, ]
+tree_list_all &lt;- tree_list_all[!tree_list_all$tree_id %in% bad_id, ]</code></pre>
+<p>I’ll also look at trees with status == 99, and determine if they (a) died after harvest, and thus are period 1 mortality, or (b) died before harvest, and were snags. I also give status=1 to ingrowth in 2018 (where status was NA). Finally, some down, windthrown trees (broken below dbh or uprooted) continue to have dbh recorded (44), and others do not (115). I’m not sure how to handle this for now.</p>
+<pre class="r"><code># Deal with status 99
+tree_2008[tree_2008$status == 99, &quot;status&quot;]</code></pre>
+<pre><code>## # A tibble: 4 x 1
+##   status
+##    &lt;int&gt;
+## 1     99
+## 2     99
+## 3     99
+## 4     99</code></pre>
+<pre class="r"><code>tree_2008[tree_2008$status == 99, &quot;status&quot;] &lt;- c(5, 5, 1, 1)
+
+# Deal with status=NA in 2018
+tree_2018[is.na(tree_2018$status), &quot;status&quot;] &lt;- 1</code></pre>
+<p>Changing status of one “split” tree from “live” to “broken above dbh” and one snag from -5 to 5.</p>
+<pre class="r"><code>tree_2013[tree_2013$tree_id == &quot;4L40.3255&quot;, &quot;status&quot;] &lt;- 31
+tree_2018[tree_2018$tree_id == &quot;1L40.3661&quot;, &quot;status&quot;] &lt;- 5</code></pre>
+<p>Change status of several windthrow trees from 1 to 30 or 31, based on condition codes. These are strange because, subsequent dbh for these trees continue to increase, despite them being windthrown. I’m not sure what to make of this.</p>
+<pre class="r"><code>bad_windthrow_13 &lt;- tree_2013$status == 1 &amp; grepl(&quot;30|31|32&quot;, tree_2013$cond)
+new_status_13 &lt;- str_extract(tree_2013$cond[bad_windthrow_13], &quot;30|31|32&quot;)
+tree_2013[bad_windthrow_13, &quot;status&quot;] &lt;- as.numeric(new_status_13)
+
+bad_windthrow_18 &lt;- tree_2018$status == 1 &amp; grepl(&quot;30|31|32&quot;, tree_2018$cond)
+new_status_18 &lt;- str_extract(tree_2018$cond[bad_windthrow_18], &quot;30|31|32&quot;)
+tree_2018[bad_windthrow_18, &quot;status&quot;] &lt;- as.numeric(new_status_18)</code></pre>
+</div>
+<div id="cut-trees" class="section level2">
+<h2>Cut trees</h2>
+<p>The 2008 data needs to be broken into initial and post cut conditions. To separate these I’ll use the Status column (“15” and “16” indicate cut). Initial conditions will include cut and uncut trees. I’ll make sure tree_2008 doesn’t have any remaining cut trees, then I’ll check subsequent measurement periods to make sure there are no more remaining cut trees. Finally, I’ll remove harvested trees from tree_list_all.</p>
+<p>While ids (with a “C”) don’t indicate any unexpected cut trees in subsequent years, year 2013 has two cut trees indicated by status 16. One of these, 2L80.3731 is listed as windthrown prior to harvest in 2008, this tree should be omitted as it is not representative of treatment effects. Tree 3H40.3195 was listed as alive in 2008 and then as cut in 2013, I’m going to assume it was actually cut in 2008 (when it was 5.5 inches).</p>
+<pre class="r"><code>init_2008 &lt;- tree_2008
+tree_2008 &lt;- tree_2008[!init_2008$status %in% c(15, 16), ]
+
+# check for possible unmatched cut trees in tree_2008
+# (id&#39;s with &quot;C&quot; in second part)
+pattern &lt;- &quot;\\w+\\.([Cc]\\d+)|(\\d+[Cc])&quot;
+tree_2008[grepl(pattern, tree_2008[[&quot;tree_id&quot;]]), ]</code></pre>
+<pre><code>## # A tibble: 0 x 8
+## # ... with 8 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;int&gt;, cr &lt;int&gt;,
+## #   status &lt;int&gt;, bear &lt;chr&gt;, rot &lt;chr&gt;, notes &lt;chr&gt;</code></pre>
+<pre class="r"><code># Check if there are trees with &quot;C&quot; in subsequent years. There are not.
+tree_2013[grepl(pattern, tree_2013[[&quot;tree_id&quot;]]), ]</code></pre>
+<pre><code>## # A tibble: 0 x 9
+## # ... with 9 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;dbl&gt;, cr &lt;dbl&gt;, cc &lt;int&gt;,
+## #   status &lt;int&gt;, bear &lt;int&gt;, cond &lt;chr&gt;, notes &lt;chr&gt;</code></pre>
+<pre class="r"><code>tree_2018[grepl(pattern, tree_2018[[&quot;tree_id&quot;]]), ]</code></pre>
+<pre><code>## # A tibble: 0 x 8
+## # ... with 8 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;int&gt;, cr &lt;int&gt;,
+## #   status &lt;int&gt;, cond &lt;chr&gt;, bear &lt;int&gt;, notes &lt;chr&gt;</code></pre>
+<pre class="r"><code># Check for status 15 or 16 in subsequent years: 2 cut trees in 2013
+tree_2013[tree_2013$status %in% c(15, 16), ]</code></pre>
+<pre><code>## # A tibble: 2 x 9
+##   tree_id     dbh    ht    cr    cc status  bear cond  notes                
+##   &lt;chr&gt;     &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;  &lt;int&gt; &lt;int&gt; &lt;chr&gt; &lt;chr&gt;                
+## 1 2L80.3731     0     0     0    -1     16    NA &quot;&quot;    &lt;NA&gt;                 
+## 2 3H40.3195     0     0     0    -1     16    NA &quot;&quot;    cut down accidentally</code></pre>
+<pre class="r"><code>tree_2018[tree_2018$status %in% c(15, 16), ]</code></pre>
+<pre><code>## # A tibble: 0 x 8
+## # ... with 8 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;int&gt;, cr &lt;int&gt;,
+## #   status &lt;int&gt;, cond &lt;chr&gt;, bear &lt;int&gt;, notes &lt;chr&gt;</code></pre>
+<pre class="r"><code># remove pre-harvest windthrown tree
+bad_id &lt;- &quot;2L80.3731&quot;
+tree_2008 &lt;- tree_2008[!tree_2008$tree_id %in% bad_id, ]
+tree_2013 &lt;- tree_2013[!tree_2013$tree_id %in% bad_id, ]
+tree_2018 &lt;- tree_2018[!tree_2018$tree_id %in% bad_id, ]
+tree_list_all &lt;- tree_list_all[!tree_list_all$tree_id %in% bad_id, ]
+
+# assume 3H40.3195 was actually cut in 2008
+cut_13 &lt;- &quot;3H40.3195&quot;
+tree_2013 &lt;- tree_2013[!tree_2013$tree_id %in% cut_13, ]
+tree_2008 &lt;- tree_2008[!tree_2008$tree_id %in% cut_13, ]
+new_data &lt;- list(tree_id = paste0(cut_13, &quot;C&quot;), status = 16)
+init_2008[init_2008$tree_id %in% cut_13, c(&quot;tree_id&quot;, &quot;status&quot;)] &lt;- new_data
+tree_list_all[tree_list_all$tree_id %in% cut_13, &quot;tree_id&quot;] &lt;- new_data$tree_id
+
+# get ids of cut trees and remove from tree list
+cut_ids &lt;- init_2008$tree_id[init_2008$status %in% c(15, 16)]
+tree_list &lt;- tree_list_all[!tree_list_all$tree_id %in% cut_ids, ]</code></pre>
+</div>
+<div id="bearrot-column" class="section level2">
+<h2>Bear/rot column</h2>
+<p>Covert bear damage and rot to TRUE/FALSE, rather than Y/N or 1/(missing)</p>
+<pre class="r"><code>init_2008$bear &lt;- if_else(init_2008$bear == &quot;Y&quot;, TRUE, FALSE)
+init_2008$rot &lt;- if_else(init_2008$rot == &quot;Y&quot;, TRUE, FALSE)
+tree_2008$bear &lt;- if_else(tree_2008$bear == &quot;Y&quot;, TRUE, FALSE)
+tree_2008$rot &lt;- if_else(tree_2008$rot == &quot;Y&quot;, TRUE, FALSE)
+tree_2013$bear &lt;- if_else(tree_2013$bear == 1, TRUE, FALSE, missing = FALSE)
+tree_2018$bear &lt;- if_else(tree_2018$bear == 1, TRUE, FALSE, missing = FALSE)</code></pre>
+<p>In 2018, “bear” column does not agree with bear damage recorded in “condition codes,” I’ll default to using the condition codes and adjust “bear” accordingly.</p>
+<pre class="r"><code>any(tree_2018$bear == FALSE &amp; str_detect(tree_2018$cond, &quot;17|18|19&quot;))</code></pre>
+<pre><code>## [1] TRUE</code></pre>
+<pre class="r"><code>tree_2018[str_detect(tree_2018$cond, &quot;17|18|19&quot;), &quot;bear&quot;] &lt;- TRUE</code></pre>
+</div>
+<div id="initial-complete-dataset" class="section level2">
+<h2>Initial Complete dataset</h2>
+<p>I’ll check to make sure all tree_ids for all measurement years are represented in the tree list and vice-versa. Then I’ll make a long format dataset where each observation has one row by simply attaching each dataset together, end to end and adding a column for the year. This format should be efficient for producing summary statistics. I am including initial conditions in this dataset and convert to metric. I also fix notes that have multiple lines.</p>
+<pre class="r"><code>all_years &lt;- list(`init` = init_2008, `08` = tree_2008,
+                   `13` = tree_2013, `18` = tree_2018)
+after_harvest &lt;- all_years[names(all_years) != &quot;init&quot;]
+ids &lt;- lapply(after_harvest, &quot;[[&quot;, &quot;tree_id&quot;)
+ids &lt;- Reduce(union, ids)
+# check extra tree_list ids
+setdiff(tree_list$tree_id, ids)</code></pre>
+<pre><code>## character(0)</code></pre>
+<pre class="r"><code># check extra measurement data ids
+setdiff(ids, tree_list$tree_id)</code></pre>
+<pre><code>## character(0)</code></pre>
+<pre class="r"><code># long format dataset (includes initial conditions)
+# and convert to metric
+treatments &lt;- paste(&quot;H40&quot;, &quot;L40&quot;, &quot;H80&quot;, &quot;L80&quot;, &quot;C&quot;, sep = &quot;|&quot;)
+d_l &lt;- bind_rows(all_years, .id = &quot;year&quot;)
+d_l &lt;- left_join(tree_list_all, d_l, by = &quot;tree_id&quot;) %&gt;%
+  mutate(treatment = str_extract(plot, treatments), .after = plot) %&gt;%
+  mutate(h_dist = h_dist / 3.281, dbh = dbh * 2.54, ht = ht / 3.281) %&gt;%
+  mutate(year = factor(year, levels = names(all_years), ordered = TRUE))
+
+d_l &lt;- d_l %&gt;%
+  mutate(notes = gsub(&quot;\n.*&quot;, &quot;&quot;, notes),
+         cond = replace_na(cond, &quot;&quot;))</code></pre>
+</div>
+<div id="ingrowth" class="section level2">
+<h2>Ingrowth</h2>
+<p>Ingrowth is important for metrics such as structural diversity, understory diversity and others, but might skew metrics relating to the growth of dominant trees of interest. Here I remove ingrowth from the main dataset.</p>
+<pre class="r"><code>ingrowth &lt;- d_l %&gt;%
+  group_by(tree_id) %&gt;%
+  filter(min(year) &gt; &quot;08&quot;) %&gt;%
+  ungroup()
+
+d_l &lt;- d_l %&gt;%
+  group_by(tree_id) %&gt;%
+  filter(min(year) &lt; &quot;13&quot;) %&gt;%
+  ungroup()</code></pre>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

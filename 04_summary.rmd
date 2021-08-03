@@ -1,0 +1,353 @@
+---
+title: "Calculate summary statistics"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+```
+
+# Summary measures
+
+I'm making the assumption now that all trees recorded as cut were alive in the initial conditions. For all of the following I use trees with status 1, 2, 3, 15, 16. Fifteen and 16 are cut trees, but in the long data format, they only occur on entries where year = "init" so they do not affected other periods. Status 1, 2 and 3 represent second-growth, advanced regen, and old-growth, respectively.
+
+Generally, the `summarise()` command in each section defines the output of a given measure. The `mutate()` command is also used for calculating new columns. Calculations are done by grouping levels (generally by treatment, by year).
+
+```{r}
+# I'll store all my metrics in this list
+measures <- list()
+```
+
+## Density
+
+I'll look at a quick summary of quartiles of the number of tree observations by plot for each year. Initial plots had between 83 and 164 observations and subsequent years are roughly parallel. Density is being calculated for all live trees, including those broken above dbh.
+
+```{r}
+
+d_l %>%
+  filter(status %in% c(1, 2, 3, 15, 16, 31)) %>%
+  group_by(year, plot) %>%
+  summarize(n = n()) %>%
+  summarize(as_tibble_row(quantile(n)))
+
+
+
+# unused <- function(data, by_species = FALSE) {
+#   data %>%
+#     filter(live | status %in% c(15, 16)) %>%
+#     group_by(!!!group_vars(by_species)) %>%
+#     # expansion factor 12.5, over 4 replicates
+#     summarise(density = n() * 12.5 / 4, n_density = n())
+# }
+
+
+measures$density <- function(data, species) {
+  if(is.null(species)) species <- unique(data$spp)
+  data %>%
+    filter(spp %in% species, live | status %in% c(15, 16)) %>%
+    group_by(treatment, year, plot) %>%
+    # expansion factor 12.5 (12.5 * .08 = 1 ha)
+    summarise(density_plot = n() * 12.5, n_density = n()) %>%
+    summarise(
+      val_density = mean(density_plot),
+      n_density = sum(n_density),
+      sd_density = sd(density_plot)
+    )
+}
+```
+
+## Mortality
+
+New mortality here is ascribed to observations of the current period which were alive in the previous period and are not alive in the current period and reported in tph. Currently, this is undefined for the first period ("init") and is zero for "08" (because "init" and "08" are really only one observation). The values for 2013 and 2018 record the new mortality in the previous period, ie: 08-13 and 13-18, respectively.
+
+```{r}
+measures$mort <- function(data, species) {
+  if(is.null(species)) species <- unique(data$spp)
+  data %>%
+    filter(spp %in% species) %>%
+    group_by(tree_id) %>%
+    mutate(mort = ((live == FALSE) * (lag(live) == TRUE)) > 0) %>%
+    group_by(year, treatment, plot) %>%
+    summarize(mort_plot = sum(mort) * 12.5, n_mort = n()) %>%
+    summarize(
+      val_mort = mean(mort_plot),
+      n_mort = sum(n_mort),
+      sd_mort = sd(mort_plot)
+    )
+}
+```
+
+## dbh
+
+Dbh will be calculated based on all live trees, including those broken above dbh and with broken and dead tops (most of these are SESE and assumed to be alive).
+
+```{r}
+measures$dbh <- function(data, species) {
+  if(is.null(species)) species <- unique(data$spp)
+  data %>%
+    filter(spp %in% species, live | status %in% c(15, 16)) %>%
+    group_by(treatment, year) %>%
+    summarise(
+      val_dbh = mean(dbh),
+      n_dbh = n(),
+      sd_dbh = sd(dbh, na.rm = TRUE)
+    )
+}
+
+
+# unused <- d_l %>%
+#   filter(status %in% c(1, 2, 3, 15, 16)) %>%
+#   group_by(plot, year) %>%
+#   slice_max(order_by = dbh, n = 4, with_ties = FALSE) %>%
+#   group_by(spp, treatment, year) %>%
+#   summarise(dom_dbh = mean(dbh), n_dom_dbh = n())
+
+measures$dom_dbh <- function(data, species) {
+  if(is.null(species)) species <- unique(data$spp)
+  data %>%
+    filter(live | status %in% c(15, 16)) %>%
+    group_by(plot, year) %>%
+    slice_max(order_by = dbh, n = 4, with_ties = FALSE) %>%
+    filter(spp %in% species) %>%
+    group_by(treatment, year) %>%
+    summarise(
+      val_dom_dbh = mean(dbh),
+      n_dom_dbh = n(),
+      sd_dom_dbh = sd(dbh))
+}
+```
+
+## Heights
+
+Heights will be determined using only trees with unbroken, live crowns.
+
+Because there are about 14 observations in 2008 and 2013 that do not have height measurements, I am omitting these from analysis for now. Also, I am only looking at trees that have height measurements in 2018. This means that of the 3,538 total height observations, I am only looking at 1,929 over the the three measurement periods.
+
+For dominant heights, I am using dominant dbh trees *not including broken and dead tops*. Not all of these have heights. For this reason, there are fewer than 4 trees per plot.
+
+```{r}
+
+# get ids of trees that have heights in 2018
+ht_id_2018 <- filter(d_l, year == "18", !is.na(ht)) %>% pull(tree_id)
+
+# average height I AM OMMITING MISSING HEIGHT MEASUREMENTS.
+measures$ht <- function(data, species) {
+  if(is.null(species)) species <- unique(data$spp)
+  data %>%
+    filter(
+      spp %in% species,
+      live | status %in% c(15, 16),
+      !get_cond(c(2, 3)),
+      tree_id %in% ht_id_2018,
+      !is.na(ht)
+    ) %>%
+  group_by(treatment, year) %>%
+  summarise(
+    val_ht = mean(ht),
+    n_ht = n(),
+    sd_ht = sd(ht)
+  )
+}
+
+# unused <- d_l %>%
+#   filter(
+#     live | status %in% c(15, 16),
+#     !get_cond(c(2, 3)),
+#     tree_id %in% ht_id_2018,
+#     !is.na(ht)) %>%
+#   group_by(spp, treatment, year) %>%
+#   summarise(ht = mean(ht), n_ht = n())
+
+# Dominant height
+# I AM CALCULATING DOM HEIGHT ONLY FROM THOSE AVAILABLE
+measures$dom_ht <- function(data, species) {
+  if(is.null(species)) species <- unique(data$spp)
+  data %>%
+    filter(
+      live | status %in% c(15, 16),
+      !get_cond(2, 3),
+      tree_id %in% ht_id_2018
+    ) %>%
+    group_by(plot, year) %>%
+    slice_max(order_by = ht, n = 4, with_ties = FALSE) %>%
+    filter(spp %in% species) %>%
+    group_by(treatment, year) %>%
+    summarise(
+      val_dom_ht = mean(ht, na.rm = TRUE),
+      n_dom_ht = sum(!is.na(ht)),
+      sd_dom_ht = sd(ht, na.rm = TRUE)
+    )
+}
+
+```
+
+
+## Basal Area
+
+Basal area, similar to density will be calculated for all live trees.
+
+```{r}
+# measures$ba <- d_l %>%
+#   filter(live | status %in% c(15, 16)) %>%
+#   group_by(treatment, year) %>%
+#   summarise(ba = sum(dbh^2 * pi / 40000) * (12.5 / 4), n_ba = n())
+
+measures$ba <- function(data, species) {
+  if(is.null(species)) species <- unique(data$spp)
+  data %>%
+    filter(spp %in% species, live | status %in% c(15, 16)) %>%
+    group_by(treatment, year, plot) %>%
+    summarise(
+      ba_plot = sum(dbh^2 * pi / 40000, na.rm = TRUE) * 12.5,
+      n_ba = n()
+    ) %>%
+    summarize(
+      val_ba = mean(ba_plot),
+      n_ba = sum(n_ba),
+      sd_ba = sd(ba_plot)
+    )
+}
+```
+
+
+## SDI
+
+For SDI, I use the same trees that were used for basal area and density: all standing trees (broken or not) that are taller than breast height.
+
+```{r}
+# do any target trees have missing dbh?
+any(nrow(filter(d_l, status %in% c(1, 2, 3, 15, 16), is.na(dbh))))
+
+measures$sdi <- function(data, species) {
+  if(is.null(species)) species <- unique(data$spp)
+  data %>%
+    filter(spp %in% species, live | status %in% c(15, 16)) %>%
+    group_by(treatment, year, plot) %>%
+    summarise(
+      sdi_plot = sum(12.5 * (dbh * 0.04)^1.605, na.rm = TRUE),
+      n_sdi = n()
+    ) %>%
+    summarize(
+      val_sdi = mean(sdi_plot),
+      n_sdi = sum(n_sdi),
+      sd_sdi = sd(sdi_plot)
+    )
+}
+
+```
+
+# Initial summary tables
+
+## All species
+```{r, echo=FALSE}
+# Call all summary functions with a given dataset and speces list
+# and join the results into a wide dataframe.
+get_measures <- function(data = d_l, species = NULL) {
+  measures %>%
+  map(exec, data, species) %>%
+  reduce(full_join) %>%
+  pivot_longer(
+    !c(treatment, year),
+    names_to = c(".value", "measure"),
+    names_pattern = "(val|n|sd)_(.*)"
+  )
+}
+
+
+# takes a long dataset of summary values
+make_summary <- function(data) {
+  data %>%
+  arrange(measure, year) %>%
+  relocate(measure) %>%
+  mutate(across(where(is.double), ~ sprintf("%.1f", .x))) %>%
+  mutate(val = paste0(val, " (", sd, ")")) %>%
+  select(measure, treatment, year, val) %>%
+  pivot_wider(names_from = treatment, values_from = val) %>%
+  mutate(
+    measure = recode(measure,
+      density = "Density (tph)",
+      mort = "New mortality (tph)",
+      dbh = "dbh (cm)",
+      dom_dbh = "Dominant dbh (cm)",
+      ht = "Height (m)",
+      dom_ht = "Dominant height (m)",
+      ba = "Basal area (m^2^/ha)",
+      sdi = "SDI"
+    )
+  )
+}
+
+```
+
+```{r}
+
+get_measures(d_l) %>%
+  make_summary() %>%
+  kbl() %>%
+  kable_classic(full_width = FALSE, html_font = "Garamond") %>%
+  add_header_above(c(" " = 2, "Treatment" = 5)) %>%
+  collapse_rows(columns = 1, valign = "top")
+```
+
+## Redwood
+
+```{r}
+get_measures(species = "SESE3") %>%
+  make_summary() %>%
+  kbl() %>%
+  kable_classic(full_width = FALSE, html_font = "Garamond") %>%
+  add_header_above(c(" " = 2, "Treatment" = 5)) %>%
+  collapse_rows(columns = 1, valign = "top")
+
+```
+
+## Douglas-fir
+
+```{r}
+get_measures(species = "PSMEM") %>%
+  make_summary() %>%
+  kbl() %>%
+  kable_classic(full_width = FALSE, html_font = "Garamond") %>%
+  add_header_above(c(" " = 2, "Treatment" = 5)) %>%
+  collapse_rows(columns = 1, valign = "top")
+
+```
+
+# Figures
+
+```{r, fig.height = 2, fig.width = 9.5, echo = FALSE, message=FALSE, warning = FALSE}
+fix_year <- function(year) {
+  case_when(year == "init" ~2008,
+            year == "08" ~2008.2,
+            year == "13" ~2013,
+            year == "18" ~2018)
+}
+
+plot_data <- bind_rows(
+  tibble(spp = "SESE3", get_measures(species = "SESE3")),
+  tibble(spp = "PSMEM", get_measures(species = "PSMEM"))
+)
+
+make_plot <- function(measure, data = plot_data) {
+  yr_breaks <- c(2008, 2013, 2018)
+  data %>%
+    filter(measure == !!measure) %>%
+    mutate(year = fix_year(year)) %>%
+    ggplot(aes(year, val, color = spp)) +
+      geom_line(position = position_dodge(width = .5)) +
+      geom_point(position = position_dodge(width = .5)) +
+      geom_errorbar(
+        aes(ymin = val - sd, ymax = val + sd),
+        width = .75,
+        position = position_dodge(.5)
+      ) +
+      facet_wrap(~ treatment, ncol = 5) +
+      scale_x_continuous(breaks = yr_breaks) +
+      theme(panel.spacing.x = unit(1, "lines")) +
+      scale_color_manual(values = c(SESE3 = "#F8766D", PSMEM = "#00BFC4")) +
+      labs(y = measure)
+}
+
+for (var in names(measures)) {
+  print(make_plot(var))
+}
+```

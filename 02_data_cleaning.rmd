@@ -1,0 +1,537 @@
+---
+title: "Detailed data cleaning"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+```
+
+# Detailed data cleaning
+
+Considering each summary statistic, I'll look for potential problems in each column of the dataset, looking for outliers and repairing values if needed.
+
+## DBH data cleaning
+
+I'll start by taking a look at the dbh quartiles. There are zeros. They only occur in statuses 30, 31, 32 and 5 (snags and windfalls). I'll convert these zeros to "NA".
+
+```{r}
+summary(d_l$dbh)
+d_l %>% filter(dbh == 0) %>% pull(status) %>% unique()
+d_l$dbh[d_l$dbh == 0] <- NA
+```
+
+I look at a summary of all dbh then I identify dbh outliers among post-harvest trees, there are 77 separate observations (including remeasures), none of the dbh's are obviously extreme. 
+
+```{r}
+summary(filter(d_l, year != "init")$dbh)
+
+dbh_out <- boxplot(filter(d_l, year != "init")$dbh, plot = FALSE)$out
+length(dbh_out)
+```
+
+I check for dbh among all post harvest trees that change dramatically from one observation to the next because this may indicate a measurement error. *This includes dbh measurements for some downed trees, which may or may not be appropriate.* Outliers are defined as 1.5 times inter-quartile range above Q3 or below Q1, and are determined separately for both growth periods, but across all species and treatments. I also select anything with more than 1" shrinkage.
+
+```{r, echo = FALSE}
+change_d <- d_l %>%
+  filter(year != "init") %>%
+  pivot_wider(id_cols = c(tree_id, spp, plot), names_from = year,
+              values_from = c(dbh, notes, bear, cr, status)) %>%
+  mutate(p1 = dbh_13 - dbh_08, p2 = dbh_18 - dbh_13)
+```
+```{r}
+# Period one summary
+summary(change_d$p1)
+
+# Period two summary
+summary(change_d$p2)
+```
+
+```{r, echo = FALSE}
+# Get diameter change outliers in both periods
+out_d <- change_d %>%
+  select(p1, p2) %>%
+  map(~filter(change_d, .x %in% boxplot(.x, plot = FALSE)$out | .x < -2.54))
+```
+
+Average growth by *species and treatment* to be used to help identify and fix problems with dbh's. I looked at grouping by *species and plot*, but there were often too few trees for a good average. I'm assuming here that the response of species to treatment captures the most meaningful data for our purposes. 
+
+```{r, echo = FALSE}
+
+change_d %>%
+  group_by(treatment = str_extract(plot, "L40|L80|H40|H80|C"), spp) %>%
+  summarise(p1_mean = signif(mean(p1, na.rm = TRUE), 3),
+            p2_mean = signif(mean(p2, na.rm = TRUE), 3),
+            .groups = "drop") %>%
+  rbind(rep(NA, 4)) %>%
+  {bind_cols(.[1:11, ], .[12:22, ], .name_repair = "minimal")} %>%
+  ungroup() %>%
+  kbl() %>%
+  kable_styling()
+
+```
+
+### Identify dbh to fix
+
+I'll look at change outliers that occur in p1 or p2, but not both and I'll manually select entries to remove from the dbh summary. 
+
+* If the first or las dbh seems unlikely, project a value using either the other periods dbh change or the average change for that species/treatment.
+* If the tree seems very unhealthy, allow up to 10% shrinkage per measurement period with a 15% maximum.
+* If the middle measurement seems unlikely:
+  * consider averaging first and last
+  * project growth based on other period, or average
+* project actual growth for trees that "grew together with neighbor" using previous period and average growth.
+* Assume extreme growth on very bear damaged trees may be due to bark abnormalities - adjust.
+* Assume rapid growth is unlikely when a tree dies in following period with no bear damage.
+
+I'm also fixing dbh of trees whose tag was removed because they grew together with their neighbor. I project dbh growth for these trees based on average growth (by species and treatment) and previous/subsequent period growth.
+
+Pink highlight indicates outlier values (for individual measurements as well as height increment). Salmon highlight indicates edited values with new value in parentheses.
+
+```{r, echo = FALSE}
+dbh_problem1 <- out_d %>%
+  reduce(full_join) %>%
+  bind_rows(filter(change_d, if_any(starts_with("status"), ~ .x == 20))) %>%
+  select(-plot)
+
+new_dbh <- tribble(
+  ~tree_id,    ~year, ~dbh,
+  "1H80.3589", "08", 13.3,
+  "1H80.3621", "13", 34.53,
+  "1L80.3456", "08", 49.5,
+  "3L80.3361", "08", 15.3,
+  "4L80.3296", "08", 17.6,
+  "C2.4244",   "13", 17.78,
+  "C2.4252",   "08", 24.4,
+  "C2.4301",   "08", 22.14,
+  "C2.4301",   "13", 20.03,
+  "C2.4301",   "18", NA,
+  "C4.4636",   "08", 17.02,
+  "1H80.3620", "18", 31.8,
+  "1L40.3656", "18", 35.9,
+  "2H40.3067", "08", 44.83,
+  "2H80.3164", "18", 36.1,
+  "2L80.3724", "18", 53.6,
+  "3L80.3365", "18", 30.7,
+  "4L40.3276", "18", 46.25,
+  "C4.4601",   "18", 55.37,
+  "1H80.3529", "13", 31.4,
+  "1H80.3619", "18", 18.8,
+  "2H80.4110", "18", 23.6,
+  "2L80.3725", "18", 37.6,
+  "3L80.3366", "18", 34.5,
+  "4L40.3277", "18", 40.9,
+  "C4.4600",   "18", 29.0,
+  ) %>%
+  mutate(year = factor(year, levels = c("08", "13", "18"), ordered = TRUE))
+```
+
+```{r, echo = FALSE}
+# Color the values that are being changed as well as the outlier values
+dbh_color <- split(new_dbh, ~year) %>%
+  map("tree_id") %>%
+  map(~ifelse(dbh_problem1$tree_id %in% .x, "Salmon", "White"))
+  
+outlier_color <- map(out_d, "tree_id") %>%
+  map(~if_else(dbh_problem1$tree_id %in% .x, "Pink", "White"))
+
+# prepare replacement data to add to colored table
+problem_wide <- new_dbh %>%
+  group_by(tree_id) %>%
+  complete(year) %>%
+  pivot_wider(names_from = year, values_from = dbh, names_prefix = "dbh_")
+
+
+show_fix <- function(old, new) {
+  if_else(!is.na(new), paste0(old, " (", new, ")"), as.character(old))
+}
+
+# Make colored table with updated values
+dbh_problem1 %>%
+  left_join(problem_wide, by = "tree_id", suffix = c("", "_new")) %>%
+  mutate(dbh_08 = show_fix(dbh_08, dbh_08_new),
+         dbh_13 = show_fix(dbh_13, dbh_13_new),
+         dbh_18 = show_fix(dbh_18, dbh_18_new)) %>%
+  select(!ends_with("new")) %>%
+  unite("bear_seq", starts_with("bear"), sep = ">") %>%
+  unite("cr_seq", starts_with("cr"), sep = ">") %>%
+  unite("status_seq", starts_with("status"), sep = ">") %>%
+  kbl() %>%
+  kable_styling(bootstrap_options = "hover") %>%
+  column_spec(3, background = dbh_color[[1]]) %>%
+  column_spec(4, background = dbh_color[[2]]) %>%
+  column_spec(5, background = dbh_color[[3]]) %>%
+  column_spec(12, background = outlier_color[[1]]) %>%
+  column_spec(13, background = outlier_color[[2]])
+```
+
+### *Update dbh values in main dataset*
+
+Here I'll update the dbh data in the main dataset with the values identified above. I'll also change status 20 to 1 (live tree). Below this point, d_l is an updated dataset.
+
+```{r}
+# make sure year factors match eg. "init"
+new_dbh$year <- ordered(new_dbh$year, levels = levels(d_l$year))
+d_l <- rows_update(d_l, new_dbh, by = c("tree_id", "year"))
+# make sure all status 20 are accounted for
+all(d_l$tree_id[d_l$status == 20] %in% new_dbh$tree_id)
+# Change status 20, update post harvest data
+d_l[d_l$status == 20, "status"] <- 1
+p_h <- filter(d_l, year > "init")
+```
+
+## Height data cleaning
+
+
+I'll start by identifying and eliminating zeros and bad data (-30.2m = -99ft) from height data and replace these with NA.
+
+```{r}
+d_l %>%
+  group_by(year, treatment) %>%
+    summarize(min = min(ht, na.rm = TRUE),
+            `1st qu.` = quantile(ht, .25, na.rm = TRUE),
+            median = median(ht, na.rm = TRUE),
+            mean = mean(ht, na.rm = TRUE),
+            `3rd qu.` = quantile(ht, .75, na.rm = TRUE),
+            max = max(ht, na.rm = TRUE),
+            na = sum(is.na(ht)))
+
+d_l <- d_l %>%
+  mutate(ht = if_else(ht * 3.281 == -99 | ht == 0, NA_real_, ht))
+```
+
+### Fixing Status and Condition Codes
+
+Here I make changes to status and condition codes. I add condition codes to, and change the status of some trees based on their notes and height information to identify leaning, broken-top, and broken above dbh height anomalies. If a tree is broken below 7m, then it should be status 31, "broken above dbh", rather than just a broken top.
+
+```{r}
+
+  # New condition codes
+cond_new <- tribble(
+  ~tree_id, ~year, ~cond,
+  "1H40.1908", "08", "3",
+  "2H40.3064", "13", "3",
+  "2L80.3729", "08", "3",
+  "3H80.3839", "13", "31",
+  "3L40.3211", "13", "31",
+  "4H80.3975", "13", "3",
+  "4H80.4005", "08", "3",
+  "4H80.4011", "08", "3",
+  "4H80.4027", "13", "3",
+  "C1.4204",   "08", "2",
+  "C2.4295",   "13", "3",
+  "1L80.3399", "08", "3",
+  "1L80.3399", "13", "3",
+)
+
+# Update condition codes
+key <- map(list(d_l, cond_new), ~paste(.x$tree_id, .x$year))
+vals_to_change <- match(key[[2]], key[[1]])
+new_vals <- paste(d_l$cond[vals_to_change], cond_new$cond, sep = ",") %>%
+  str_remove("^,|,$")
+d_l$cond[vals_to_change] <- new_vals
+
+# New status
+status_new <- tribble(
+  ~tree_id, ~year, ~status,
+  "3H80.3839", "13", 31,
+  "3H80.3839", "18", 31,
+  "3L40.3207", "13", 31,
+  "3L40.3207", "18", 31,
+  "4L40.3283", "08", 31,
+  "C3.4530",   "13", 31,
+  "1H80.3581", "18", 31,
+  "4L40.3255", "18", 31,
+  "4L40.3262", "18", 31,
+  "1L40.3661", "13", 5,
+)
+
+# Update datasets with new status
+d_l <- rows_update(d_l, status_new, by = c("tree_id", "year"))
+
+# If a tree with "broken top" is less than 5m, then it should be
+# status 31, broken above dbh
+broken_low <- with(d_l, which(get_cond(3) & ht < 5 & status == 1))
+d_l[broken_low, "status"] <- 31
+
+p_h <- filter(d_l, year > "init")
+```
+
+### Height outliers
+
+Next, I'll look for absolute outliers in height. First I'll fit a linear model (square-root transformed) and get the extreme residuals by defining an arbitrary cutoff.
+
+```{r ht_plot1, echo = FALSE}
+
+p_h <- filter(d_l, year > "init")
+
+# vector of positions in original dataset that are out
+ht_outlier_resid <- plot_ht(p_h, mag = 2.5)
+
+# Get tree id and year for each outlier
+ht_outlier_resid <- p_h[ht_outlier_resid, c("tree_id", "year")]
+
+```
+
+I also want to look at extreme changes in height. I'll combine these two sets of outliers and look for height values that need fixing. I'm looking at outlier height increments that are 2 times above or below the IQR. Pink highlight indicates outlier values (for individual measurements as well as height increments). Salmon highlight indicates edited values with new value in parentheses. 
+
+```{r, echo=FALSE}
+# Define the delta-height dataset in wide format
+change_h <- p_h %>%
+  pivot_wider(id_cols = c(tree_id, spp, plot), names_from = year,
+              values_from = c(ht, dbh, notes, bear, cr, status, cond)) %>%
+  mutate(p1 = ht_13 - ht_08, p2 = ht_18 - ht_13) %>%
+  mutate(across(where(is.double), round, 2))
+
+# compile list of all target outlier tree ids
+ht_outlier <- select(change_h, p1:p2) %>%
+  map(~ out(.x, mag = 2)) %>%
+  map(~ change_h$tree_id[.x]) %>%
+  c(resid = list(unique(ht_outlier_resid$tree_id)))
+
+# Define height problem dataset
+problem_ht <- filter(change_h, tree_id %in% reduce(ht_outlier, union))
+
+```
+
+
+```{r}
+# New tree heights
+new_ht <- tribble(
+  ~tree_id,    ~year, ~ht,
+  "1L80.3400", "08",  21,
+  "1L80.3402", "13",  15.8,
+  "2H40.3049", "08",  15,
+  "2H40.3073", "18",  24,
+  "2H40.3075", "13",  17,
+  "2H80.3094", "18",  18,
+  "2H80.3099", "18",  15,
+  "2H80.3175", "18",  30,
+  "2H80.4105", "13",  26,
+  "2H80.4111", "13",  22,
+  "3H40.1859", "18",  21,
+  "3H80.3790", "13",  16,
+  "3L80.3320", "08",  15,
+  "3L80.3374", "18",  21,
+  "4H80.4000", "18",  26.5,
+  "4L40.3278", "18",  18,
+  "4L40.3283", "08",  8.5,
+  "C1.4146",   "18",  21,
+  "C1.4197",   "13",  19,
+  "C4.4676",   "18",  28,
+  ) %>%
+  mutate(
+    year = factor(year, levels = c("init", "08", "13", "18"), ordered = TRUE)
+  )
+
+```
+
+```{r, echo=FALSE}
+# Color the values that are being changed as well as the
+# height increment outlier values and the residual outliers
+
+ht_resid_color <- split(ht_outlier_resid, ~ year, drop = TRUE) %>%
+  map("tree_id") %>%
+  map(~if_else(problem_ht$tree_id %in% .x, "Pink", "White"))
+
+ht_fix_color <- split(new_ht, ~year, drop = TRUE) %>%
+  map("tree_id") %>%
+  map2(ht_resid_color, ~ifelse(problem_ht$tree_id %in% .x, "Salmon", .y))
+
+ht_change_color <- ht_outlier[c("p1", "p2")] %>%
+  map(~if_else(problem_ht$tree_id %in% .x, "Pink", "White"))
+
+# prepare replacement data to add to colored table
+new_ht_wide <- new_ht %>%
+  group_by(tree_id) %>%
+  complete(year) %>%
+  pivot_wider(names_from = year, values_from = ht, names_prefix = "ht_") %>%
+  select(-ht_init)
+
+
+problem_ht %>%
+  left_join(new_ht_wide, by = "tree_id", suffix = c("", "_new")) %>%
+  mutate(ht_08 = show_fix(ht_08, ht_08_new),
+         ht_13 = show_fix(ht_13, ht_13_new),
+         ht_18 = show_fix(ht_18, ht_18_new)) %>%
+  select(!c(ends_with("new"), plot)) %>%
+  unite("bear_seq", starts_with("bear"), sep = ">") %>%
+  unite("cr_seq", starts_with("cr"), sep = ">") %>%
+  unite("status_seq", starts_with("status"), sep = ">") %>%
+  unite("dbh_seq", starts_with("dbh"), sep = ">") %>%
+  unite("cond_seq", starts_with("cond"), sep = ">") %>%
+  kbl() %>%
+  kable_styling() %>%
+  column_spec(3, background = ht_fix_color[[1]]) %>%
+  column_spec(4, background = ht_fix_color[[2]]) %>%
+  column_spec(5, background = ht_fix_color[[3]]) %>%
+  column_spec(14, background = ht_change_color[[1]]) %>%
+  column_spec(15, background = ht_change_color[[2]])
+
+```
+
+
+```{r}
+# Update datasets with new heights
+d_l <- rows_update(d_l, new_ht, by = c("tree_id", "year"))
+p_h <- filter(d_l, year > "init")
+```
+
+Our plot of height outliers doesn't change much, but if we include only status 1, unbroken trees, then our residuals are more homogenous. Filtering like this omits 836 observations over the 3 post harvest measurements. If we remove non-status-one and broken trees *under 12 m*, then 369 trees are omitted and most of the outliers are removed. 
+
+Next, I'll look at the proportion of trees that have height measurements, but it is worth noting here that for regression purposes there are 3537 observations *with both dbh and height measurements* (of 4591 total). Of the observations with full measurements, filtering, as above, removes 304 and 82 observations, respectively.
+
+```{r}
+p_h %>% plot_ht(mag = 2.5)
+
+# What trees are ommited if we remove broken trees
+p_h %>%
+  filter(
+    !is.na(ht * dbh),
+    status != 1 |
+    get_cond(c(2, 3)) & ht < 12
+  ) %>%
+  select(dbh, ht) %>%
+  points(col = "firebrick1", pch = 4)
+
+p_h %>%
+  filter(
+    !is.na(ht * dbh),
+    status != 1 | get_cond(c(2, 3))) %>%
+  nrow()
+
+p_h %>%
+  filter(
+    !is.na(ht * dbh),
+    status != 1 | (get_cond(c(2, 3)) & ht < 12)) %>%
+  nrow()
+```
+
+### Missing heights
+
+Heights for 2018 seem to only have been taken for a sample of the trees (643 of 1505). I'm not sure how these were selected, so tree selection may be a source of bias. I checked what proportion of heights were measured for plots and treatments. 35 - 70% of heights were sampled for each treatment and 17% - 100% of each plot has height measurements.
+
+For comparison purposes, I'll summarize height across measurement periods *only for tree ids that have height measurements in 2018*, with the understanding that the height related sampling error may introduce bias especially at the plot level, where sampling intensity ranged from 0.17 to 1.
+
+```{r}
+# do any target trees have missing heights? If so, how many
+any(nrow(filter(d_l, status %in% c(1, 2, 3, 15, 16), is.na(ht))))
+nrow(filter(d_l, status %in% c(1, 2, 3, 15, 16), is.na(ht)))
+
+# proportion of (target) trees that have height measurements each period
+filter(p_h, status %in% c(1, 2, 3, 15, 16)) %>%
+  group_by(year, measured = !is.na(ht)) %>%
+  summarise(n = n()) %>%
+  mutate(freq = n / sum(n), .keep = "unused") %>%
+  filter(measured)
+
+# what proportion of trees in 2018 by treatment and plot DO have height data?
+filter(d_l, status %in% c(1, 2, 3, 15, 16), year == "18") %>%
+  group_by(plot, measured = !is.na(ht)) %>%
+  summarise(n = n()) %>%
+  mutate(freq = round(n / sum(n), 2)) %>%
+  filter(measured) %>%
+  select(plot, freq)
+
+filter(d_l, status %in% c(1, 2, 3, 15, 16), year == "18") %>%
+  group_by(treatment, measured = !is.na(ht)) %>%
+  summarise(n = n()) %>%
+  mutate(freq = round(n / sum(n), 2)) %>%
+  filter(measured) %>%
+  select(treatment, freq)
+
+
+```
+
+It looks like the 643, 2018 height observations are somewhat distributed across plots and treatments (although treatment L80 and plot C3 are underrepresented). Now, I want to check if heights were observed across dbh and height classes. Because trees are expected to grow from one year to the next, I will compare samples based on 2013 heights (90% of inventoried trees have heights in 2013). It appears as though the 2018 heights are relatively unbiased across the inventory. There still may be some bias within treatments, but we can burn that bridge later.
+
+```{r compare-heights, echo = FALSE}
+ht_18_id <- p_h %>% filter(year == "18" & !is.na(ht)) %>%
+  pull(tree_id)
+
+ht_18_13 <- p_h %>%
+  filter(year == "13", !is.na(ht), tree_id %in% ht_18_id) %>%
+  pull(ht)
+
+ht_13_13 <- p_h %>%
+  filter(year == "13", !is.na(ht)) %>%
+  pull(ht)
+
+ht_18_08 <- p_h %>%
+  filter(year == "08", !is.na(ht), tree_id %in% ht_18_id) %>%
+  pull(ht)
+
+ht_08_08 <- p_h %>%
+  filter(year == "08", !is.na(ht)) %>%
+  pull(ht)
+
+mycols <- palette.colors(palette = "Classic Tableau", alpha = .25)
+hist(ht_13_13, col = mycols[1],
+     ylim = c(0, 0.12),
+     xlim = range(c(ht_13_13, ht_18_13)),
+     prob = TRUE,
+     main = "Sample distirbution comparison",
+     xlab = "2013 heights (m)")
+hist(ht_18_13, col = mycols[2], prob = TRUE, add = TRUE, breaks = 12)
+legend(5, .1,
+  legend = c("All 2013 heights", "2018 subset"),
+  col = mycols[1:2],
+  pch = 15,
+  bty = "n",
+  cex = 1.2,
+  y.intersp = 1.7)
+```
+
+My plan is to calculate height metrics (for comparison) based just on those trees which have heights measured in 2018. This means that I would only be looking at 1911 of the 3488 total height measurements (status 1 trees only). 
+
+There are 14 different trees which are missing heights for 2008 and have heights in 2013 and 2018. I can deal with these values in one of the following ways:
+
+* Simply omit these observations from the analysis
+* Manually estimate using average increments for species and treatment
+* Fit a linear model including dbh, treatment, ht_13 and ht_18, bear.
+* Fit separate models (mixed model?) 
+
+```{r, include=FALSE}
+d_l %>%
+  group_by(tree_id) %>%
+  filter(tree_id %in% ht_18_id, year == "08", status == 1, is.na(ht))
+```
+
+### Dominant trees missing heights
+
+I need to check to see that there are heights recorded for all **dominant trees** at each observation period, otherwise we are not really getting dominant height. First I'll check to see how many heights are missing for dominant trees (top 4 dbh per plot == 50 tph). 
+
+There are 12 plots that are missing dominant tree height data and all of them are in 2018---a total of 26 trees. It also looks like there are very few trees of the same species/plot to predict missing values from in some plots. I've included the average dbh of the missing tree as well as the range of dbh for which heights are available by plot/species. 
+
+```{r, warning = FALSE}
+p_h %>%
+  group_by(plot, year) %>%
+  filter(status == 1, !get_cond(c(2, 3))) %>%
+  mutate(rank = rank(-dbh, ties.method = "min")) %>%
+  group_by(plot, year, spp) %>%
+  summarize(
+    ht_na = sum(is.na(ht) & rank <= 4),
+    na_dbh_mean = paste(
+      mean(dbh[rank <= 4 & is.na(ht)], na.rm = TRUE), collapse = ", "),
+    have_ht = sum(!is.na(ht)),
+    have_dbh_range = paste(
+      range(dbh[!is.na(ht)], na.rm = TRUE), collapse = ", ")
+  ) %>%
+  filter(ht_na > 0) %>%
+  color_groups()
+```
+
+I'm curious about dominant trees in general, are they also the tallest trees? Out of the 240 dominant (diameter) trees over three measurement periods, 66 of them do not rank in the top 9 trees (by plot) in height. I'm excluding broken/dead tops and missing heights. This makes me wonder if we are accurately characterizing dominant trees. Perhaps these trees were once, but are no longer dominant.
+
+```{r}
+p_h %>%
+  group_by(plot, year) %>%
+  filter(status == 1, !get_cond(c(2, 3))) %>%
+  mutate(
+    tallest = rank(-ht, ties.method = "min"),
+    widest = rank(-dbh, ties.method = "min")
+  ) %>%
+  filter(widest <= 4, tallest > 9, !is.na(ht)) %>%
+  select(-c(azi, h_dist, treatment, cc, rot, status)) %>%
+  group_by(tree_id) %>%
+  color_groups()
+```
