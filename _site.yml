@@ -1,5 +1,5 @@
 name: "A-972 10-year Study"
-output_dir: _site
+output_dir: docs
 include: 
 exclude: 
 navbar:
