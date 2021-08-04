@@ -283,6 +283,7 @@ $(document).ready(function () {
 <li><a href="#bearrot-column">Bear/rot column</a></li>
 <li><a href="#initial-complete-dataset">Initial Complete dataset</a></li>
 <li><a href="#ingrowth">Ingrowth</a></li>
+<li><a href="#add-plot-coordinates">Add plot coordinates</a></li>
 </ul></li>
 </ul>
 </div>
@@ -295,27 +296,57 @@ library(kableExtra)</code></pre>
 <div id="import-data" class="section level1">
 <h1>Import Data</h1>
 <p>I’ll start by importing tree data from all three periods as well as the tree list. These will be stored in four appropriately named data frames. While importing, I’ll rename some columns, select useful columns and remove the “spare” observations. I combine condition codes into a single column.</p>
-<pre class="r"><code>tree_2008 &lt;- read.csv(&quot;./original/tblA972_TreeData2008.txt&quot;,
-                           na.strings = &quot;&quot;) %&gt;%
-  select(tree_id = TreeID, dbh = DBH, ht = HTt, cr = CR,
-        status = Status, bear = BearDmg, rot = Rot, notes = Notes) %&gt;%
-        filter(!grepl(&quot;^SPR1&quot;, tree_id)) %&gt;%
+<pre class="r"><code>tree_2008 &lt;- read.csv(
+  &quot;./original/tblA972_TreeData2008.txt&quot;,
+  na.strings = &quot;&quot;
+  ) %&gt;%
+  select(
+    tree_id = TreeID,
+    dbh = DBH,
+    ht = HTt,
+    cr = CR,
+    status = Status,
+    bear = BearDmg,
+    rot = Rot,
+    notes = Notes
+  ) %&gt;%
+  filter(!grepl(&quot;^SPR1&quot;, tree_id)
+  ) %&gt;%
   as_tibble()
 
-tree_2013 &lt;- read.csv(&quot;./original/tblA972_TreeData2013.txt&quot;,
-                           na.strings = &quot;&quot;) %&gt;%
-  select(tree_id = TreeID, dbh = DBH, ht = Ht, cr = CR, cc = CC,
-         status = Status, bear = BearDmg, ConCode.A:ConCode.E,
-         notes = Notes) %&gt;%
+tree_2013 &lt;- read.csv(
+  &quot;./original/tblA972_TreeData2013.txt&quot;,
+  na.strings = &quot;&quot;
+  ) %&gt;% 
+  select(
+    tree_id = TreeID,
+    dbh = DBH,
+    ht = Ht,
+    cr = CR,
+    cc = CC,
+    status = Status,
+    bear = BearDmg,
+    ConCode.A:ConCode.E,
+    notes = Notes
+    ) %&gt;%
   unite(cond, starts_with(&quot;ConCode&quot;), sep = &quot;,&quot;, na.rm = TRUE) %&gt;%
   filter(!grepl(&quot;^SPR1&quot;, tree_id)) %&gt;%
   as_tibble()
 
-tree_2018 &lt;- read.csv(&quot;./original/tblA972_TreeData2018.txt&quot;,
-                           na.strings = &quot;&quot;) %&gt;%
-  select(tree_id = TreeID, dbh = DBH, ht = HTt, cr = CR,
-         status = Status, ConCode.A:ConCode.E, bear = BearDmg,
-         notes = Notes) %&gt;%
+tree_2018 &lt;- read.csv(
+  &quot;./original/tblA972_TreeData2018.txt&quot;,
+   na.strings = &quot;&quot;
+   ) %&gt;%
+  select(
+    tree_id = TreeID,
+    dbh = DBH,
+    ht = HTt,
+    cr = CR,
+    status = Status,
+    ConCode.A:ConCode.E, 
+    bear = BearDmg,
+    notes = Notes
+  ) %&gt;%
   unite(cond, starts_with(&quot;ConCode&quot;), sep = &quot;,&quot;, na.rm = TRUE) %&gt;%
   filter(!grepl(&quot;^SPR1&quot;, tree_id)) %&gt;%
   as_tibble()
@@ -324,6 +355,16 @@ tree_list_all &lt;- read.csv(&quot;./original/tblA972_Trees.txt&quot;, na.string
   select(plot = Plot_ID, tree_id = TreeID, spp = Species,
          h_dist = H_Dist, azi = Azimuth) %&gt;%
   filter(!grepl(&quot;^SPR1&quot;, tree_id)) %&gt;%
+  as_tibble()
+
+plot_info &lt;- read.csv(&quot;./original/tblA972_PlotInfo.txt&quot;) %&gt;%
+  select(
+    plot = Plot_ID,
+    slope = PctSlope,
+    aspect = Aspect,
+    utm_x = UTM_E,
+    utm_y = UTM_N
+  ) %&gt;%
   as_tibble()</code></pre>
 </div>
 <div id="initial-data-cleaning" class="section level1">
@@ -476,6 +517,11 @@ d_l &lt;- d_l %&gt;%
   group_by(tree_id) %&gt;%
   filter(min(year) &lt; &quot;13&quot;) %&gt;%
   ungroup()</code></pre>
+</div>
+<div id="add-plot-coordinates" class="section level2">
+<h2>Add plot coordinates</h2>
+<pre class="r"><code>d_l &lt;- left_join(d_l, plot_info[c(&quot;plot&quot;,&quot;utm_x&quot;, &quot;utm_y&quot;)], by = &quot;plot&quot;) %&gt;%
+  mutate(circular2xy(h_dist, azi, utm_x, utm_y), .keep = &quot;unused&quot;)</code></pre>
 </div>
 </div>
 

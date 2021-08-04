@@ -28,7 +28,7 @@ circular2xy <- function(distance, bearing, center.x = 0, center.y = 0) {
   bearing.rad <- bearing * (pi / 180) #convert bearing to radians
   delta.x <- distance * sin(bearing.rad)
   delta.y <- distance * cos(bearing.rad)
-  tree.x <- round(center.x + delta.x,2)
-  tree.y <- round(center.y + delta.y,2)
+  tree.x <- center.x + delta.x
+  tree.y <- center.y + delta.y
   return(data.frame(x=tree.x,y=tree.y))
 }

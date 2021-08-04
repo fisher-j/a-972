@@ -531,7 +531,7 @@ p_h %>%
     widest = rank(-dbh, ties.method = "min")
   ) %>%
   filter(widest <= 4, tallest > 9, !is.na(ht)) %>%
-  select(-c(azi, h_dist, treatment, cc, rot, status)) %>%
+  select(-c(x, y, treatment, cc, rot, status)) %>%
   group_by(tree_id) %>%
   color_groups()
 ```

@@ -23,27 +23,57 @@ I'll start by importing tree data from all three periods as well as the tree lis
 
 ```{r}
 
-tree_2008 <- read.csv("./original/tblA972_TreeData2008.txt",
-                           na.strings = "") %>%
-  select(tree_id = TreeID, dbh = DBH, ht = HTt, cr = CR,
-        status = Status, bear = BearDmg, rot = Rot, notes = Notes) %>%
-        filter(!grepl("^SPR1", tree_id)) %>%
+tree_2008 <- read.csv(
+  "./original/tblA972_TreeData2008.txt",
+  na.strings = ""
+  ) %>%
+  select(
+    tree_id = TreeID,
+    dbh = DBH,
+    ht = HTt,
+    cr = CR,
+    status = Status,
+    bear = BearDmg,
+    rot = Rot,
+    notes = Notes
+  ) %>%
+  filter(!grepl("^SPR1", tree_id)
+  ) %>%
   as_tibble()
 
-tree_2013 <- read.csv("./original/tblA972_TreeData2013.txt",
-                           na.strings = "") %>%
-  select(tree_id = TreeID, dbh = DBH, ht = Ht, cr = CR, cc = CC,
-         status = Status, bear = BearDmg, ConCode.A:ConCode.E,
-         notes = Notes) %>%
+tree_2013 <- read.csv(
+  "./original/tblA972_TreeData2013.txt",
+  na.strings = ""
+  ) %>% 
+  select(
+    tree_id = TreeID,
+    dbh = DBH,
+    ht = Ht,
+    cr = CR,
+    cc = CC,
+    status = Status,
+    bear = BearDmg,
+    ConCode.A:ConCode.E,
+    notes = Notes
+    ) %>%
   unite(cond, starts_with("ConCode"), sep = ",", na.rm = TRUE) %>%
   filter(!grepl("^SPR1", tree_id)) %>%
   as_tibble()
 
-tree_2018 <- read.csv("./original/tblA972_TreeData2018.txt",
-                           na.strings = "") %>%
-  select(tree_id = TreeID, dbh = DBH, ht = HTt, cr = CR,
-         status = Status, ConCode.A:ConCode.E, bear = BearDmg,
-         notes = Notes) %>%
+tree_2018 <- read.csv(
+  "./original/tblA972_TreeData2018.txt",
+   na.strings = ""
+   ) %>%
+  select(
+    tree_id = TreeID,
+    dbh = DBH,
+    ht = HTt,
+    cr = CR,
+    status = Status,
+    ConCode.A:ConCode.E, 
+    bear = BearDmg,
+    notes = Notes
+  ) %>%
   unite(cond, starts_with("ConCode"), sep = ",", na.rm = TRUE) %>%
   filter(!grepl("^SPR1", tree_id)) %>%
   as_tibble()
@@ -52,6 +82,16 @@ tree_list_all <- read.csv("./original/tblA972_Trees.txt", na.strings = "") %>%
   select(plot = Plot_ID, tree_id = TreeID, spp = Species,
          h_dist = H_Dist, azi = Azimuth) %>%
   filter(!grepl("^SPR1", tree_id)) %>%
+  as_tibble()
+
+plot_info <- read.csv("./original/tblA972_PlotInfo.txt") %>%
+  select(
+    plot = Plot_ID,
+    slope = PctSlope,
+    aspect = Aspect,
+    utm_x = UTM_E,
+    utm_y = UTM_N
+  ) %>%
   as_tibble()
 ```
 
@@ -210,4 +250,12 @@ d_l <- d_l %>%
   group_by(tree_id) %>%
   filter(min(year) < "13") %>%
   ungroup()
+```
+
+
+## Add plot coordinates
+
+```{r}
+d_l <- left_join(d_l, plot_info[c("plot","utm_x", "utm_y")], by = "plot") %>%
+  mutate(circular2xy(h_dist, azi, utm_x, utm_y), .keep = "unused")
 ```

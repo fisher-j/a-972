@@ -7373,7 +7373,7 @@ SESE3
     widest = rank(-dbh, ties.method = &quot;min&quot;)
   ) %&gt;%
   filter(widest &lt;= 4, tallest &gt; 9, !is.na(ht)) %&gt;%
-  select(-c(azi, h_dist, treatment, cc, rot, status)) %&gt;%
+  select(-c(x, y, treatment, cc, rot, status)) %&gt;%
   group_by(tree_id) %&gt;%
   color_groups()</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
