@@ -29,17 +29,6 @@ d_l %>%
   summarize(n = n()) %>%
   summarize(as_tibble_row(quantile(n)))
 
-
-
-# unused <- function(data, by_species = FALSE) {
-#   data %>%
-#     filter(live | status %in% c(15, 16)) %>%
-#     group_by(!!!group_vars(by_species)) %>%
-#     # expansion factor 12.5, over 4 replicates
-#     summarise(density = n() * 12.5 / 4, n_density = n())
-# }
-
-
 measures$density <- function(data, species) {
   if(is.null(species)) species <- unique(data$spp)
   data %>%
@@ -93,14 +82,6 @@ measures$dbh <- function(data, species) {
     )
 }
 
-
-# unused <- d_l %>%
-#   filter(status %in% c(1, 2, 3, 15, 16)) %>%
-#   group_by(plot, year) %>%
-#   slice_max(order_by = dbh, n = 4, with_ties = FALSE) %>%
-#   group_by(spp, treatment, year) %>%
-#   summarise(dom_dbh = mean(dbh), n_dom_dbh = n())
-
 measures$dom_dbh <- function(data, species) {
   if(is.null(species)) species <- unique(data$spp)
   data %>%
@@ -148,15 +129,6 @@ measures$ht <- function(data, species) {
   )
 }
 
-# unused <- d_l %>%
-#   filter(
-#     live | status %in% c(15, 16),
-#     !get_cond(c(2, 3)),
-#     tree_id %in% ht_id_2018,
-#     !is.na(ht)) %>%
-#   group_by(spp, treatment, year) %>%
-#   summarise(ht = mean(ht), n_ht = n())
-
 # Dominant height
 # I AM CALCULATING DOM HEIGHT ONLY FROM THOSE AVAILABLE
 measures$dom_ht <- function(data, species) {
@@ -186,10 +158,6 @@ measures$dom_ht <- function(data, species) {
 Basal area, similar to density will be calculated for all live trees.
 
 ```{r}
-# measures$ba <- d_l %>%
-#   filter(live | status %in% c(15, 16)) %>%
-#   group_by(treatment, year) %>%
-#   summarise(ba = sum(dbh^2 * pi / 40000) * (12.5 / 4), n_ba = n())
 
 measures$ba <- function(data, species) {
   if(is.null(species)) species <- unique(data$spp)

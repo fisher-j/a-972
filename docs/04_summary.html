@@ -316,16 +316,7 @@ measures &lt;- list()</code></pre>
 ## 2 08       26  40.8  84   108.     147
 ## 3 13       21  35.5  79    94      117
 ## 4 18       20  33.5  74.5  84.5     92</code></pre>
-<pre class="r"><code># unused &lt;- function(data, by_species = FALSE) {
-#   data %&gt;%
-#     filter(live | status %in% c(15, 16)) %&gt;%
-#     group_by(!!!group_vars(by_species)) %&gt;%
-#     # expansion factor 12.5, over 4 replicates
-#     summarise(density = n() * 12.5 / 4, n_density = n())
-# }
-
-
-measures$density &lt;- function(data, species) {
+<pre class="r"><code>measures$density &lt;- function(data, species) {
   if(is.null(species)) species &lt;- unique(data$spp)
   data %&gt;%
     filter(spp %in% species, live | status %in% c(15, 16)) %&gt;%
@@ -372,14 +363,6 @@ measures$density &lt;- function(data, species) {
     )
 }
 
-
-# unused &lt;- d_l %&gt;%
-#   filter(status %in% c(1, 2, 3, 15, 16)) %&gt;%
-#   group_by(plot, year) %&gt;%
-#   slice_max(order_by = dbh, n = 4, with_ties = FALSE) %&gt;%
-#   group_by(spp, treatment, year) %&gt;%
-#   summarise(dom_dbh = mean(dbh), n_dom_dbh = n())
-
 measures$dom_dbh &lt;- function(data, species) {
   if(is.null(species)) species &lt;- unique(data$spp)
   data %&gt;%
@@ -421,15 +404,6 @@ measures$ht &lt;- function(data, species) {
   )
 }
 
-# unused &lt;- d_l %&gt;%
-#   filter(
-#     live | status %in% c(15, 16),
-#     !get_cond(c(2, 3)),
-#     tree_id %in% ht_id_2018,
-#     !is.na(ht)) %&gt;%
-#   group_by(spp, treatment, year) %&gt;%
-#   summarise(ht = mean(ht), n_ht = n())
-
 # Dominant height
 # I AM CALCULATING DOM HEIGHT ONLY FROM THOSE AVAILABLE
 measures$dom_ht &lt;- function(data, species) {
@@ -454,12 +428,7 @@ measures$dom_ht &lt;- function(data, species) {
 <div id="basal-area" class="section level2">
 <h2>Basal Area</h2>
 <p>Basal area, similar to density will be calculated for all live trees.</p>
-<pre class="r"><code># measures$ba &lt;- d_l %&gt;%
-#   filter(live | status %in% c(15, 16)) %&gt;%
-#   group_by(treatment, year) %&gt;%
-#   summarise(ba = sum(dbh^2 * pi / 40000) * (12.5 / 4), n_ba = n())
-
-measures$ba &lt;- function(data, species) {
+<pre class="r"><code>measures$ba &lt;- function(data, species) {
   if(is.null(species)) species &lt;- unique(data$spp)
   data %&gt;%
     filter(spp %in% species, live | status %in% c(15, 16)) %&gt;%
