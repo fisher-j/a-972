@@ -31,7 +31,7 @@ length(dbh_out)
 
 I check for dbh among all post harvest trees that change dramatically from one observation to the next because this may indicate a measurement error. *This includes dbh measurements for some downed trees, which may or may not be appropriate.* Outliers are defined as 1.5 times inter-quartile range above Q3 or below Q1, and are determined separately for both growth periods, but across all species and treatments. I also select anything with more than 1" shrinkage.
 
-```{r, echo = FALSE}
+```{r}
 change_d <- d_l %>%
   filter(year != "init") %>%
   pivot_wider(id_cols = c(tree_id, spp, plot), names_from = year,
@@ -46,7 +46,7 @@ summary(change_d$p1)
 summary(change_d$p2)
 ```
 
-```{r, echo = FALSE}
+```{r}
 # Get diameter change outliers in both periods
 out_d <- change_d %>%
   select(p1, p2) %>%
@@ -55,7 +55,7 @@ out_d <- change_d %>%
 
 Average growth by *species and treatment* to be used to help identify and fix problems with dbh's. I looked at grouping by *species and plot*, but there were often too few trees for a good average. I'm assuming here that the response of species to treatment captures the most meaningful data for our purposes. 
 
-```{r, echo = FALSE}
+```{r}
 
 change_d %>%
   group_by(treatment = str_extract(plot, "L40|L80|H40|H80|C"), spp) %>%
@@ -87,7 +87,7 @@ I'm also fixing dbh of trees whose tag was removed because they grew together wi
 
 Pink highlight indicates outlier values (for individual measurements as well as height increment). Salmon highlight indicates edited values with new value in parentheses.
 
-```{r, echo = FALSE}
+```{r}
 dbh_problem1 <- out_d %>%
   reduce(full_join) %>%
   bind_rows(filter(change_d, if_any(starts_with("status"), ~ .x == 20))) %>%
@@ -125,7 +125,7 @@ new_dbh <- tribble(
   mutate(year = factor(year, levels = c("08", "13", "18"), ordered = TRUE))
 ```
 
-```{r, echo = FALSE}
+```{r}
 # Color the values that are being changed as well as the outlier values
 dbh_color <- split(new_dbh, ~year) %>%
   map("tree_id") %>%
@@ -260,7 +260,7 @@ p_h <- filter(d_l, year > "init")
 
 Next, I'll look for absolute outliers in height. First I'll fit a linear model (square-root transformed) and get the extreme residuals by defining an arbitrary cutoff.
 
-```{r ht_plot1, echo = FALSE}
+```{r ht_plot1}
 
 p_h <- filter(d_l, year > "init")
 
@@ -274,7 +274,7 @@ ht_outlier_resid <- p_h[ht_outlier_resid, c("tree_id", "year")]
 
 I also want to look at extreme changes in height. I'll combine these two sets of outliers and look for height values that need fixing. I'm looking at outlier height increments that are 2 times above or below the IQR. Pink highlight indicates outlier values (for individual measurements as well as height increments). Salmon highlight indicates edited values with new value in parentheses. 
 
-```{r, echo=FALSE}
+```{r}
 # Define the delta-height dataset in wide format
 change_h <- p_h %>%
   pivot_wider(id_cols = c(tree_id, spp, plot), names_from = year,
@@ -326,7 +326,7 @@ new_ht <- tribble(
 
 ```
 
-```{r, echo=FALSE}
+```{r}
 # Color the values that are being changed as well as the
 # height increment outlier values and the residual outliers
 
@@ -445,7 +445,7 @@ filter(d_l, status %in% c(1, 2, 3, 15, 16), year == "18") %>%
 
 It looks like the 643, 2018 height observations are somewhat distributed across plots and treatments (although treatment L80 and plot C3 are underrepresented). Now, I want to check if heights were observed across dbh and height classes. Because trees are expected to grow from one year to the next, I will compare samples based on 2013 heights (90% of inventoried trees have heights in 2013). It appears as though the 2018 heights are relatively unbiased across the inventory. There still may be some bias within treatments, but we can burn that bridge later.
 
-```{r compare-heights, echo = FALSE}
+```{r compare-heights}
 ht_18_id <- p_h %>% filter(year == "18" & !is.na(ht)) %>%
   pull(tree_id)
 
@@ -544,7 +544,7 @@ p_h %>%
 
 It might be important to fill in missing heights (especially for dominant trees) in 2018. First I'll explore a simple linear relationship between dbh and height increment. I'm only looking at live, unbroken redwood and Douglas-fir.
 
-```{r, fig.height=8, fig.width=9.5, warning=FALSE}
+```{r, fig.height=8, fig.width=10, warning=FALSE}
 library(ggpmisc)
 d_l %>%
   # add increment data

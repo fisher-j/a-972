@@ -30,6 +30,7 @@
        code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
        pre:not([class]) { background-color: white }</style>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
@@ -217,6 +218,9 @@ $(document).ready(function () {
 </style>
 
 <!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
 
 
 
@@ -268,6 +272,14 @@ $(document).ready(function () {
 
 <div id="header">
 
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
 
 
 <h1 class="title toc-ignore">Detailed data cleaning</h1>
@@ -316,6 +328,11 @@ $(document).ready(function () {
 length(dbh_out)</code></pre>
 <pre><code>## [1] 77</code></pre>
 <p>I check for dbh among all post harvest trees that change dramatically from one observation to the next because this may indicate a measurement error. <em>This includes dbh measurements for some downed trees, which may or may not be appropriate.</em> Outliers are defined as 1.5 times inter-quartile range above Q3 or below Q1, and are determined separately for both growth periods, but across all species and treatments. I also select anything with more than 1” shrinkage.</p>
+<pre class="r"><code>change_d &lt;- d_l %&gt;%
+  filter(year != &quot;init&quot;) %&gt;%
+  pivot_wider(id_cols = c(tree_id, spp, plot), names_from = year,
+              values_from = c(dbh, notes, bear, cr, status)) %&gt;%
+  mutate(p1 = dbh_13 - dbh_08, p2 = dbh_18 - dbh_13)</code></pre>
 <pre class="r"><code># Period one summary
 summary(change_d$p1)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
@@ -324,7 +341,21 @@ summary(change_d$p1)</code></pre>
 summary(change_d$p2)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA&#39;s 
 ##  -7.112   0.254   1.524   2.081   3.048  25.146     148</code></pre>
+<pre class="r"><code># Get diameter change outliers in both periods
+out_d &lt;- change_d %&gt;%
+  select(p1, p2) %&gt;%
+  map(~filter(change_d, .x %in% boxplot(.x, plot = FALSE)$out | .x &lt; -2.54))</code></pre>
 <p>Average growth by <em>species and treatment</em> to be used to help identify and fix problems with dbh’s. I looked at grouping by <em>species and plot</em>, but there were often too few trees for a good average. I’m assuming here that the response of species to treatment captures the most meaningful data for our purposes.</p>
+<pre class="r"><code>change_d %&gt;%
+  group_by(treatment = str_extract(plot, &quot;L40|L80|H40|H80|C&quot;), spp) %&gt;%
+  summarise(p1_mean = signif(mean(p1, na.rm = TRUE), 3),
+            p2_mean = signif(mean(p2, na.rm = TRUE), 3),
+            .groups = &quot;drop&quot;) %&gt;%
+  rbind(rep(NA, 4)) %&gt;%
+  {bind_cols(.[1:11, ], .[12:22, ], .name_repair = &quot;minimal&quot;)} %&gt;%
+  ungroup() %&gt;%
+  kbl() %&gt;%
+  kable_styling()</code></pre>
 <table class="table" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -660,6 +691,77 @@ NA
 </ul>
 <p>I’m also fixing dbh of trees whose tag was removed because they grew together with their neighbor. I project dbh growth for these trees based on average growth (by species and treatment) and previous/subsequent period growth.</p>
 <p>Pink highlight indicates outlier values (for individual measurements as well as height increment). Salmon highlight indicates edited values with new value in parentheses.</p>
+<pre class="r"><code>dbh_problem1 &lt;- out_d %&gt;%
+  reduce(full_join) %&gt;%
+  bind_rows(filter(change_d, if_any(starts_with(&quot;status&quot;), ~ .x == 20))) %&gt;%
+  select(-plot)
+
+new_dbh &lt;- tribble(
+  ~tree_id,    ~year, ~dbh,
+  &quot;1H80.3589&quot;, &quot;08&quot;, 13.3,
+  &quot;1H80.3621&quot;, &quot;13&quot;, 34.53,
+  &quot;1L80.3456&quot;, &quot;08&quot;, 49.5,
+  &quot;3L80.3361&quot;, &quot;08&quot;, 15.3,
+  &quot;4L80.3296&quot;, &quot;08&quot;, 17.6,
+  &quot;C2.4244&quot;,   &quot;13&quot;, 17.78,
+  &quot;C2.4252&quot;,   &quot;08&quot;, 24.4,
+  &quot;C2.4301&quot;,   &quot;08&quot;, 22.14,
+  &quot;C2.4301&quot;,   &quot;13&quot;, 20.03,
+  &quot;C2.4301&quot;,   &quot;18&quot;, NA,
+  &quot;C4.4636&quot;,   &quot;08&quot;, 17.02,
+  &quot;1H80.3620&quot;, &quot;18&quot;, 31.8,
+  &quot;1L40.3656&quot;, &quot;18&quot;, 35.9,
+  &quot;2H40.3067&quot;, &quot;08&quot;, 44.83,
+  &quot;2H80.3164&quot;, &quot;18&quot;, 36.1,
+  &quot;2L80.3724&quot;, &quot;18&quot;, 53.6,
+  &quot;3L80.3365&quot;, &quot;18&quot;, 30.7,
+  &quot;4L40.3276&quot;, &quot;18&quot;, 46.25,
+  &quot;C4.4601&quot;,   &quot;18&quot;, 55.37,
+  &quot;1H80.3529&quot;, &quot;13&quot;, 31.4,
+  &quot;1H80.3619&quot;, &quot;18&quot;, 18.8,
+  &quot;2H80.4110&quot;, &quot;18&quot;, 23.6,
+  &quot;2L80.3725&quot;, &quot;18&quot;, 37.6,
+  &quot;3L80.3366&quot;, &quot;18&quot;, 34.5,
+  &quot;4L40.3277&quot;, &quot;18&quot;, 40.9,
+  &quot;C4.4600&quot;,   &quot;18&quot;, 29.0,
+  ) %&gt;%
+  mutate(year = factor(year, levels = c(&quot;08&quot;, &quot;13&quot;, &quot;18&quot;), ordered = TRUE))</code></pre>
+<pre class="r"><code># Color the values that are being changed as well as the outlier values
+dbh_color &lt;- split(new_dbh, ~year) %&gt;%
+  map(&quot;tree_id&quot;) %&gt;%
+  map(~ifelse(dbh_problem1$tree_id %in% .x, &quot;Salmon&quot;, &quot;White&quot;))
+  
+outlier_color &lt;- map(out_d, &quot;tree_id&quot;) %&gt;%
+  map(~if_else(dbh_problem1$tree_id %in% .x, &quot;Pink&quot;, &quot;White&quot;))
+
+# prepare replacement data to add to colored table
+problem_wide &lt;- new_dbh %&gt;%
+  group_by(tree_id) %&gt;%
+  complete(year) %&gt;%
+  pivot_wider(names_from = year, values_from = dbh, names_prefix = &quot;dbh_&quot;)
+
+
+show_fix &lt;- function(old, new) {
+  if_else(!is.na(new), paste0(old, &quot; (&quot;, new, &quot;)&quot;), as.character(old))
+}
+
+# Make colored table with updated values
+dbh_problem1 %&gt;%
+  left_join(problem_wide, by = &quot;tree_id&quot;, suffix = c(&quot;&quot;, &quot;_new&quot;)) %&gt;%
+  mutate(dbh_08 = show_fix(dbh_08, dbh_08_new),
+         dbh_13 = show_fix(dbh_13, dbh_13_new),
+         dbh_18 = show_fix(dbh_18, dbh_18_new)) %&gt;%
+  select(!ends_with(&quot;new&quot;)) %&gt;%
+  unite(&quot;bear_seq&quot;, starts_with(&quot;bear&quot;), sep = &quot;&gt;&quot;) %&gt;%
+  unite(&quot;cr_seq&quot;, starts_with(&quot;cr&quot;), sep = &quot;&gt;&quot;) %&gt;%
+  unite(&quot;status_seq&quot;, starts_with(&quot;status&quot;), sep = &quot;&gt;&quot;) %&gt;%
+  kbl() %&gt;%
+  kable_styling(bootstrap_options = &quot;hover&quot;) %&gt;%
+  column_spec(3, background = dbh_color[[1]]) %&gt;%
+  column_spec(4, background = dbh_color[[2]]) %&gt;%
+  column_spec(5, background = dbh_color[[3]]) %&gt;%
+  column_spec(12, background = outlier_color[[1]]) %&gt;%
+  column_spec(13, background = outlier_color[[2]])</code></pre>
 <table class="table table-hover" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -4055,8 +4157,29 @@ p_h &lt;- filter(d_l, year &gt; &quot;init&quot;)</code></pre>
 <div id="height-outliers" class="section level3">
 <h3>Height outliers</h3>
 <p>Next, I’ll look for absolute outliers in height. First I’ll fit a linear model (square-root transformed) and get the extreme residuals by defining an arbitrary cutoff.</p>
+<pre class="r"><code>p_h &lt;- filter(d_l, year &gt; &quot;init&quot;)
+
+# vector of positions in original dataset that are out
+ht_outlier_resid &lt;- plot_ht(p_h, mag = 2.5)</code></pre>
 <p><img src="02_data_cleaning_files/figure-html/ht_plot1-1.png" width="672" /></p>
+<pre class="r"><code># Get tree id and year for each outlier
+ht_outlier_resid &lt;- p_h[ht_outlier_resid, c(&quot;tree_id&quot;, &quot;year&quot;)]</code></pre>
 <p>I also want to look at extreme changes in height. I’ll combine these two sets of outliers and look for height values that need fixing. I’m looking at outlier height increments that are 2 times above or below the IQR. Pink highlight indicates outlier values (for individual measurements as well as height increments). Salmon highlight indicates edited values with new value in parentheses.</p>
+<pre class="r"><code># Define the delta-height dataset in wide format
+change_h &lt;- p_h %&gt;%
+  pivot_wider(id_cols = c(tree_id, spp, plot), names_from = year,
+              values_from = c(ht, dbh, notes, bear, cr, status, cond)) %&gt;%
+  mutate(p1 = ht_13 - ht_08, p2 = ht_18 - ht_13) %&gt;%
+  mutate(across(where(is.double), round, 2))
+
+# compile list of all target outlier tree ids
+ht_outlier &lt;- select(change_h, p1:p2) %&gt;%
+  map(~ out(.x, mag = 2)) %&gt;%
+  map(~ change_h$tree_id[.x]) %&gt;%
+  c(resid = list(unique(ht_outlier_resid$tree_id)))
+
+# Define height problem dataset
+problem_ht &lt;- filter(change_h, tree_id %in% reduce(ht_outlier, union))</code></pre>
 <pre class="r"><code># New tree heights
 new_ht &lt;- tribble(
   ~tree_id,    ~year, ~ht,
@@ -4085,6 +4208,46 @@ new_ht &lt;- tribble(
   mutate(
     year = factor(year, levels = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;), ordered = TRUE)
   )</code></pre>
+<pre class="r"><code># Color the values that are being changed as well as the
+# height increment outlier values and the residual outliers
+
+ht_resid_color &lt;- split(ht_outlier_resid, ~ year, drop = TRUE) %&gt;%
+  map(&quot;tree_id&quot;) %&gt;%
+  map(~if_else(problem_ht$tree_id %in% .x, &quot;Pink&quot;, &quot;White&quot;))
+
+ht_fix_color &lt;- split(new_ht, ~year, drop = TRUE) %&gt;%
+  map(&quot;tree_id&quot;) %&gt;%
+  map2(ht_resid_color, ~ifelse(problem_ht$tree_id %in% .x, &quot;Salmon&quot;, .y))
+
+ht_change_color &lt;- ht_outlier[c(&quot;p1&quot;, &quot;p2&quot;)] %&gt;%
+  map(~if_else(problem_ht$tree_id %in% .x, &quot;Pink&quot;, &quot;White&quot;))
+
+# prepare replacement data to add to colored table
+new_ht_wide &lt;- new_ht %&gt;%
+  group_by(tree_id) %&gt;%
+  complete(year) %&gt;%
+  pivot_wider(names_from = year, values_from = ht, names_prefix = &quot;ht_&quot;) %&gt;%
+  select(-ht_init)
+
+
+problem_ht %&gt;%
+  left_join(new_ht_wide, by = &quot;tree_id&quot;, suffix = c(&quot;&quot;, &quot;_new&quot;)) %&gt;%
+  mutate(ht_08 = show_fix(ht_08, ht_08_new),
+         ht_13 = show_fix(ht_13, ht_13_new),
+         ht_18 = show_fix(ht_18, ht_18_new)) %&gt;%
+  select(!c(ends_with(&quot;new&quot;), plot)) %&gt;%
+  unite(&quot;bear_seq&quot;, starts_with(&quot;bear&quot;), sep = &quot;&gt;&quot;) %&gt;%
+  unite(&quot;cr_seq&quot;, starts_with(&quot;cr&quot;), sep = &quot;&gt;&quot;) %&gt;%
+  unite(&quot;status_seq&quot;, starts_with(&quot;status&quot;), sep = &quot;&gt;&quot;) %&gt;%
+  unite(&quot;dbh_seq&quot;, starts_with(&quot;dbh&quot;), sep = &quot;&gt;&quot;) %&gt;%
+  unite(&quot;cond_seq&quot;, starts_with(&quot;cond&quot;), sep = &quot;&gt;&quot;) %&gt;%
+  kbl() %&gt;%
+  kable_styling() %&gt;%
+  column_spec(3, background = ht_fix_color[[1]]) %&gt;%
+  column_spec(4, background = ht_fix_color[[2]]) %&gt;%
+  column_spec(5, background = ht_fix_color[[3]]) %&gt;%
+  column_spec(14, background = ht_change_color[[1]]) %&gt;%
+  column_spec(15, background = ht_change_color[[2]])</code></pre>
 <table class="table" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -6916,6 +7079,40 @@ filter(d_l, status %in% c(1, 2, 3, 15, 16), year == &quot;18&quot;) %&gt;%
 ## 4 L40        0.56
 ## 5 L80        0.35</code></pre>
 <p>It looks like the 643, 2018 height observations are somewhat distributed across plots and treatments (although treatment L80 and plot C3 are underrepresented). Now, I want to check if heights were observed across dbh and height classes. Because trees are expected to grow from one year to the next, I will compare samples based on 2013 heights (90% of inventoried trees have heights in 2013). It appears as though the 2018 heights are relatively unbiased across the inventory. There still may be some bias within treatments, but we can burn that bridge later.</p>
+<pre class="r"><code>ht_18_id &lt;- p_h %&gt;% filter(year == &quot;18&quot; &amp; !is.na(ht)) %&gt;%
+  pull(tree_id)
+
+ht_18_13 &lt;- p_h %&gt;%
+  filter(year == &quot;13&quot;, !is.na(ht), tree_id %in% ht_18_id) %&gt;%
+  pull(ht)
+
+ht_13_13 &lt;- p_h %&gt;%
+  filter(year == &quot;13&quot;, !is.na(ht)) %&gt;%
+  pull(ht)
+
+ht_18_08 &lt;- p_h %&gt;%
+  filter(year == &quot;08&quot;, !is.na(ht), tree_id %in% ht_18_id) %&gt;%
+  pull(ht)
+
+ht_08_08 &lt;- p_h %&gt;%
+  filter(year == &quot;08&quot;, !is.na(ht)) %&gt;%
+  pull(ht)
+
+mycols &lt;- palette.colors(palette = &quot;Classic Tableau&quot;, alpha = .25)
+hist(ht_13_13, col = mycols[1],
+     ylim = c(0, 0.12),
+     xlim = range(c(ht_13_13, ht_18_13)),
+     prob = TRUE,
+     main = &quot;Sample distirbution comparison&quot;,
+     xlab = &quot;2013 heights (m)&quot;)
+hist(ht_18_13, col = mycols[2], prob = TRUE, add = TRUE, breaks = 12)
+legend(5, .1,
+  legend = c(&quot;All 2013 heights&quot;, &quot;2018 subset&quot;),
+  col = mycols[1:2],
+  pch = 15,
+  bty = &quot;n&quot;,
+  cex = 1.2,
+  y.intersp = 1.7)</code></pre>
 <p><img src="02_data_cleaning_files/figure-html/compare-heights-1.png" width="672" /></p>
 <p>My plan is to calculate height metrics (for comparison) based just on those trees which have heights measured in 2018. This means that I would only be looking at 1911 of the 3488 total height measurements (status 1 trees only).</p>
 <p>There are 14 different trees which are missing heights for 2008 and have heights in 2013 and 2018. I can deal with these values in one of the following ways:</p>
@@ -9238,7 +9435,7 @@ d_l %&gt;%
     ) +
     ylim(-.5, 1.5) +
     theme_bw()</code></pre>
-<p><img src="02_data_cleaning_files/figure-html/unnamed-chunk-21-1.png" width="912" /></p>
+<p><img src="02_data_cleaning_files/figure-html/unnamed-chunk-21-1.png" width="960" /></p>
 </div>
 </div>
 </div>
@@ -9276,6 +9473,11 @@ $(document).ready(function () {
 </script>
 
 <!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
 
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
