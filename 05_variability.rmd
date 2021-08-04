@@ -1,0 +1,23 @@
+---
+title: "Variability"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+```
+
+Here are boxplots showing the variability of some potentially important variables
+
+```{r}
+p_h %>%
+  filter(year == "18") %>%
+  select(treatment, spp, dbh, ht, cr, inc_1, inc_2) %>%
+  pivot_longer(
+    !c(treatment, spp),
+    names_to = "measure",
+    values_to = "value"
+  ) %>%
+  ggplot(aes(treatment, value)) +
+    geom_boxplot() +
+    facet_wrap(~ measure, scales = "free_y")
+```

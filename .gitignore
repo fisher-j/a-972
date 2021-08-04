@@ -5,3 +5,7 @@ original
 # ignore reference material
 
 reference
+
+# ignore my notes
+
+notes.txt
