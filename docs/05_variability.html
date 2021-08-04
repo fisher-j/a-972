@@ -11,7 +11,7 @@
 
 
 
-<title>Define new data</title>
+<title>Variability</title>
 
 <script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
@@ -268,58 +268,25 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Define new data</h1>
+<h1 class="title toc-ignore">Variability</h1>
 
 </div>
 
-<div id="TOC">
-<ul>
-<li><a href="#defining-livedead-trees">Defining live/dead trees</a></li>
-<li><a href="#define-diameter-increment">Define diameter increment</a></li>
-</ul>
-</div>
 
-<div id="defining-livedead-trees" class="section level2">
-<h2>Defining live/dead trees</h2>
-<p>Status and condition codes provided do not necessarily define mortality, because a broken tree, depending on species may still be alive or dead. I’ll define dead trees as:</p>
-<ol style="list-style-type: decimal">
-<li>snags or down snags (status -9 to -5, and 5 to 9)</li>
-<li>trees broken below dbh and uprooted trees (status 30, 32)</li>
-<li>any non-sprouting species broken above dbh (status 31)</li>
-<li>any sprouting species broken below 3 meters</li>
-</ol>
-<pre class="r"><code>d_l &lt;- d_l %&gt;%
-  mutate(
-    live = case_when(
-      status %in% c(5:9, -5:-9)                                  ~ FALSE,
-      status %in% c(30, 32)                                      ~ FALSE,
-      (spp %in% c(&quot;PSMEM&quot;, &quot;PISI&quot;) &amp; status == 31)               ~ FALSE,
-      (spp %in% c(&quot;SESE3&quot;, &quot;ALRU&quot;) &amp; status == 31 &amp; ht &lt; 3)      ~ FALSE,
-      (spp %in% c(&quot;SESE3&quot;, &quot;ALRU&quot;) &amp; status == 31 &amp; lag(ht) &lt; 3) ~ FALSE,
-      TRUE                                                       ~ TRUE
-    )
-  )
-
-# Do any trees go from being dead to being alive?
-nrow(filter(group_by(d_l, tree_id), any(!live &amp; lead(live))))</code></pre>
-<pre><code>## [1] 0</code></pre>
-<pre class="r"><code># update post-harvest data
-p_h &lt;- filter(d_l, year &gt; &quot;init&quot;)</code></pre>
-</div>
-<div id="define-diameter-increment" class="section level2">
-<h2>Define diameter increment</h2>
-<p>I looked at increment earlier to try to suss out bad dbh entries. Here I will formally add annual diameter increment to the long-form dataset. Each observation will be associated with a p1 and p2 increment. These are 5-year increments. Should I divide this number by 5?</p>
-<pre class="r"><code># Add increment data and update post-harvest data
-d_l &lt;- d_l %&gt;%
-  group_by(tree_id) %&gt;%
-  mutate(
-    inc_1 = nth(lead(dbh) - dbh, 2, order_by = year),
-    inc_2 = nth(lead(dbh) - dbh, 3, order_by = year)
+<p>Here are boxplots showing the variability of some potentially important variables</p>
+<pre class="r"><code>p_h %&gt;%
+  filter(year == &quot;18&quot;) %&gt;%
+  select(treatment, spp, dbh, ht, cr, inc_1, inc_2) %&gt;%
+  pivot_longer(
+    !c(treatment, spp),
+    names_to = &quot;measure&quot;,
+    values_to = &quot;value&quot;
   ) %&gt;%
-  ungroup()
-
-p_h &lt;- filter(d_l, year &gt; &quot;init&quot;)</code></pre>
-</div>
+  ggplot(aes(treatment, value)) +
+    geom_boxplot() +
+    facet_wrap(~ measure, scales = &quot;free_y&quot;)</code></pre>
+<pre><code>## Warning: Removed 2265 rows containing non-finite values (stat_boxplot).</code></pre>
+<p><img src="05_variability_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
 
 
 
