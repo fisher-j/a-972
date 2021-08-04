@@ -289,6 +289,8 @@ $(document).ready(function () {
 <li><a href="#height-outliers">Height outliers</a></li>
 <li><a href="#missing-heights">Missing heights</a></li>
 <li><a href="#dominant-trees-missing-heights">Dominant trees missing heights</a></li>
+<li><a href="#short-fat-trees">Short fat trees?</a></li>
+<li><a href="#predicting-missing-heights">Predicting missing heights</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -4078,6 +4080,7 @@ new_ht &lt;- tribble(
   &quot;C1.4146&quot;,   &quot;18&quot;,  21,
   &quot;C1.4197&quot;,   &quot;13&quot;,  19,
   &quot;C4.4676&quot;,   &quot;18&quot;,  28,
+  &quot;C1.4164&quot;,   &quot;18&quot;,  22.0,
   ) %&gt;%
   mutate(
     year = factor(year, levels = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;), ordered = TRUE)
@@ -6496,8 +6499,8 @@ PSMEM
 <td style="text-align:left;background-color: White !important;">
 21.94
 </td>
-<td style="text-align:left;background-color: White !important;">
-11.28
+<td style="text-align:left;background-color: Salmon !important;">
+11.28 (22)
 </td>
 <td style="text-align:left;">
 18.03&gt;18.8&gt;19.05
@@ -6929,7 +6932,7 @@ filter(d_l, status %in% c(1, 2, 3, 15, 16), year == &quot;18&quot;) %&gt;%
 <p>There are 12 plots that are missing dominant tree height data and all of them are in 2018—a total of 26 trees. It also looks like there are very few trees of the same species/plot to predict missing values from in some plots. I’ve included the average dbh of the missing tree as well as the range of dbh for which heights are available by plot/species.</p>
 <pre class="r"><code>p_h %&gt;%
   group_by(plot, year) %&gt;%
-  filter(status == 1, !get_cond(c(2, 3))) %&gt;%
+  filter(status == 1, !get_cond(2, 3)) %&gt;%
   mutate(rank = rank(-dbh, ties.method = &quot;min&quot;)) %&gt;%
   group_by(plot, year, spp) %&gt;%
   summarize(
@@ -7364,16 +7367,20 @@ SESE3
 </tr>
 </tbody>
 </table>
-<p>I’m curious about dominant trees in general, are they also the tallest trees? Out of the 240 dominant (diameter) trees over three measurement periods, 66 of them do not rank in the top 9 trees (by plot) in height. I’m excluding broken/dead tops and missing heights. This makes me wonder if we are accurately characterizing dominant trees. Perhaps these trees were once, but are no longer dominant.</p>
+</div>
+<div id="short-fat-trees" class="section level3">
+<h3>Short fat trees?</h3>
+<p>I’m curious about dominant trees in general, are they also the tallest trees? Out of the 240 dominant (diameter) trees over three measurement periods, 47 of them do not rank in the top 25% (by plot) in height. I’m excluding broken/dead tops and missing heights. This makes me wonder if we are accurately characterizing dominant trees. Perhaps these trees were once, but are no longer dominant.</p>
 <pre class="r"><code>p_h %&gt;%
   group_by(plot, year) %&gt;%
-  filter(status == 1, !get_cond(c(2, 3))) %&gt;%
+  filter(status == 1, !get_cond(2, 3)) %&gt;%
   mutate(
-    tallest = rank(-ht, ties.method = &quot;min&quot;),
-    widest = rank(-dbh, ties.method = &quot;min&quot;)
+    ht_rank = rank(-ht, ties.method = &quot;min&quot;),
+    widest = rank(-dbh, ties.method = &quot;min&quot;),
+    ht_pctile = round(ecdf(ht)(ht), 2)
   ) %&gt;%
-  filter(widest &lt;= 4, tallest &gt; 9, !is.na(ht)) %&gt;%
-  select(-c(x, y, treatment, cc, rot, status)) %&gt;%
+  filter(widest &lt;= 4, ht_pctile &lt; .75, !is.na(ht)) %&gt;%
+  select(-c(widest, x, y, treatment, cc, rot, status)) %&gt;%
   group_by(tree_id) %&gt;%
   color_groups()</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -7412,14 +7419,51 @@ notes
 cond
 </th>
 <th style="text-align:right;">
-tallest
+ht_rank
 </th>
 <th style="text-align:right;">
-widest
+ht_pctile
 </th>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+1H40
+</td>
+<td style="text-align:left;">
+1H40.3032
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+44.958
+</td>
+<td style="text-align:right;">
+24.07803
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+0.72
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 1H40
@@ -7455,7 +7499,7 @@ NA
 10
 </td>
 <td style="text-align:right;">
-2
+0.53
 </td>
 </tr>
 <tr>
@@ -7492,7 +7536,7 @@ X
 31
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-2
+0.72
 </td>
 </tr>
 <tr>
@@ -7530,7 +7574,7 @@ NA
 39
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-2
+0.52
 </td>
 </tr>
 <tr>
@@ -7568,7 +7612,7 @@ NA
 49
 </td>
 <td style="text-align:right;">
-4
+0.39
 </td>
 </tr>
 <tr>
@@ -7606,7 +7650,7 @@ NA
 27
 </td>
 <td style="text-align:right;">
-4
+0.64
 </td>
 </tr>
 <tr>
@@ -7643,7 +7687,7 @@ SHORT TREE
 24
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-1
+0.18
 </td>
 </tr>
 <tr>
@@ -7681,7 +7725,7 @@ double tree
 16
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-1
+0.25
 </td>
 </tr>
 <tr>
@@ -7689,19 +7733,19 @@ double tree
 1L40
 </td>
 <td style="text-align:left;">
-1L40.3674
+1L40.3670
 </td>
 <td style="text-align:left;">
-SESE3
+PSMEM
 </td>
 <td style="text-align:left;">
-08
+13
 </td>
 <td style="text-align:right;">
-38.862
+43.180
 </td>
 <td style="text-align:right;">
-25.60195
+27.43066
 </td>
 <td style="text-align:right;">
 30
@@ -7710,23 +7754,24 @@ SESE3
 FALSE
 </td>
 <td style="text-align:left;">
-X
+NA
 </td>
 <td style="text-align:left;">
+22
 </td>
 <td style="text-align:right;">
-11
+7
 </td>
 <td style="text-align:right;">
-4
+0.70
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80
+1L40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80.3403
+1L40.3674
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
@@ -7735,16 +7780,16 @@ SESE3
 08
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-52.070
+38.862
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 25.60195
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-25
+30
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
+FALSE
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 X
@@ -7755,7 +7800,7 @@ X
 11
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-2
+0.64
 </td>
 </tr>
 <tr>
@@ -7792,7 +7837,7 @@ Tag Sequence Break
 23
 </td>
 <td style="text-align:right;">
-1
+0.73
 </td>
 </tr>
 <tr>
@@ -7830,314 +7875,166 @@ Rot at base; 3451
 22
 </td>
 <td style="text-align:right;">
-1
+0.71
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80.3464
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-53.086
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-27.73545
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-35
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-3
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 2H40
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 2H40.3060
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 13
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 50.292
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 24.99238
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 15
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 14
 </td>
-<td style="text-align:right;">
-2
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.57
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 2H40
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 2H40.3067
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 SESE3
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 18
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 58.420
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 26.51631
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 NA
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 TRUE
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 NA
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 17
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 13
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-3
+<td style="text-align:right;">
+0.48
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 2H40
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 2H40.3080
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 18
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 59.182
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 24.68760
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 NA
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 TRUE
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 19
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 15
 </td>
-<td style="text-align:right;">
-2
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.39
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 2H40
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 2H40.3086
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 SESE3
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-08
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-57.658
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.60195
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-X
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H40.3086
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 13
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 64.770
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 25.60195
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 20
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 FALSE
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 frass
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 4
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2H80
-</td>
-<td style="text-align:left;">
-2H80.3130
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-52.832
-</td>
-<td style="text-align:right;">
-24.07803
-</td>
-<td style="text-align:right;">
--999
-</td>
-<td style="text-align:left;">
-TRUE
-</td>
-<td style="text-align:left;">
-X
-</td>
-<td style="text-align:left;">
-</td>
 <td style="text-align:right;">
 11
 </td>
 <td style="text-align:right;">
-1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.3149
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-53.848
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-26.51631
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2
+0.67
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-2H80
+2H40
 </td>
 <td style="text-align:left;">
-2H80.3159
+2H40.3086
 </td>
 <td style="text-align:left;">
 SESE3
@@ -8146,13 +8043,13 @@ SESE3
 18
 </td>
 <td style="text-align:right;">
-54.610
+71.882
 </td>
 <td style="text-align:right;">
-28.04023
+28.64980
 </td>
 <td style="text-align:right;">
-25
+NA
 </td>
 <td style="text-align:left;">
 FALSE
@@ -8161,12 +8058,13 @@ FALSE
 NA
 </td>
 <td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-18
-</td>
-<td style="text-align:right;">
 4
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+0.65
 </td>
 </tr>
 <tr>
@@ -8203,7 +8101,7 @@ X
 25
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-4
+0.33
 </td>
 </tr>
 <tr>
@@ -8240,7 +8138,45 @@ FRASS
 14
 </td>
 <td style="text-align:right;">
-4
+0.58
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2L40
+</td>
+<td style="text-align:left;">
+2L40.3510
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+44.450
+</td>
+<td style="text-align:right;">
+29.86894
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+0.74
 </td>
 </tr>
 <tr>
@@ -8277,7 +8213,7 @@ X
 18
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-3
+0.53
 </td>
 </tr>
 <tr>
@@ -8314,7 +8250,7 @@ FRASS
 14
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-3
+0.58
 </td>
 </tr>
 <tr>
@@ -8351,7 +8287,7 @@ X
 13
 </td>
 <td style="text-align:right;">
-2
+0.67
 </td>
 </tr>
 <tr>
@@ -8389,7 +8325,7 @@ FRASS
 20
 </td>
 <td style="text-align:right;">
-1
+0.39
 </td>
 </tr>
 <tr>
@@ -8427,118 +8363,44 @@ NA
 16
 </td>
 <td style="text-align:right;">
-3
+0.44
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-2L80
+3H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-2L80.3683
+3H40.1844
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-08
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-38.862
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.46845
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-X
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2L80
-</td>
-<td style="text-align:left;">
-2L80.3723
-</td>
-<td style="text-align:left;">
 SESE3
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 08
 </td>
-<td style="text-align:right;">
-36.322
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.736
 </td>
-<td style="text-align:right;">
-21.94453
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.07803
 </td>
-<td style="text-align:right;">
-25
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 TRUE
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 X
 </td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-19
-</td>
-<td style="text-align:right;">
-3
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2L80.3726
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-40.132
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-24.99238
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-10
+14
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-4
+0.69
 </td>
 </tr>
 <tr>
@@ -8546,416 +8408,308 @@ NA
 3H40
 </td>
 <td style="text-align:left;">
-3H40.1844
+3H40.1882
 </td>
 <td style="text-align:left;">
 SESE3
 </td>
 <td style="text-align:left;">
-08
+13
 </td>
 <td style="text-align:right;">
-46.736
+52.324
 </td>
 <td style="text-align:right;">
-24.07803
+24.68760
 </td>
 <td style="text-align:right;">
-30
+20
 </td>
 <td style="text-align:left;">
 TRUE
 </td>
 <td style="text-align:left;">
-X
+NA
 </td>
 <td style="text-align:left;">
+18
 </td>
 <td style="text-align:right;">
 14
 </td>
 <td style="text-align:right;">
-3
+0.62
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40
+</td>
+<td style="text-align:left;">
+3H40.1882
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+58.420
+</td>
+<td style="text-align:right;">
+26.51631
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+0.58
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-3H40
+3H80
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-3H40.1882
+3H80.3838
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-52.324
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-24.68760
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-14
+45.720
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-4
+26.82109
 </td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3H80
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
 </td>
-<td style="text-align:left;">
-3H80.3838
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
 </td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-39.116
-</td>
-<td style="text-align:right;">
-25.29717
-</td>
-<td style="text-align:right;">
-25
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
 </td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-14
-</td>
-<td style="text-align:right;">
-4
-</td>
-</tr>
-<tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-3H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3H80.3846
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
+19
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-51.054
+7
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-25.60195
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-frass
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,17
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-12
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1
+0.71
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-3H80
-</td>
-<td style="text-align:left;">
-3H80.3903
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-36.322
-</td>
-<td style="text-align:right;">
-24.07803
-</td>
-<td style="text-align:right;">
-25
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-X
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:right;">
-3
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
 3L40
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 3L40.1900
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 PSMEM
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 08
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 39.370
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 20.72539
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 30
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 TRUE
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 X
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 26
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-4
+<td style="text-align:right;">
+0.32
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 3L40
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 3L40.3201
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 08
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 41.910
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 20.11582
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 25
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 TRUE
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 Tag Sequence Break
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 29
 </td>
-<td style="text-align:right;">
-2
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.24
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80
+3L40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80.3304
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-08
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-37.846
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.16367
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-X
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3L80
-</td>
-<td style="text-align:left;">
-3L80.3316
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-35.306
-</td>
-<td style="text-align:right;">
-22.85888
-</td>
-<td style="text-align:right;">
-30
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-X
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-20
-</td>
-<td style="text-align:right;">
-4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H40.3926
+3L40.3201
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-08
+13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-38.608
+51.308
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-24.07803
+25.90674
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-30
+35
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 TRUE
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-LOOKS GREAT
+26 from BD
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
+1,19
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-12
+9
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-1
+0.71
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 4H40
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 4H40.3926
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 SESE3
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 13
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 44.704
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 25.29717
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+BD healed over
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+14
+</td>
+<td style="text-align:right;">
+0.65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40.3946
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+41.402
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.60195
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 20
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
+TRUE
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-BD healed over
+FRASS
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
+4,18
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-14
+12
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-1
+0.70
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-4H40
+4L40
 </td>
 <td style="text-align:left;">
-4H40.3946
+4L40.3241
 </td>
 <td style="text-align:left;">
 PSMEM
@@ -8964,10 +8718,10 @@ PSMEM
 08
 </td>
 <td style="text-align:right;">
-35.306
+39.624
 </td>
 <td style="text-align:right;">
-23.77324
+24.07803
 </td>
 <td style="text-align:right;">
 25
@@ -8976,23 +8730,23 @@ PSMEM
 FALSE
 </td>
 <td style="text-align:left;">
-SHORT TREE
+X
 </td>
 <td style="text-align:left;">
 </td>
 <td style="text-align:right;">
-13
+9
 </td>
 <td style="text-align:right;">
-3
+0.74
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-4H40
+4L40
 </td>
 <td style="text-align:left;">
-4H40.3946
+4L40.3241
 </td>
 <td style="text-align:left;">
 PSMEM
@@ -9001,28 +8755,28 @@ PSMEM
 13
 </td>
 <td style="text-align:right;">
-41.402
+43.434
 </td>
 <td style="text-align:right;">
-25.60195
+26.51631
 </td>
 <td style="text-align:right;">
-20
+30
 </td>
 <td style="text-align:left;">
-TRUE
+FALSE
 </td>
 <td style="text-align:left;">
-FRASS
+frass
 </td>
 <td style="text-align:left;">
-4,18
+4
 </td>
 <td style="text-align:right;">
-12
+7
 </td>
 <td style="text-align:right;">
-2
+0.70
 </td>
 </tr>
 <tr>
@@ -9059,305 +8813,121 @@ X
 28
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-3
+0.13
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-4L80
+4L40
 </td>
 <td style="text-align:left;">
-4L80.1967
+4L40.3284
 </td>
 <td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-41.656
-</td>
-<td style="text-align:right;">
-23.16367
-</td>
-<td style="text-align:right;">
-35
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-X
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-13
-</td>
-<td style="text-align:right;">
-4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4L80
-</td>
-<td style="text-align:left;">
-4L80.1967
-</td>
-<td style="text-align:left;">
-PSMEM
+SESE3
 </td>
 <td style="text-align:left;">
 13
 </td>
 <td style="text-align:right;">
-44.196
+49.022
 </td>
 <td style="text-align:right;">
-24.38281
+26.21152
 </td>
 <td style="text-align:right;">
 20
 </td>
 <td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-frass
-</td>
-<td style="text-align:left;">
-1,4
-</td>
-<td style="text-align:right;">
-26
-</td>
-<td style="text-align:right;">
-3
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1.4169
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-08
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-54.864
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-24.07803
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-35
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
 TRUE
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
+big sweep
+</td>
+<td style="text-align:left;">
+4,7,19
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+0.65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+4L40.3284
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+52.324
+</td>
+<td style="text-align:right;">
+24.07803
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
 NA
 </td>
+<td style="text-align:left;">
+4,7,19
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+0.29
+</td>
+</tr>
+<tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
+4L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L80.1967
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+44.196
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.38281
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 20
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C1.4179
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-45.466
-</td>
-<td style="text-align:right;">
-24.38281
-</td>
-<td style="text-align:right;">
-35
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-18
-</td>
-<td style="text-align:right;">
-4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C1.4179
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-53.848
-</td>
-<td style="text-align:right;">
-28.64980
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-14
-</td>
-<td style="text-align:right;">
-2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1.4180
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-52.324
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-28.34502
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
+frass
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
+1,4
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-17
+26
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C1.4209
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-53.340
-</td>
-<td style="text-align:right;">
-24.68760
-</td>
-<td style="text-align:right;">
-25
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-TRIPLE TOP
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-13
-</td>
-<td style="text-align:right;">
-3
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C1.4209
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-56.896
-</td>
-<td style="text-align:right;">
-25.60195
-</td>
-<td style="text-align:right;">
-25
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-triple top
-</td>
-<td style="text-align:left;">
-1,4,6
-</td>
-<td style="text-align:right;">
-17
-</td>
-<td style="text-align:right;">
-2
+0.55
 </td>
 </tr>
 <tr>
@@ -9395,7 +8965,7 @@ NA
 19
 </td>
 <td style="text-align:right;">
-1
+0.72
 </td>
 </tr>
 <tr>
@@ -9403,186 +8973,36 @@ NA
 C2
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4276
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PISI
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-08
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-45.466
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.60195
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-35
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
 C2.4311
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 PSMEM
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 08
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 40.386
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 21.33496
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 30
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 52
 </td>
-<td style="text-align:right;">
-4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C2.4311
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-43.942
-</td>
-<td style="text-align:right;">
-26.51631
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
-14
-</td>
-<td style="text-align:right;">
-2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4322
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-08
-</td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-42.164
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.46845
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-29
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4322
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-43.434
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.29717
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-30
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-24
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-3
+0.56
 </td>
 </tr>
 <tr>
@@ -9619,7 +9039,7 @@ NA
 121
 </td>
 <td style="text-align:right;">
-3
+0.18
 </td>
 </tr>
 <tr>
@@ -9656,82 +9076,7 @@ old DBH
 37
 </td>
 <td style="text-align:right;">
-2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4518
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-45.974
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.90674
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-30
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C4
-</td>
-<td style="text-align:left;">
-C4.4601
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-45.212
-</td>
-<td style="text-align:right;">
-24.07803
-</td>
-<td style="text-align:right;">
-30
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-SPLIT BELOW DBH
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-23
-</td>
-<td style="text-align:right;">
-1
+0.67
 </td>
 </tr>
 <tr>
@@ -9769,7 +9114,7 @@ NA
 14
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-4
+0.52
 </td>
 </tr>
 <tr>
@@ -9777,115 +9122,123 @@ NA
 C4
 </td>
 <td style="text-align:left;">
-C4.4608
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-38.100
-</td>
-<td style="text-align:right;">
-23.16367
-</td>
-<td style="text-align:right;">
-20
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-31
-</td>
-<td style="text-align:right;">
-4
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C4
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
 C4.4648
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 SESE3
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 18
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 44.704
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 23.77324
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 NA
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 TRUE
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 healing well from bear damage
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 19
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 18
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-3
+<td style="text-align:right;">
+0.37
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 C4
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 C4.4706
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 PSMEM
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 13
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 38.862
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 24.68760
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 20
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 32
 </td>
-<td style="text-align:right;">
-4
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.67
 </td>
 </tr>
 </tbody>
 </table>
+</div>
+<div id="predicting-missing-heights" class="section level3">
+<h3>Predicting missing heights</h3>
+<p>It might be important to fill in missing heights (especially for dominant trees) in 2018. First I’ll explore a simple linear relationship between dbh and height increment. I’m only looking at live, unbroken redwood and Douglas-fir.</p>
+<pre class="r"><code>library(ggpmisc)
+d_l %&gt;%
+  # add increment data
+  group_by(tree_id) %&gt;%
+  mutate(
+    inc_1 = nth(lead(ht) - ht, 2, order_by = year) / 5,
+    inc_2 = nth(lead(ht) - ht, 3, order_by = year) / 5
+  ) %&gt;%
+  # only use unbroken live sese or psme from 2018
+  filter(
+    spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;),
+    year == &quot;18&quot;,
+    status == 1,
+    !get_cond(2, 3)
+  ) %&gt;%
+  ungroup() %&gt;%
+  ggplot(aes(x = dbh, y = inc_2)) +
+    geom_point(size = 1.3, color = &quot;gray30&quot;) +
+    geom_smooth(method = &quot;lm&quot;, color = &quot;gold3&quot;, fill = &quot;gray75&quot;) +
+    stat_poly_eq(
+      formula = y ~ x,
+      aes(label = after_stat(eq.label)),
+      family = &quot;mono&quot;,
+      coef.digits = 2
+    ) +
+    stat_poly_eq(
+      formula = y ~ x,
+      aes(label = after_stat(rr.label)),
+      family = &quot;mono&quot;,
+      label.y = .85
+    ) +
+    facet_wrap(~ treatment + spp) +
+    labs(
+      title = &quot;Height increment vs dbh&quot;,
+      subtitle = &quot;2013 - 2018&quot; ,
+      y = &quot;Annual height increment (m)&quot;,
+      x = &quot;dbh (cm)&quot;
+    ) +
+    ylim(-.5, 1.5) +
+    theme_bw()</code></pre>
+<p><img src="02_data_cleaning_files/figure-html/unnamed-chunk-21-1.png" width="912" /></p>
 </div>
 </div>
 </div>
