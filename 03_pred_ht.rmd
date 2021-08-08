@@ -30,7 +30,8 @@ plot_groups <- function(
   group = treatment,
   response = ht_inc_2,
   predictor = dbh,
-  by_spp = TRUE
+  by_spp = TRUE,
+  title
   ) {
   palette("Tableau 10")
   x <- substitute(predictor)
@@ -82,7 +83,7 @@ plot_groups <- function(
         family = "mono",
         fontface = "bold"
       ) +
-      labs(title = "Height increment vs dbh") +
+      labs(title = title) +
       theme_bw() +
       scale_color_manual(
         values = palette(),
@@ -95,7 +96,7 @@ plot_groups <- function(
 Out of these models, the H40, H80 and L80 have a p < 0.05. In none of them is there a significant difference in slope (between species). Constants are significantly different for H40, L80.
 
 ```{r, fig.height=7.5, fig.width=10.5, warning=FALSE}
-plot_groups(treatment)
+plot_groups(title = "Height increment vs dbh")
 ```
 
 ```{r}
@@ -128,7 +129,7 @@ Now I'm combining treatments so we only have a C, H, and L. Again slopes are not
 
 ```{r, fig.height=4, fig.width=10.5, warning=FALSE}
 # Now I'll combine treatments so we just have a H, L and C
-plot_groups(str_extract(treatment, "C|H|L"))
+plot_groups(str_extract(treatment, "C|H|L"), title = "Height increment vs dbh")
 ```
 
 ```{r}
@@ -148,7 +149,7 @@ I'll look at what happens if I group by treatment intensity instead. Again, this
 
 ```{r, fig.height=4, fig.width=10.5, warning=FALSE}
 # for comparison I'll combine treatment intensities instead
-plot_groups(str_extract(treatment, "C|40|80"))
+plot_groups(str_extract(treatment, "C|40|80"), title = "Height increment vs dbh")
 ```
 
 Perhaps a height model that includes more predictors would reveal a difference in response between treatments, our current models are not capturing much variance. I had the thought that we already have height data for our trees, shouldn't that be a pretty good predictor of height in the next period? For that matter, I can also use height_inc from period 1 and current dbh as well and vary these all by treatment.
@@ -178,7 +179,7 @@ summary(mod3)
 Here I'll show the plots of how 2018 height varies with each of the predictors, starting with dbh, which is highly correlated with heights. There is a clear difference between the constants for redwood and douglas-fir. While most of the slopes seem parallel, Treatment H40 seems different and if we look at just that treatment, the interaction is significant. Perhaps we should include a dummy variable for just H40? Or let dbh interact with treatment and species even though that interaction was removed earlier?
 
 ```{r, fig.height=7.5, fig.width=10.5}
-plot_groups(response = ht, predictor = dbh)
+plot_groups(response = ht, predictor = dbh, title = "Height vs dbh")
 
 test_d %>% filter(treatment == "H40") %>% lm(ht ~ dbh * spp, data = .) %>% tidy()
 
@@ -194,13 +195,13 @@ It would seem that when included in the entire model, the effect adding a dummy 
 Next I'll plot first period ht increment, this was included in the model but without any interactions. 
 
 ```{r, fig.height=7.5, fig.width=10.5}
-plot_groups(response = ht, predictor = ht_inc_1)
+plot_groups(response = ht, predictor = ht_inc_1, title = "Height vs first period ht increment")
 ```
 
 Finally, here is a plot of 2013 ht and 2018 heights. Because the model currently has this variable interacting with treatment and species, this is a more accurate representation of its effect (in the model). Its funny though, if I were to guess, it seems like this predictor is the most consistent across species and treatments.
 
 ```{r, fig.height=7.5, fig.width=10.5}
 
-plot_groups(response = ht, predictor = ht_13)
+plot_groups(response = ht, predictor = ht_13, title = "Height vs 2013 height")
 
 ```
