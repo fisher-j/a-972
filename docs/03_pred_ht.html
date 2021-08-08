@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>03_pred_ht.knit</title>
+
+<script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">A-972 10-year Study</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="01_import.html">Data import</a>
+</li>
+<li>
+  <a href="02_data_cleaning.html">Data cleaning</a>
+</li>
+<li>
+  <a href="03_pred_ht.html">Predicting missing heights</a>
+</li>
+<li>
+  <a href="04_define.html">Define new variables</a>
+</li>
+<li>
+  <a href="05_summary.html">Data summaries and figures</a>
+</li>
+<li>
+  <a href="06_variability.html">Variability</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#predicting-missing-heights">Predicting missing heights</a></li>
+</ul>
+</div>
+
+<div id="predicting-missing-heights" class="section level3">
+<h3>Predicting missing heights</h3>
+<p>It might be important to fill in missing heights (especially for dominant trees) in 2018. First I’ll explore a simple linear relationship between dbh and height increment. I’m only looking at live, unbroken redwood and Douglas-fir.</p>
+<pre class="r"><code>test_d &lt;- d_l %&gt;%
+  # add increment data
+  group_by(tree_id) %&gt;%
+  mutate(
+    ht_inc_2 = nth(lead(ht) - ht, 3, order_by = year) / 5,
+    ht_inc_1 = nth(lead(ht) - ht, 2, order_by = year) / 5,
+    ht_13 = nth(ht, 3, order_by = year)) %&gt;%
+  # only use unbroken live sese or psme from 2018
+  filter(
+    spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;),
+    year == &quot;18&quot;,
+    status == 1,
+    !get_cond(2, 3)
+  ) %&gt;%
+  ungroup()
+  
+# fit model to each group to generate lables for plot
+plot_groups &lt;- function(
+  group = treatment,
+  response = ht_inc_2,
+  predictor = dbh,
+  by_spp = TRUE
+  ) {
+  palette(&quot;Tableau 10&quot;)
+  x &lt;- substitute(predictor)
+  y &lt;- substitute(response)
+  form &lt;- formula(bquote(.(y) ~ .(x)))
+  if (by_spp) {
+    dat &lt;- group_by(test_d, group = {{group}}, spp)
+  } else {
+    dat &lt;- group_by(test_d, group = {{group}})
+  }
+  mytext &lt;- dat %&gt;%
+    summarize(lm_eqn(lm(form, data = cur_data())))
+  if (by_spp) {
+    mytext &lt;- pivot_longer(mytext, !c(group, spp)) %&gt;%
+    arrange(group, name) %&gt;%
+    mutate(
+      x = npc(dat[[x]], c(0, 0, .7, .7, .7, .7)),
+      y = npc(dat[[y]], c(1.1, 1, .1, 0, 1.1, 1))
+    )
+  } else {
+    mytext &lt;- pivot_longer(mytext, !c(group)) %&gt;%
+    arrange(group, name) %&gt;%
+    group_by(group) %&gt;%
+    mutate(
+      x = npc(dat[[x]], c(0, .7, .7)),
+      y = npc(dat[[y]], c(1.1,.1,1.1))
+    )
+  }
+  # Plot based on specified group and always species
+  p &lt;- if (by_spp) {
+    ggplot(
+      dat,
+      aes(x = {{predictor}},
+      y = {{response}},
+      fill = spp,
+      color = spp)
+    )
+  } else {
+    ggplot(dat, aes(x = {{predictor}}, y = {{response}}))
+  }
+  print(p +
+      geom_point(size = 1.3, shape = 16, alpha = .6) +
+      geom_smooth(method = &quot;lm&quot;, alpha = .25) +
+      facet_wrap(~ group) +
+      geom_text(
+        data = mytext,
+        aes(x = x, y = y, label = value, hjust = 0),
+        parse = TRUE,
+        family = &quot;mono&quot;,
+        fontface = &quot;bold&quot;
+      ) +
+      labs(title = &quot;Height increment vs dbh&quot;) +
+      theme_bw() +
+      scale_color_manual(
+        values = palette(),
+        aesthetics = c(&quot;color&quot;, &quot;fill&quot;)) +
+      guides(fill = guide_legend(override.aes = aes(label = &quot;&quot;)))
+  )
+}</code></pre>
+<p>Out of these models, the H40, H80 and L80 have a p &lt; 0.05. In none of them is there a significant difference in slope (between species). Constants are significantly different for H40, L80.</p>
+<pre class="r"><code>plot_groups(treatment)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-2-1.png" width="1008" /></p>
+<pre class="r"><code>library(broom)
+
+get_model_stats &lt;- function(formula, grouping) {
+  test_d %&gt;% 
+    nest_by(group = {{grouping}}) %&gt;%
+    mutate(
+      mod = list(lm(formula, data = data)),
+      summary = list(tidy(mod)),
+      pf = pf(
+        summary(mod)$fstatistic[1],
+        summary(mod)$fstatistic[2],
+        summary(mod)$fstatistic[3],
+        lower.tail = FALSE
+      )
+    ) %&gt;%
+    unnest(summary)
+}</code></pre>
+<pre class="r"><code>get_model_stats(formula = ht_inc_2 ~ dbh * spp, grouping = treatment)</code></pre>
+<pre><code>## # A tibble: 20 x 9
+## # Groups:   group [5]
+##    group         data mod   term   estimate std.error statistic p.value       pf
+##    &lt;chr&gt; &lt;list&lt;tibbl&gt; &lt;lis&gt; &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+##  1 C       [275 x 19] &lt;lm&gt;  (Inte~  1.38e-1   0.114       1.20  0.232    1.82e-1
+##  2 C       [275 x 19] &lt;lm&gt;  dbh     6.84e-3   0.00396     1.73  0.0869   1.82e-1
+##  3 C       [275 x 19] &lt;lm&gt;  sppSE~ -2.88e-2   0.190      -0.151 0.880    1.82e-1
+##  4 C       [275 x 19] &lt;lm&gt;  dbh:s~ -1.31e-3   0.00578    -0.227 0.821    1.82e-1
+##  5 H40     [106 x 19] &lt;lm&gt;  (Inte~  2.00e-1   0.217       0.920 0.361    4.50e-2
+##  6 H40     [106 x 19] &lt;lm&gt;  dbh     6.44e-3   0.00580     1.11  0.271    4.50e-2
+##  7 H40     [106 x 19] &lt;lm&gt;  sppSE~ -2.51e-1   0.291      -0.863 0.392    4.50e-2
+##  8 H40     [106 x 19] &lt;lm&gt;  dbh:s~  9.35e-4   0.00734     0.127 0.899    4.50e-2
+##  9 H80     [247 x 19] &lt;lm&gt;  (Inte~ -4.68e-2   0.129      -0.364 0.717    8.90e-9
+## 10 H80     [247 x 19] &lt;lm&gt;  dbh     1.37e-2   0.00426     3.22  0.00151  8.90e-9
+## 11 H80     [247 x 19] &lt;lm&gt;  sppSE~ -7.46e-2   0.151      -0.495 0.621    8.90e-9
+## 12 H80     [247 x 19] &lt;lm&gt;  dbh:s~ -7.06e-4   0.00484    -0.146 0.884    8.90e-9
+## 13 L40      [86 x 19] &lt;lm&gt;  (Inte~  5.10e-1   0.436       1.17  0.249    6.48e-1
+## 14 L40      [86 x 19] &lt;lm&gt;  dbh    -3.53e-3   0.0113     -0.313 0.756    6.48e-1
+## 15 L40      [86 x 19] &lt;lm&gt;  sppSE~ -2.88e-1   0.528      -0.546 0.588    6.48e-1
+## 16 L40      [86 x 19] &lt;lm&gt;  dbh:s~  4.27e-3   0.0137      0.310 0.758    6.48e-1
+## 17 L80     [264 x 19] &lt;lm&gt;  (Inte~  1.01e-1   0.118       0.854 0.396    2.34e-7
+## 18 L80     [264 x 19] &lt;lm&gt;  dbh     1.14e-2   0.00382     2.99  0.00368  2.34e-7
+## 19 L80     [264 x 19] &lt;lm&gt;  sppSE~ -3.46e-1   0.167      -2.07  0.0418   2.34e-7
+## 20 L80     [264 x 19] &lt;lm&gt;  dbh:s~  7.13e-3   0.00510     1.40  0.166    2.34e-7</code></pre>
+<pre class="r"><code>get_model_stats(formula = ht_inc_2 ~ dbh + spp, grouping = treatment)</code></pre>
+<pre><code>## # A tibble: 15 x 9
+## # Groups:   group [5]
+##    group         data mod    term  estimate std.error statistic  p.value      pf
+##    &lt;chr&gt; &lt;list&lt;tibbl&gt; &lt;list&gt; &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;
+##  1 C       [275 x 19] &lt;lm&gt;   (Int~  1.55e-1   0.0862      1.79  7.56e- 2 8.93e-2
+##  2 C       [275 x 19] &lt;lm&gt;   dbh    6.23e-3   0.00287     2.17  3.23e- 2 8.93e-2
+##  3 C       [275 x 19] &lt;lm&gt;   sppS~ -6.87e-2   0.0721     -0.953 3.42e- 1 8.93e-2
+##  4 H40     [106 x 19] &lt;lm&gt;   (Int~  1.79e-1   0.139       1.28  2.05e- 1 1.74e-2
+##  5 H40     [106 x 19] &lt;lm&gt;   dbh    7.03e-3   0.00352     1.99  5.03e- 2 1.74e-2
+##  6 H40     [106 x 19] &lt;lm&gt;   sppS~ -2.16e-1   0.0856     -2.52  1.42e- 2 1.74e-2
+##  7 H80     [247 x 19] &lt;lm&gt;   (Int~ -3.08e-2   0.0673     -0.458 6.48e- 1 1.63e-9
+##  8 H80     [247 x 19] &lt;lm&gt;   dbh    1.32e-2   0.00201     6.57  5.95e-10 1.63e-9
+##  9 H80     [247 x 19] &lt;lm&gt;   sppS~ -9.54e-2   0.0486     -1.96  5.13e- 2 1.63e-9
+## 10 L40      [86 x 19] &lt;lm&gt;   (Int~  4.00e-1   0.251       1.59  1.18e- 1 4.56e-1
+## 11 L40      [86 x 19] &lt;lm&gt;   dbh   -6.62e-4   0.00639    -0.104 9.18e- 1 4.56e-1
+## 12 L40      [86 x 19] &lt;lm&gt;   sppS~ -1.27e-1   0.101      -1.26  2.14e- 1 4.56e-1
+## 13 L80     [264 x 19] &lt;lm&gt;   (Int~ -1.84e-2   0.0822     -0.224 8.23e- 1 1.17e-7
+## 14 L80     [264 x 19] &lt;lm&gt;   dbh    1.54e-2   0.00254     6.07  3.78e- 8 1.17e-7
+## 15 L80     [264 x 19] &lt;lm&gt;   sppS~ -1.24e-1   0.0535     -2.32  2.26e- 2 1.17e-7</code></pre>
+<p>Now I’m combining treatments so we only have a C, H, and L. Again slopes are not significantly different and neither are constants between species.</p>
+<pre class="r"><code># Now I&#39;ll combine treatments so we just have a H, L and C
+plot_groups(str_extract(treatment, &quot;C|H|L&quot;))</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-5-1.png" width="1008" /></p>
+<pre class="r"><code># do ancova, look at interaction first and then see if 
+# y-intercepts are any different between models.
+
+get_model_stats(
+  formula = ht_inc_2 ~ dbh * spp,
+  grouping = str_extract(treatment, &quot;C|L|H&quot;))</code></pre>
+<pre><code>## # A tibble: 12 x 9
+## # Groups:   group [3]
+##    group         data mod    term   estimate std.error statistic p.value      pf
+##    &lt;chr&gt; &lt;list&lt;tibbl&gt; &lt;list&gt; &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+##  1 C       [275 x 19] &lt;lm&gt;   (Inte~  1.38e-1   0.114       1.20  2.32e-1 1.82e-1
+##  2 C       [275 x 19] &lt;lm&gt;   dbh     6.84e-3   0.00396     1.73  8.69e-2 1.82e-1
+##  3 C       [275 x 19] &lt;lm&gt;   sppSE~ -2.88e-2   0.190      -0.151 8.80e-1 1.82e-1
+##  4 C       [275 x 19] &lt;lm&gt;   dbh:s~ -1.31e-3   0.00578    -0.227 8.21e-1 1.82e-1
+##  5 H       [353 x 19] &lt;lm&gt;   (Inte~  3.52e-2   0.104       0.337 7.36e-1 3.75e-9
+##  6 H       [353 x 19] &lt;lm&gt;   dbh     1.10e-2   0.00323     3.40  8.01e-4 3.75e-9
+##  7 H       [353 x 19] &lt;lm&gt;   sppSE~ -1.16e-1   0.127      -0.909 3.64e-1 3.75e-9
+##  8 H       [353 x 19] &lt;lm&gt;   dbh:s~ -5.10e-4   0.00378    -0.135 8.93e-1 3.75e-9
+##  9 L       [350 x 19] &lt;lm&gt;   (Inte~  2.61e-1   0.119       2.20  2.96e-2 2.23e-4
+## 10 L       [350 x 19] &lt;lm&gt;   dbh     4.66e-3   0.00348     1.34  1.83e-1 2.23e-4
+## 11 L       [350 x 19] &lt;lm&gt;   sppSE~ -3.91e-1   0.170      -2.30  2.30e-2 2.23e-4
+## 12 L       [350 x 19] &lt;lm&gt;   dbh:s~  9.02e-3   0.00486     1.86  6.54e-2 2.23e-4</code></pre>
+<pre class="r"><code>get_model_stats(
+  formula = ht_inc_2 ~ dbh + spp,
+  grouping = str_extract(treatment, &quot;C|L|H&quot;))</code></pre>
+<pre><code>## # A tibble: 9 x 9
+## # Groups:   group [3]
+##   group         data mod   term   estimate std.error statistic  p.value       pf
+##   &lt;chr&gt; &lt;list&lt;tibbl&gt; &lt;lis&gt; &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+## 1 C       [275 x 19] &lt;lm&gt;  (Inte~  0.155     0.0862      1.79   7.56e-2 8.93e- 2
+## 2 C       [275 x 19] &lt;lm&gt;  dbh     0.00623   0.00287     2.17   3.23e-2 8.93e- 2
+## 3 C       [275 x 19] &lt;lm&gt;  sppSE~ -0.0687    0.0721     -0.953  3.42e-1 8.93e- 2
+## 4 H       [353 x 19] &lt;lm&gt;  (Inte~  0.0468    0.0596      0.785  4.33e-1 6.82e-10
+## 5 H       [353 x 19] &lt;lm&gt;  dbh     0.0106    0.00168     6.32   1.30e-9 6.82e-10
+## 6 H       [353 x 19] &lt;lm&gt;  sppSE~ -0.132     0.0426     -3.10   2.19e-3 6.82e-10
+## 7 L       [350 x 19] &lt;lm&gt;  (Inte~  0.108     0.0862      1.25   2.13e-1 3.24e- 4
+## 8 L       [350 x 19] &lt;lm&gt;  dbh     0.00929   0.00245     3.79   2.30e-4 3.24e- 4
+## 9 L       [350 x 19] &lt;lm&gt;  sppSE~ -0.0894    0.0507     -1.76   8.04e-2 3.24e- 4</code></pre>
+<p>I’ll look at what happens if I group by treatment intensity instead. Again, this does not seem to reveal any</p>
+<pre class="r"><code># for comparison I&#39;ll combine treatment intensities instead
+plot_groups(str_extract(treatment, &quot;C|40|80&quot;))</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-7-1.png" width="1008" /></p>
+<p>Perhaps a height model that includes more predictors would reveal a difference in response between treatments, our current models are not capturing much variance. I had the thought that we already have height data for our trees, shouldn’t that be a pretty good predictor of height in the next period? For that matter, I can also use height_inc from period 1 and current dbh as well and vary these all by treatment.</p>
+<pre class="r"><code> mod1 &lt;- lm(ht ~ (ht_13 + ht_inc_1 + dbh) * treatment * spp, data = test_d)
+summary(mod1)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = ht ~ (ht_13 + ht_inc_1 + dbh) * treatment * spp, 
+##     data = test_d)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.4896 -0.8061  0.0552  0.8873  4.8686 
+## 
+## Coefficients:
+##                                Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                     5.01910    1.62435   3.090  0.00213 ** 
+## ht_13                           0.74589    0.09559   7.803 4.47e-14 ***
+## ht_inc_1                       -0.46414    0.45546  -1.019  0.30874    
+## dbh                             0.10521    0.03238   3.249  0.00125 ** 
+## treatmentH40                    4.24300    3.58843   1.182  0.23768    
+## treatmentH80                   -5.76233    2.76028  -2.088  0.03741 *  
+## treatmentL40                    3.94807    4.31142   0.916  0.36031    
+## treatmentL80                   -7.84445    3.22317  -2.434  0.01534 *  
+## sppSESE3                       -5.30221    2.21177  -2.397  0.01693 *  
+## ht_13:treatmentH40             -0.20800    0.20446  -1.017  0.30958    
+## ht_13:treatmentH80              0.31141    0.16195   1.923  0.05513 .  
+## ht_13:treatmentL40             -0.06641    0.19094  -0.348  0.72815    
+## ht_13:treatmentL80              0.45763    0.18775   2.437  0.01519 *  
+## ht_inc_1:treatmentH40           0.89096    1.11251   0.801  0.42365    
+## ht_inc_1:treatmentH80          -0.67477    0.82340  -0.819  0.41295    
+## ht_inc_1:treatmentL40           1.77614    1.31896   1.347  0.17880    
+## ht_inc_1:treatmentL80          -1.06393    1.05601  -1.008  0.31425    
+## dbh:treatmentH40                0.01668    0.05446   0.306  0.75957    
+## dbh:treatmentH80               -0.04845    0.04889  -0.991  0.32227    
+## dbh:treatmentL40               -0.08461    0.07022  -1.205  0.22890    
+## dbh:treatmentL80               -0.08478    0.05573  -1.521  0.12887    
+## ht_13:sppSESE3                  0.31567    0.14735   2.142  0.03272 *  
+## ht_inc_1:sppSESE3              -0.22055    0.94443  -0.234  0.81546    
+## dbh:sppSESE3                   -0.08776    0.05026  -1.746  0.08152 .  
+## treatmentH40:sppSESE3          -4.55168    4.08147  -1.115  0.26537    
+## treatmentH80:sppSESE3           5.28467    3.27393   1.614  0.10721    
+## treatmentL40:sppSESE3           4.86527    5.89491   0.825  0.40963    
+## treatmentL80:sppSESE3           7.32883    4.13221   1.774  0.07682 .  
+## ht_13:treatmentH40:sppSESE3     0.21419    0.25546   0.838  0.40223    
+## ht_13:treatmentH80:sppSESE3    -0.34762    0.20865  -1.666  0.09641 .  
+## ht_13:treatmentL40:sppSESE3    -0.53003    0.33452  -1.584  0.11382    
+## ht_13:treatmentL80:sppSESE3    -0.55474    0.27849  -1.992  0.04700 *  
+## ht_inc_1:treatmentH40:sppSESE3  0.96018    1.77084   0.542  0.58794    
+## ht_inc_1:treatmentH80:sppSESE3  0.44578    1.28181   0.348  0.72818    
+## ht_inc_1:treatmentL40:sppSESE3  3.10728    2.24920   1.382  0.16783    
+## ht_inc_1:treatmentL80:sppSESE3  1.84212    1.72140   1.070  0.28515    
+## dbh:treatmentH40:sppSESE3      -0.03005    0.07698  -0.390  0.69647    
+## dbh:treatmentH80:sppSESE3       0.09475    0.06503   1.457  0.14581    
+## dbh:treatmentL40:sppSESE3       0.13923    0.10571   1.317  0.18850    
+## dbh:treatmentL80:sppSESE3       0.16998    0.08536   1.991  0.04708 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.516 on 439 degrees of freedom
+##   (499 observations deleted due to missingness)
+## Multiple R-squared:  0.9066, Adjusted R-squared:  0.8983 
+## F-statistic: 109.2 on 39 and 439 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>It turns out the varying first period increment or dbh by treatment doesn’t add much. So I will only vary 2013 ht by treatment</p>
+<pre class="r"><code>drop1(mod1)</code></pre>
+<pre><code>## Single term deletions
+## 
+## Model:
+## ht ~ (ht_13 + ht_inc_1 + dbh) * treatment * spp
+##                        Df Sum of Sq    RSS    AIC
+## &lt;none&gt;                              1009.5 437.11
+## ht_13:treatment:spp     4   23.4902 1033.0 440.13
+## ht_inc_1:treatment:spp  4    6.1674 1015.7 432.02
+## dbh:treatment:spp       4   17.8964 1027.4 437.52</code></pre>
+<pre class="r"><code>form2 &lt;- ht ~ ht_13 * treatment * spp + ht_inc_1 + dbh
+mod2 &lt;- lm(form2, data = test_d)
+summary(mod2)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = form2, data = test_d)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.3417 -0.8356  0.0156  0.9103  5.0961 
+## 
+## Coefficients:
+##                             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                  3.80751    1.35617   2.808  0.00521 ** 
+## ht_13                        0.84332    0.06107  13.809  &lt; 2e-16 ***
+## treatmentH40                 2.71582    2.78178   0.976  0.32944    
+## treatmentH80                -3.86060    2.13896  -1.805  0.07175 .  
+## treatmentL40                 1.39030    3.54201   0.393  0.69486    
+## treatmentL80                -4.16386    2.37612  -1.752  0.08038 .  
+## sppSESE3                    -3.09020    1.79913  -1.718  0.08655 .  
+## ht_inc_1                    -0.50051    0.24112  -2.076  0.03847 *  
+## dbh                          0.06449    0.01123   5.745 1.68e-08 ***
+## ht_13:treatmentH40          -0.10162    0.11099  -0.916  0.36037    
+## ht_13:treatmentH80           0.16345    0.08742   1.870  0.06217 .  
+## ht_13:treatmentL40          -0.05890    0.13658  -0.431  0.66648    
+## ht_13:treatmentL80           0.18982    0.09685   1.960  0.05060 .  
+## ht_13:sppSESE3               0.09747    0.07747   1.258  0.20902    
+## treatmentH40:sppSESE3       -4.27129    3.25296  -1.313  0.18983    
+## treatmentH80:sppSESE3        2.61432    2.57053   1.017  0.30967    
+## treatmentL40:sppSESE3        1.50558    4.81542   0.313  0.75468    
+## treatmentL80:sppSESE3        1.53702    3.05598   0.503  0.61524    
+## ht_13:treatmentH40:sppSESE3  0.13962    0.13434   1.039  0.29924    
+## ht_13:treatmentH80:sppSESE3 -0.09813    0.10898  -0.900  0.36834    
+## ht_13:treatmentL40:sppSESE3 -0.09058    0.20048  -0.452  0.65163    
+## ht_13:treatmentL80:sppSESE3 -0.04816    0.12935  -0.372  0.70980    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.527 on 457 degrees of freedom
+##   (499 observations deleted due to missingness)
+## Multiple R-squared:  0.9013, Adjusted R-squared:  0.8968 
+## F-statistic: 198.8 on 21 and 457 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>form3 &lt;- ht ~ (dbh + ht_inc_1) * treatment * spp + ht_13
+mod3 &lt;- lm(form3, data = test_d)
+summary(mod3)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = form3, data = test_d)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.4141 -0.8742  0.0665  0.8741  5.1082 
+## 
+## Coefficients:
+##                                  Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                     1.7693492  0.8300353   2.132   0.0336 *  
+## dbh                             0.0485252  0.0215169   2.255   0.0246 *  
+## ht_inc_1                       -0.7060723  0.4500803  -1.569   0.1174    
+## treatmentH40                    0.5724626  1.1596206   0.494   0.6218    
+## treatmentH80                   -0.7555270  0.8862820  -0.852   0.3944    
+## treatmentL40                    1.7778514  2.3284169   0.764   0.4455    
+## treatmentL80                   -0.3877241  0.9659395  -0.401   0.6883    
+## sppSESE3                       -0.7355108  0.9383134  -0.784   0.4335    
+## ht_13                           0.9493294  0.0382157  24.841   &lt;2e-16 ***
+## dbh:treatmentH40               -0.0079272  0.0319547  -0.248   0.8042    
+## dbh:treatmentH80                0.0331802  0.0282138   1.176   0.2402    
+## dbh:treatmentL40               -0.0590206  0.0633794  -0.931   0.3522    
+## dbh:treatmentL80                0.0302089  0.0325132   0.929   0.3533    
+## ht_inc_1:treatmentH40          -0.3307307  0.9189780  -0.360   0.7191    
+## ht_inc_1:treatmentH80          -0.1172540  0.7344566  -0.160   0.8732    
+## ht_inc_1:treatmentL40           0.8492262  1.1251447   0.755   0.4508    
+## ht_inc_1:treatmentL80          -0.0678091  0.9506987  -0.071   0.9432    
+## dbh:sppSESE3                    0.0004614  0.0291512   0.016   0.9874    
+## ht_inc_1:sppSESE3               0.2558861  0.9223123   0.277   0.7816    
+## treatmentH40:sppSESE3          -1.1965823  1.6368987  -0.731   0.4652    
+## treatmentH80:sppSESE3          -0.1134196  1.2133139  -0.093   0.9256    
+## treatmentL40:sppSESE3          -0.7864082  2.9296861  -0.268   0.7885    
+## treatmentL80:sppSESE3          -1.2747091  1.4691289  -0.868   0.3860    
+## dbh:treatmentH40:sppSESE3      -0.0007996  0.0448255  -0.018   0.9858    
+## dbh:treatmentH80:sppSESE3      -0.0013993  0.0376941  -0.037   0.9704    
+## dbh:treatmentL40:sppSESE3      -0.0151405  0.0823793  -0.184   0.8543    
+## dbh:treatmentL80:sppSESE3       0.0275891  0.0452967   0.609   0.5428    
+## ht_inc_1:treatmentH40:sppSESE3  2.3371804  1.6176480   1.445   0.1492    
+## ht_inc_1:treatmentH80:sppSESE3 -0.0123609  1.1745531  -0.011   0.9916    
+## ht_inc_1:treatmentL40:sppSESE3  2.4741610  2.0346265   1.216   0.2246    
+## ht_inc_1:treatmentL80:sppSESE3  0.6803263  1.4535749   0.468   0.6400    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.54 on 448 degrees of freedom
+##   (499 observations deleted due to missingness)
+## Multiple R-squared:  0.9017, Adjusted R-squared:  0.8951 
+## F-statistic:   137 on 30 and 448 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>Here I’ll show the plots of how 2018 height varies with each of the predictors, starting with dbh, which is highly correlated with heights. There is a clear difference between the constants for redwood and douglas-fir. While most of the slopes seem parallel, Treatment H40 seems different and if we look at just that treatment, the interaction is significant. Perhaps we should include a dummy variable for just H40? Or let dbh interact with treatment and species even though that interaction was removed earlier?</p>
+<pre class="r"><code>plot_groups(response = ht, predictor = dbh)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="1008" /></p>
+<pre class="r"><code>test_d %&gt;% filter(treatment == &quot;H40&quot;) %&gt;% lm(ht ~ dbh * spp, data = .) %&gt;% tidy()</code></pre>
+<pre><code>## # A tibble: 4 x 5
+##   term         estimate std.error statistic  p.value
+##   &lt;chr&gt;           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)    19.3      1.74       11.1  1.55e-16
+## 2 dbh             0.225    0.0465      4.84 8.40e- 6
+## 3 sppSESE3      -11.6      2.33       -4.98 5.01e- 6
+## 4 dbh:sppSESE3    0.146    0.0587      2.49 1.56e- 2</code></pre>
+<pre class="r"><code>test_d %&gt;% 
+  mutate(dum_h40 = treatment == &quot;H40&quot;) %&gt;%
+  lm(update(form2, ~ . + dbh:spp:dum_h40), data = .) %&gt;%
+  tidy() %&gt;%
+  filter(str_detect(term, &quot;dbh:dum&quot;))</code></pre>
+<pre><code>## # A tibble: 4 x 5
+##   term                      estimate std.error statistic p.value
+##   &lt;chr&gt;                        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
+## 1 sppPSMEM:dbh:dum_h40FALSE   0.0702    0.0435      1.62  0.107 
+## 2 sppSESE3:dbh:dum_h40FALSE   0.0621    0.0415      1.50  0.136 
+## 3 sppPSMEM:dbh:dum_h40TRUE    0.0993    0.0540      1.84  0.0664
+## 4 sppSESE3:dbh:dum_h40TRUE   NA        NA          NA    NA</code></pre>
+<p>It would seem that when included in the entire model, the effect adding a dummy variable for the interaction between spp, dbh and treatment is not quite significant.</p>
+<p>Next I’ll plot first period ht increment, this was included in the model but without any interactions.</p>
+<pre class="r"><code>plot_groups(response = ht, predictor = ht_inc_1)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="1008" /></p>
+<p>Finally, here is a plot of 2013 ht and 2018 heights. Because the model currently has this variable interacting with treatment and species, this is a more accurate representation of its effect (in the model). Its funny though, if I were to guess, it seems like this predictor is the most consistent across species and treatments.</p>
+<pre class="r"><code>plot_groups(response = ht, predictor = ht_13)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-13-1.png" width="1008" /></p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
