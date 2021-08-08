@@ -33,6 +33,8 @@
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -395,53 +397,884 @@ get_model_stats &lt;- function(formula, grouping) {
         lower.tail = FALSE
       )
     ) %&gt;%
-    unnest(summary)
+    unnest(summary) %&gt;%
+    select(-c(data, mod))
 }</code></pre>
-<pre class="r"><code>get_model_stats(formula = ht_inc_2 ~ dbh * spp, grouping = treatment)</code></pre>
-<pre><code>## # A tibble: 20 x 9
-## # Groups:   group [5]
-##    group         data mod   term   estimate std.error statistic p.value       pf
-##    &lt;chr&gt; &lt;list&lt;tibbl&gt; &lt;lis&gt; &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-##  1 C       [275 x 19] &lt;lm&gt;  (Inte~  1.38e-1   0.114       1.20  0.232    1.82e-1
-##  2 C       [275 x 19] &lt;lm&gt;  dbh     6.84e-3   0.00396     1.73  0.0869   1.82e-1
-##  3 C       [275 x 19] &lt;lm&gt;  sppSE~ -2.88e-2   0.190      -0.151 0.880    1.82e-1
-##  4 C       [275 x 19] &lt;lm&gt;  dbh:s~ -1.31e-3   0.00578    -0.227 0.821    1.82e-1
-##  5 H40     [106 x 19] &lt;lm&gt;  (Inte~  2.00e-1   0.217       0.920 0.361    4.50e-2
-##  6 H40     [106 x 19] &lt;lm&gt;  dbh     6.44e-3   0.00580     1.11  0.271    4.50e-2
-##  7 H40     [106 x 19] &lt;lm&gt;  sppSE~ -2.51e-1   0.291      -0.863 0.392    4.50e-2
-##  8 H40     [106 x 19] &lt;lm&gt;  dbh:s~  9.35e-4   0.00734     0.127 0.899    4.50e-2
-##  9 H80     [247 x 19] &lt;lm&gt;  (Inte~ -4.68e-2   0.129      -0.364 0.717    8.90e-9
-## 10 H80     [247 x 19] &lt;lm&gt;  dbh     1.37e-2   0.00426     3.22  0.00151  8.90e-9
-## 11 H80     [247 x 19] &lt;lm&gt;  sppSE~ -7.46e-2   0.151      -0.495 0.621    8.90e-9
-## 12 H80     [247 x 19] &lt;lm&gt;  dbh:s~ -7.06e-4   0.00484    -0.146 0.884    8.90e-9
-## 13 L40      [86 x 19] &lt;lm&gt;  (Inte~  5.10e-1   0.436       1.17  0.249    6.48e-1
-## 14 L40      [86 x 19] &lt;lm&gt;  dbh    -3.53e-3   0.0113     -0.313 0.756    6.48e-1
-## 15 L40      [86 x 19] &lt;lm&gt;  sppSE~ -2.88e-1   0.528      -0.546 0.588    6.48e-1
-## 16 L40      [86 x 19] &lt;lm&gt;  dbh:s~  4.27e-3   0.0137      0.310 0.758    6.48e-1
-## 17 L80     [264 x 19] &lt;lm&gt;  (Inte~  1.01e-1   0.118       0.854 0.396    2.34e-7
-## 18 L80     [264 x 19] &lt;lm&gt;  dbh     1.14e-2   0.00382     2.99  0.00368  2.34e-7
-## 19 L80     [264 x 19] &lt;lm&gt;  sppSE~ -3.46e-1   0.167      -2.07  0.0418   2.34e-7
-## 20 L80     [264 x 19] &lt;lm&gt;  dbh:s~  7.13e-3   0.00510     1.40  0.166    2.34e-7</code></pre>
-<pre class="r"><code>get_model_stats(formula = ht_inc_2 ~ dbh + spp, grouping = treatment)</code></pre>
-<pre><code>## # A tibble: 15 x 9
-## # Groups:   group [5]
-##    group         data mod    term  estimate std.error statistic  p.value      pf
-##    &lt;chr&gt; &lt;list&lt;tibbl&gt; &lt;list&gt; &lt;chr&gt;    &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;
-##  1 C       [275 x 19] &lt;lm&gt;   (Int~  1.55e-1   0.0862      1.79  7.56e- 2 8.93e-2
-##  2 C       [275 x 19] &lt;lm&gt;   dbh    6.23e-3   0.00287     2.17  3.23e- 2 8.93e-2
-##  3 C       [275 x 19] &lt;lm&gt;   sppS~ -6.87e-2   0.0721     -0.953 3.42e- 1 8.93e-2
-##  4 H40     [106 x 19] &lt;lm&gt;   (Int~  1.79e-1   0.139       1.28  2.05e- 1 1.74e-2
-##  5 H40     [106 x 19] &lt;lm&gt;   dbh    7.03e-3   0.00352     1.99  5.03e- 2 1.74e-2
-##  6 H40     [106 x 19] &lt;lm&gt;   sppS~ -2.16e-1   0.0856     -2.52  1.42e- 2 1.74e-2
-##  7 H80     [247 x 19] &lt;lm&gt;   (Int~ -3.08e-2   0.0673     -0.458 6.48e- 1 1.63e-9
-##  8 H80     [247 x 19] &lt;lm&gt;   dbh    1.32e-2   0.00201     6.57  5.95e-10 1.63e-9
-##  9 H80     [247 x 19] &lt;lm&gt;   sppS~ -9.54e-2   0.0486     -1.96  5.13e- 2 1.63e-9
-## 10 L40      [86 x 19] &lt;lm&gt;   (Int~  4.00e-1   0.251       1.59  1.18e- 1 4.56e-1
-## 11 L40      [86 x 19] &lt;lm&gt;   dbh   -6.62e-4   0.00639    -0.104 9.18e- 1 4.56e-1
-## 12 L40      [86 x 19] &lt;lm&gt;   sppS~ -1.27e-1   0.101      -1.26  2.14e- 1 4.56e-1
-## 13 L80     [264 x 19] &lt;lm&gt;   (Int~ -1.84e-2   0.0822     -0.224 8.23e- 1 1.17e-7
-## 14 L80     [264 x 19] &lt;lm&gt;   dbh    1.54e-2   0.00254     6.07  3.78e- 8 1.17e-7
-## 15 L80     [264 x 19] &lt;lm&gt;   sppS~ -1.24e-1   0.0535     -2.32  2.26e- 2 1.17e-7</code></pre>
+<pre class="r"><code>stat &lt;- get_model_stats(formula = ht_inc_2 ~ dbh * spp, grouping = treatment)
+stat %&gt;%
+  color_groups() %&gt;%
+  row_spec(which(stat$p.value &lt; .05), background = &quot;MistyRose&quot;)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+group
+</th>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:right;">
+estimate
+</th>
+<th style="text-align:right;">
+std.error
+</th>
+<th style="text-align:right;">
+statistic
+</th>
+<th style="text-align:right;">
+p.value
+</th>
+<th style="text-align:right;">
+pf
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+0.1375585
+</td>
+<td style="text-align:right;">
+0.1143752
+</td>
+<td style="text-align:right;">
+1.2026948
+</td>
+<td style="text-align:right;">
+0.2315864
+</td>
+<td style="text-align:right;">
+0.1822137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+dbh
+</td>
+<td style="text-align:right;">
+0.0068448
+</td>
+<td style="text-align:right;">
+0.0039640
+</td>
+<td style="text-align:right;">
+1.7267242
+</td>
+<td style="text-align:right;">
+0.0869259
+</td>
+<td style="text-align:right;">
+0.1822137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0287703
+</td>
+<td style="text-align:right;">
+0.1903294
+</td>
+<td style="text-align:right;">
+-0.1511608
+</td>
+<td style="text-align:right;">
+0.8801160
+</td>
+<td style="text-align:right;">
+0.1822137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+dbh:sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0013134
+</td>
+<td style="text-align:right;">
+0.0057836
+</td>
+<td style="text-align:right;">
+-0.2270885
+</td>
+<td style="text-align:right;">
+0.8207616
+</td>
+<td style="text-align:right;">
+0.1822137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+(Intercept)
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.1996656
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.2169151
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.9204782
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.3607796
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0449821
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0064417
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0058014
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1103671
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.2709953
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0449821
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+sppSESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.2510704
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.2910948
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.8625040
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.3916307
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0449821
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+dbh:sppSESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0009350
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0073355
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.1274625
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.8989740
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0449821
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+-0.0468195
+</td>
+<td style="text-align:right;">
+0.1287197
+</td>
+<td style="text-align:right;">
+-0.3637320
+</td>
+<td style="text-align:right;">
+0.7165101
+</td>
+<td style="text-align:right;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+H80
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0137452
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0042626
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+3.2246324
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0015126
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0746243
+</td>
+<td style="text-align:right;">
+0.1507183
+</td>
+<td style="text-align:right;">
+-0.4951240
+</td>
+<td style="text-align:right;">
+0.6211519
+</td>
+<td style="text-align:right;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+dbh:sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0007062
+</td>
+<td style="text-align:right;">
+0.0048376
+</td>
+<td style="text-align:right;">
+-0.1459815
+</td>
+<td style="text-align:right;">
+0.8841089
+</td>
+<td style="text-align:right;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+(Intercept)
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.5103101
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.4361034
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1701586
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.2485344
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.6484228
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.0035253
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0112579
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.3131379
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.7557257
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.6484228
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+sppSESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.2881778
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.5279011
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.5458936
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.5880271
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.6484228
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+dbh:sppSESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0042670
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0137433
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.3104809
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.7577309
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.6484228
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+0.1008937
+</td>
+<td style="text-align:right;">
+0.1181852
+</td>
+<td style="text-align:right;">
+0.8536919
+</td>
+<td style="text-align:right;">
+0.3957934
+</td>
+<td style="text-align:right;">
+0.0000002
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+L80
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0114392
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0038244
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+2.9911383
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0036814
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0000002
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+L80
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+sppSESE3
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+-0.3457901
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.1671822
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+-2.0683429
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0417983
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0000002
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+dbh:sppSESE3
+</td>
+<td style="text-align:right;">
+0.0071266
+</td>
+<td style="text-align:right;">
+0.0050994
+</td>
+<td style="text-align:right;">
+1.3975317
+</td>
+<td style="text-align:right;">
+0.1660699
+</td>
+<td style="text-align:right;">
+0.0000002
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>stat &lt;- get_model_stats(formula = ht_inc_2 ~ dbh + spp, grouping = treatment)
+stat %&gt;%
+  color_groups() %&gt;%
+  row_spec(which(stat$p.value &lt; .05), background = &quot;MistyRose&quot;)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+group
+</th>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:right;">
+estimate
+</th>
+<th style="text-align:right;">
+std.error
+</th>
+<th style="text-align:right;">
+statistic
+</th>
+<th style="text-align:right;">
+p.value
+</th>
+<th style="text-align:right;">
+pf
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+0.1545358
+</td>
+<td style="text-align:right;">
+0.0862016
+</td>
+<td style="text-align:right;">
+1.7927252
+</td>
+<td style="text-align:right;">
+0.0756458
+</td>
+<td style="text-align:right;">
+0.0893222
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+C
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0062278
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0028746
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+2.1665172
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0323351
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0893222
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0687429
+</td>
+<td style="text-align:right;">
+0.0720991
+</td>
+<td style="text-align:right;">
+-0.9534507
+</td>
+<td style="text-align:right;">
+0.3423616
+</td>
+<td style="text-align:right;">
+0.0893222
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+(Intercept)
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.1785928
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.1393595
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2815257
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.2045619
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0174456
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0070266
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0035234
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.9942599
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0503214
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0174456
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+sppSESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+-0.2156331
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0856009
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+-2.5190530
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0142360
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0174456
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+-0.0308234
+</td>
+<td style="text-align:right;">
+0.0673480
+</td>
+<td style="text-align:right;">
+-0.4576736
+</td>
+<td style="text-align:right;">
+0.6477679
+</td>
+<td style="text-align:right;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+H80
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0131969
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0020099
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+6.5660360
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0000000
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0954426
+</td>
+<td style="text-align:right;">
+0.0486307
+</td>
+<td style="text-align:right;">
+-1.9625991
+</td>
+<td style="text-align:right;">
+0.0513152
+</td>
+<td style="text-align:right;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+(Intercept)
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.4001717
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.2509921
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.5943596
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.1181804
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.4561967
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.0006620
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0063890
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.1036192
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.9179533
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.4561967
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+sppSESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.1273662
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.1009696
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1.2614302
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.2139544
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.4561967
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+-0.0184106
+</td>
+<td style="text-align:right;">
+0.0822052
+</td>
+<td style="text-align:right;">
+-0.2239594
+</td>
+<td style="text-align:right;">
+0.8233460
+</td>
+<td style="text-align:right;">
+0.0000001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+L80
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0154475
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0025444
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+6.0711651
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0000000
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0000001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+L80
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+sppSESE3
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+-0.1242865
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0534947
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+-2.3233436
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0226379
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0000001
+</td>
+</tr>
+</tbody>
+</table>
 <p>Now I’m combining treatments so we only have a C, H, and L. Again slopes are not significantly different and neither are constants between species.</p>
 <pre class="r"><code># Now I&#39;ll combine treatments so we just have a H, L and C
 plot_groups(str_extract(treatment, &quot;C|H|L&quot;), title = &quot;Height increment vs dbh&quot;)</code></pre>
@@ -449,46 +1282,569 @@ plot_groups(str_extract(treatment, &quot;C|H|L&quot;), title = &quot;Height incr
 <pre class="r"><code># do ancova, look at interaction first and then see if 
 # y-intercepts are any different between models.
 
-get_model_stats(
+stat &lt;- get_model_stats(
   formula = ht_inc_2 ~ dbh * spp,
-  grouping = str_extract(treatment, &quot;C|L|H&quot;))</code></pre>
-<pre><code>## # A tibble: 12 x 9
-## # Groups:   group [3]
-##    group         data mod    term   estimate std.error statistic p.value      pf
-##    &lt;chr&gt; &lt;list&lt;tibbl&gt; &lt;list&gt; &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
-##  1 C       [275 x 19] &lt;lm&gt;   (Inte~  1.38e-1   0.114       1.20  2.32e-1 1.82e-1
-##  2 C       [275 x 19] &lt;lm&gt;   dbh     6.84e-3   0.00396     1.73  8.69e-2 1.82e-1
-##  3 C       [275 x 19] &lt;lm&gt;   sppSE~ -2.88e-2   0.190      -0.151 8.80e-1 1.82e-1
-##  4 C       [275 x 19] &lt;lm&gt;   dbh:s~ -1.31e-3   0.00578    -0.227 8.21e-1 1.82e-1
-##  5 H       [353 x 19] &lt;lm&gt;   (Inte~  3.52e-2   0.104       0.337 7.36e-1 3.75e-9
-##  6 H       [353 x 19] &lt;lm&gt;   dbh     1.10e-2   0.00323     3.40  8.01e-4 3.75e-9
-##  7 H       [353 x 19] &lt;lm&gt;   sppSE~ -1.16e-1   0.127      -0.909 3.64e-1 3.75e-9
-##  8 H       [353 x 19] &lt;lm&gt;   dbh:s~ -5.10e-4   0.00378    -0.135 8.93e-1 3.75e-9
-##  9 L       [350 x 19] &lt;lm&gt;   (Inte~  2.61e-1   0.119       2.20  2.96e-2 2.23e-4
-## 10 L       [350 x 19] &lt;lm&gt;   dbh     4.66e-3   0.00348     1.34  1.83e-1 2.23e-4
-## 11 L       [350 x 19] &lt;lm&gt;   sppSE~ -3.91e-1   0.170      -2.30  2.30e-2 2.23e-4
-## 12 L       [350 x 19] &lt;lm&gt;   dbh:s~  9.02e-3   0.00486     1.86  6.54e-2 2.23e-4</code></pre>
-<pre class="r"><code>get_model_stats(
+  grouping = str_extract(treatment, &quot;C|L|H&quot;))
+stat %&gt;%
+  color_groups() %&gt;%
+  row_spec(which(stat$p.value &lt; .05), background = &quot;MistyRose&quot;)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+group
+</th>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:right;">
+estimate
+</th>
+<th style="text-align:right;">
+std.error
+</th>
+<th style="text-align:right;">
+statistic
+</th>
+<th style="text-align:right;">
+p.value
+</th>
+<th style="text-align:right;">
+pf
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+0.1375585
+</td>
+<td style="text-align:right;">
+0.1143752
+</td>
+<td style="text-align:right;">
+1.2026948
+</td>
+<td style="text-align:right;">
+0.2315864
+</td>
+<td style="text-align:right;">
+0.1822137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+dbh
+</td>
+<td style="text-align:right;">
+0.0068448
+</td>
+<td style="text-align:right;">
+0.0039640
+</td>
+<td style="text-align:right;">
+1.7267242
+</td>
+<td style="text-align:right;">
+0.0869259
+</td>
+<td style="text-align:right;">
+0.1822137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0287703
+</td>
+<td style="text-align:right;">
+0.1903294
+</td>
+<td style="text-align:right;">
+-0.1511608
+</td>
+<td style="text-align:right;">
+0.8801160
+</td>
+<td style="text-align:right;">
+0.1822137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+dbh:sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0013134
+</td>
+<td style="text-align:right;">
+0.0057836
+</td>
+<td style="text-align:right;">
+-0.2270885
+</td>
+<td style="text-align:right;">
+0.8207616
+</td>
+<td style="text-align:right;">
+0.1822137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+(Intercept)
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0352369
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.1044112
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.3374822
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.7360509
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+H
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0109561
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0032260
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+3.3962175
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0008005
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+sppSESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.1157410
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.1273125
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.9091092
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.3642122
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+dbh:sppSESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.0005100
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0037783
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.1349888
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.8927348
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+L
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+(Intercept)
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.2612637
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.1187382
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+2.2003339
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0295917
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0002230
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L
+</td>
+<td style="text-align:left;">
+dbh
+</td>
+<td style="text-align:right;">
+0.0046595
+</td>
+<td style="text-align:right;">
+0.0034776
+</td>
+<td style="text-align:right;">
+1.3398659
+</td>
+<td style="text-align:right;">
+0.1826814
+</td>
+<td style="text-align:right;">
+0.0002230
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+L
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+sppSESE3
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+-0.3908625
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.1698028
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+-2.3018619
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0229711
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0002230
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L
+</td>
+<td style="text-align:left;">
+dbh:sppSESE3
+</td>
+<td style="text-align:right;">
+0.0090246
+</td>
+<td style="text-align:right;">
+0.0048554
+</td>
+<td style="text-align:right;">
+1.8586824
+</td>
+<td style="text-align:right;">
+0.0653870
+</td>
+<td style="text-align:right;">
+0.0002230
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>stat &lt;- get_model_stats(
   formula = ht_inc_2 ~ dbh + spp,
-  grouping = str_extract(treatment, &quot;C|L|H&quot;))</code></pre>
-<pre><code>## # A tibble: 9 x 9
-## # Groups:   group [3]
-##   group         data mod   term   estimate std.error statistic  p.value       pf
-##   &lt;chr&gt; &lt;list&lt;tibbl&gt; &lt;lis&gt; &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
-## 1 C       [275 x 19] &lt;lm&gt;  (Inte~  0.155     0.0862      1.79   7.56e-2 8.93e- 2
-## 2 C       [275 x 19] &lt;lm&gt;  dbh     0.00623   0.00287     2.17   3.23e-2 8.93e- 2
-## 3 C       [275 x 19] &lt;lm&gt;  sppSE~ -0.0687    0.0721     -0.953  3.42e-1 8.93e- 2
-## 4 H       [353 x 19] &lt;lm&gt;  (Inte~  0.0468    0.0596      0.785  4.33e-1 6.82e-10
-## 5 H       [353 x 19] &lt;lm&gt;  dbh     0.0106    0.00168     6.32   1.30e-9 6.82e-10
-## 6 H       [353 x 19] &lt;lm&gt;  sppSE~ -0.132     0.0426     -3.10   2.19e-3 6.82e-10
-## 7 L       [350 x 19] &lt;lm&gt;  (Inte~  0.108     0.0862      1.25   2.13e-1 3.24e- 4
-## 8 L       [350 x 19] &lt;lm&gt;  dbh     0.00929   0.00245     3.79   2.30e-4 3.24e- 4
-## 9 L       [350 x 19] &lt;lm&gt;  sppSE~ -0.0894    0.0507     -1.76   8.04e-2 3.24e- 4</code></pre>
-<p>I’ll look at what happens if I group by treatment intensity instead. Again, this does not seem to reveal any</p>
+  grouping = str_extract(treatment, &quot;C|L|H&quot;))
+stat %&gt;%
+  color_groups() %&gt;%
+  row_spec(which(stat$p.value &lt; .05), background = &quot;MistyRose&quot;)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+group
+</th>
+<th style="text-align:left;">
+term
+</th>
+<th style="text-align:right;">
+estimate
+</th>
+<th style="text-align:right;">
+std.error
+</th>
+<th style="text-align:right;">
+statistic
+</th>
+<th style="text-align:right;">
+p.value
+</th>
+<th style="text-align:right;">
+pf
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+0.1545358
+</td>
+<td style="text-align:right;">
+0.0862016
+</td>
+<td style="text-align:right;">
+1.7927252
+</td>
+<td style="text-align:right;">
+0.0756458
+</td>
+<td style="text-align:right;">
+0.0893222
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+C
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0062278
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0028746
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+2.1665172
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0323351
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0893222
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0687429
+</td>
+<td style="text-align:right;">
+0.0720991
+</td>
+<td style="text-align:right;">
+-0.9534507
+</td>
+<td style="text-align:right;">
+0.3423616
+</td>
+<td style="text-align:right;">
+0.0893222
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+(Intercept)
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0467957
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0596232
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.7848574
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.4333145
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+H
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0105843
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0016760
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+6.3152784
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0000000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+H
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+sppSESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+-0.1319313
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0426110
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+-3.0961822
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0021943
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;background-color: MistyRose !important;">
+0.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L
+</td>
+<td style="text-align:left;">
+(Intercept)
+</td>
+<td style="text-align:right;">
+0.1079034
+</td>
+<td style="text-align:right;">
+0.0862012
+</td>
+<td style="text-align:right;">
+1.2517623
+</td>
+<td style="text-align:right;">
+0.2129392
+</td>
+<td style="text-align:right;">
+0.0003239
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: MistyRose !important;">
+L
+</td>
+<td style="text-align:left;background-color: MistyRose !important;">
+dbh
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0092890
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0024500
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+3.7914141
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0002297
+</td>
+<td style="text-align:right;background-color: MistyRose !important;">
+0.0003239
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L
+</td>
+<td style="text-align:left;">
+sppSESE3
+</td>
+<td style="text-align:right;">
+-0.0893818
+</td>
+<td style="text-align:right;">
+0.0507159
+</td>
+<td style="text-align:right;">
+-1.7623995
+</td>
+<td style="text-align:right;">
+0.0803888
+</td>
+<td style="text-align:right;">
+0.0003239
+</td>
+</tr>
+</tbody>
+</table>
+<p>I’ll look at what happens if I group by treatment intensity instead. Again, this does not seem to reveal any especially significant</p>
 <pre class="r"><code># for comparison I&#39;ll combine treatment intensities instead
 plot_groups(str_extract(treatment, &quot;C|40|80&quot;), title = &quot;Height increment vs dbh&quot;)</code></pre>
 <p><img src="03_pred_ht_files/figure-html/unnamed-chunk-7-1.png" width="1008" /></p>
 <p>Perhaps a height model that includes more predictors would reveal a difference in response between treatments, our current models are not capturing much variance. I had the thought that we already have height data for our trees, shouldn’t that be a pretty good predictor of height in the next period? For that matter, I can also use height_inc from period 1 and current dbh as well and vary these all by treatment.</p>
+<p>I’ll start with a full model for height and then remove variables (or interactions of variables) based on AIC.</p>
 <pre class="r"><code> mod1 &lt;- lm(ht ~ (ht_13 + ht_inc_1 + dbh) * treatment * spp, data = test_d)
 summary(mod1)</code></pre>
 <pre><code>## 
@@ -549,7 +1905,7 @@ summary(mod1)</code></pre>
 ##   (499 observations deleted due to missingness)
 ## Multiple R-squared:  0.9066, Adjusted R-squared:  0.8983 
 ## F-statistic: 109.2 on 39 and 439 DF,  p-value: &lt; 2.2e-16</code></pre>
-<p>It turns out the varying first period increment or dbh by treatment doesn’t add much. So I will only vary 2013 ht by treatment</p>
+<p>It turns out the varying first period increment by spp and treatment lowers AIC, so I’ll pull it out of the interaction. Pulling out dbh or ht_13 don’t appear to result in any significant improvement in AIC.</p>
 <pre class="r"><code>drop1(mod1)</code></pre>
 <pre><code>## Single term deletions
 ## 
@@ -560,126 +1916,85 @@ summary(mod1)</code></pre>
 ## ht_13:treatment:spp     4   23.4902 1033.0 440.13
 ## ht_inc_1:treatment:spp  4    6.1674 1015.7 432.02
 ## dbh:treatment:spp       4   17.8964 1027.4 437.52</code></pre>
-<pre class="r"><code>form2 &lt;- ht ~ ht_13 * treatment * spp + ht_inc_1 + dbh
-mod2 &lt;- lm(form2, data = test_d)
+<pre class="r"><code>mod2 &lt;- lm(ht ~ (ht_13 + dbh) * treatment * spp  + ht_inc_1, data = test_d)
 summary(mod2)</code></pre>
 <pre><code>## 
 ## Call:
-## lm(formula = form2, data = test_d)
+## lm(formula = ht ~ (ht_13 + dbh) * treatment * spp + ht_inc_1, 
+##     data = test_d)
 ## 
 ## Residuals:
 ##     Min      1Q  Median      3Q     Max 
-## -5.3417 -0.8356  0.0156  0.9103  5.0961 
+## -5.4873 -0.8576  0.0384  0.9100  5.1691 
 ## 
 ## Coefficients:
-##                             Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)                  3.80751    1.35617   2.808  0.00521 ** 
-## ht_13                        0.84332    0.06107  13.809  &lt; 2e-16 ***
-## treatmentH40                 2.71582    2.78178   0.976  0.32944    
-## treatmentH80                -3.86060    2.13896  -1.805  0.07175 .  
-## treatmentL40                 1.39030    3.54201   0.393  0.69486    
-## treatmentL80                -4.16386    2.37612  -1.752  0.08038 .  
-## sppSESE3                    -3.09020    1.79913  -1.718  0.08655 .  
-## ht_inc_1                    -0.50051    0.24112  -2.076  0.03847 *  
-## dbh                          0.06449    0.01123   5.745 1.68e-08 ***
-## ht_13:treatmentH40          -0.10162    0.11099  -0.916  0.36037    
-## ht_13:treatmentH80           0.16345    0.08742   1.870  0.06217 .  
-## ht_13:treatmentL40          -0.05890    0.13658  -0.431  0.66648    
-## ht_13:treatmentL80           0.18982    0.09685   1.960  0.05060 .  
-## ht_13:sppSESE3               0.09747    0.07747   1.258  0.20902    
-## treatmentH40:sppSESE3       -4.27129    3.25296  -1.313  0.18983    
-## treatmentH80:sppSESE3        2.61432    2.57053   1.017  0.30967    
-## treatmentL40:sppSESE3        1.50558    4.81542   0.313  0.75468    
-## treatmentL80:sppSESE3        1.53702    3.05598   0.503  0.61524    
-## ht_13:treatmentH40:sppSESE3  0.13962    0.13434   1.039  0.29924    
-## ht_13:treatmentH80:sppSESE3 -0.09813    0.10898  -0.900  0.36834    
-## ht_13:treatmentL40:sppSESE3 -0.09058    0.20048  -0.452  0.65163    
-## ht_13:treatmentL80:sppSESE3 -0.04816    0.12935  -0.372  0.70980    
+##                              Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                  5.051734   1.626162   3.107  0.00201 ** 
+## ht_13                        0.742492   0.094224   7.880 2.51e-14 ***
+## dbh                          0.106145   0.032173   3.299  0.00105 ** 
+## treatmentH40                 2.842605   3.201220   0.888  0.37503    
+## treatmentH80                -4.734739   2.600390  -1.821  0.06931 .  
+## treatmentL40                 0.931693   3.768678   0.247  0.80485    
+## treatmentL80                -6.362000   2.981355  -2.134  0.03339 *  
+## sppSESE3                    -5.156896   2.156440  -2.391  0.01720 *  
+## ht_inc_1                    -0.399346   0.246303  -1.621  0.10564    
+## ht_13:treatmentH40          -0.111414   0.169761  -0.656  0.51197    
+## ht_13:treatmentH80           0.236302   0.144466   1.636  0.10261    
+## ht_13:treatmentL40           0.069153   0.165026   0.419  0.67538    
+## ht_13:treatmentL80           0.364688   0.169119   2.156  0.03158 *  
+## dbh:treatmentH40            -0.003325   0.049178  -0.068  0.94612    
+## dbh:treatmentH80            -0.032630   0.046317  -0.704  0.48150    
+## dbh:treatmentL40            -0.081496   0.070559  -1.155  0.24870    
+## dbh:treatmentL80            -0.071917   0.054552  -1.318  0.18807    
+## ht_13:sppSESE3               0.308109   0.143117   2.153  0.03186 *  
+## dbh:sppSESE3                -0.088958   0.050384  -1.766  0.07815 .  
+## treatmentH40:sppSESE3       -3.962350   3.695086  -1.072  0.28415    
+## treatmentH80:sppSESE3        4.485905   3.073585   1.460  0.14513    
+## treatmentL40:sppSESE3        3.043893   5.250048   0.580  0.56235    
+## treatmentL80:sppSESE3        5.109685   3.722791   1.373  0.17058    
+## ht_13:treatmentH40:sppSESE3  0.174761   0.225020   0.777  0.43778    
+## ht_13:treatmentH80:sppSESE3 -0.299655   0.188995  -1.586  0.11355    
+## ht_13:treatmentL40:sppSESE3 -0.354261   0.302401  -1.171  0.24202    
+## ht_13:treatmentL80:sppSESE3 -0.393498   0.233740  -1.683  0.09298 .  
+## dbh:treatmentH40:sppSESE3   -0.011574   0.073644  -0.157  0.87519    
+## dbh:treatmentH80:sppSESE3    0.085725   0.062972   1.361  0.17410    
+## dbh:treatmentL40:sppSESE3    0.136061   0.106431   1.278  0.20177    
+## dbh:treatmentL80:sppSESE3    0.142046   0.078435   1.811  0.07081 .  
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 1.527 on 457 degrees of freedom
+## Residual standard error: 1.529 on 448 degrees of freedom
 ##   (499 observations deleted due to missingness)
-## Multiple R-squared:  0.9013, Adjusted R-squared:  0.8968 
-## F-statistic: 198.8 on 21 and 457 DF,  p-value: &lt; 2.2e-16</code></pre>
-<pre class="r"><code>form3 &lt;- ht ~ (dbh + ht_inc_1) * treatment * spp + ht_13
-mod3 &lt;- lm(form3, data = test_d)
-summary(mod3)</code></pre>
-<pre><code>## 
-## Call:
-## lm(formula = form3, data = test_d)
+## Multiple R-squared:  0.9031, Adjusted R-squared:  0.8966 
+## F-statistic: 139.1 on 30 and 448 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>drop1(mod2)</code></pre>
+<pre><code>## Single term deletions
 ## 
-## Residuals:
-##     Min      1Q  Median      3Q     Max 
-## -5.4141 -0.8742  0.0665  0.8741  5.1082 
-## 
-## Coefficients:
-##                                  Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)                     1.7693492  0.8300353   2.132   0.0336 *  
-## dbh                             0.0485252  0.0215169   2.255   0.0246 *  
-## ht_inc_1                       -0.7060723  0.4500803  -1.569   0.1174    
-## treatmentH40                    0.5724626  1.1596206   0.494   0.6218    
-## treatmentH80                   -0.7555270  0.8862820  -0.852   0.3944    
-## treatmentL40                    1.7778514  2.3284169   0.764   0.4455    
-## treatmentL80                   -0.3877241  0.9659395  -0.401   0.6883    
-## sppSESE3                       -0.7355108  0.9383134  -0.784   0.4335    
-## ht_13                           0.9493294  0.0382157  24.841   &lt;2e-16 ***
-## dbh:treatmentH40               -0.0079272  0.0319547  -0.248   0.8042    
-## dbh:treatmentH80                0.0331802  0.0282138   1.176   0.2402    
-## dbh:treatmentL40               -0.0590206  0.0633794  -0.931   0.3522    
-## dbh:treatmentL80                0.0302089  0.0325132   0.929   0.3533    
-## ht_inc_1:treatmentH40          -0.3307307  0.9189780  -0.360   0.7191    
-## ht_inc_1:treatmentH80          -0.1172540  0.7344566  -0.160   0.8732    
-## ht_inc_1:treatmentL40           0.8492262  1.1251447   0.755   0.4508    
-## ht_inc_1:treatmentL80          -0.0678091  0.9506987  -0.071   0.9432    
-## dbh:sppSESE3                    0.0004614  0.0291512   0.016   0.9874    
-## ht_inc_1:sppSESE3               0.2558861  0.9223123   0.277   0.7816    
-## treatmentH40:sppSESE3          -1.1965823  1.6368987  -0.731   0.4652    
-## treatmentH80:sppSESE3          -0.1134196  1.2133139  -0.093   0.9256    
-## treatmentL40:sppSESE3          -0.7864082  2.9296861  -0.268   0.7885    
-## treatmentL80:sppSESE3          -1.2747091  1.4691289  -0.868   0.3860    
-## dbh:treatmentH40:sppSESE3      -0.0007996  0.0448255  -0.018   0.9858    
-## dbh:treatmentH80:sppSESE3      -0.0013993  0.0376941  -0.037   0.9704    
-## dbh:treatmentL40:sppSESE3      -0.0151405  0.0823793  -0.184   0.8543    
-## dbh:treatmentL80:sppSESE3       0.0275891  0.0452967   0.609   0.5428    
-## ht_inc_1:treatmentH40:sppSESE3  2.3371804  1.6176480   1.445   0.1492    
-## ht_inc_1:treatmentH80:sppSESE3 -0.0123609  1.1745531  -0.011   0.9916    
-## ht_inc_1:treatmentL40:sppSESE3  2.4741610  2.0346265   1.216   0.2246    
-## ht_inc_1:treatmentL80:sppSESE3  0.6803263  1.4535749   0.468   0.6400    
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 1.54 on 448 degrees of freedom
-##   (499 observations deleted due to missingness)
-## Multiple R-squared:  0.9017, Adjusted R-squared:  0.8951 
-## F-statistic:   137 on 30 and 448 DF,  p-value: &lt; 2.2e-16</code></pre>
-<p>Here I’ll show the plots of how 2018 height varies with each of the predictors, starting with dbh, which is highly correlated with heights. There is a clear difference between the constants for redwood and douglas-fir. While most of the slopes seem parallel, Treatment H40 seems different and if we look at just that treatment, the interaction is significant. Perhaps we should include a dummy variable for just H40? Or let dbh interact with treatment and species even though that interaction was removed earlier?</p>
+## Model:
+## ht ~ (ht_13 + dbh) * treatment * spp + ht_inc_1
+##                     Df Sum of Sq    RSS    AIC
+## &lt;none&gt;                           1047.4 436.75
+## ht_inc_1             1    6.1461 1053.5 437.56
+## ht_13:treatment:spp  4   19.5566 1067.0 437.62
+## dbh:treatment:spp    4   14.3087 1061.7 435.25</code></pre>
+<p>Here I’ll show the plots of how 2018 height varies with each of the predictors, starting with dbh, which is highly correlated with heights. There is a clear difference between the constants for redwood and douglas-fir. While most of the slopes seem parallel, Treatment H40 seems different and if we look at just that treatment, the interaction is significant.</p>
 <pre class="r"><code>plot_groups(response = ht, predictor = dbh, title = &quot;Height vs dbh&quot;)</code></pre>
-<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="1008" /></p>
-<pre class="r"><code>test_d %&gt;% filter(treatment == &quot;H40&quot;) %&gt;% lm(ht ~ dbh * spp, data = .) %&gt;% tidy()</code></pre>
-<pre><code>## # A tibble: 4 x 5
-##   term         estimate std.error statistic  p.value
-##   &lt;chr&gt;           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
-## 1 (Intercept)    19.3      1.74       11.1  1.55e-16
-## 2 dbh             0.225    0.0465      4.84 8.40e- 6
-## 3 sppSESE3      -11.6      2.33       -4.98 5.01e- 6
-## 4 dbh:sppSESE3    0.146    0.0587      2.49 1.56e- 2</code></pre>
-<pre class="r"><code>test_d %&gt;% 
-  mutate(dum_h40 = treatment == &quot;H40&quot;) %&gt;%
-  lm(update(form2, ~ . + dbh:spp:dum_h40), data = .) %&gt;%
-  tidy() %&gt;%
-  filter(str_detect(term, &quot;dbh:dum&quot;))</code></pre>
-<pre><code>## # A tibble: 4 x 5
-##   term                      estimate std.error statistic p.value
-##   &lt;chr&gt;                        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
-## 1 sppPSMEM:dbh:dum_h40FALSE   0.0702    0.0435      1.62  0.107 
-## 2 sppSESE3:dbh:dum_h40FALSE   0.0621    0.0415      1.50  0.136 
-## 3 sppPSMEM:dbh:dum_h40TRUE    0.0993    0.0540      1.84  0.0664
-## 4 sppSESE3:dbh:dum_h40TRUE   NA        NA          NA    NA</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-10-1.png" width="1008" /></p>
 <p>It would seem that when included in the entire model, the effect adding a dummy variable for the interaction between spp, dbh and treatment is not quite significant.</p>
-<p>Next I’ll plot first period ht increment, this was included in the model but without any interactions.</p>
-<pre class="r"><code>plot_groups(response = ht, predictor = ht_inc_1, title = &quot;Height vs first period ht increment&quot;)</code></pre>
-<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="1008" /></p>
+<p>Next I’ll plot first period ht increment, this was included in the model but without any interactions, so the first plot shows its effect without any groupings. The second plot shows its relationship with spp and treatment groups, this variation is not included in the model.</p>
+<pre class="r"><code>plot_groups(
+  group = TRUE,
+  response = ht,
+  predictor = ht_inc_1, title = &quot;Height vs first period ht increment&quot;,
+  by_spp = FALSE
+)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="384" /></p>
+<pre class="r"><code>plot_groups(
+  response = ht,
+  predictor = ht_inc_1,
+  title = &quot;Height vs first period ht increment\nwith interactions&quot;
+)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="960" /></p>
 <p>Finally, here is a plot of 2013 ht and 2018 heights. Because the model currently has this variable interacting with treatment and species, this is a more accurate representation of its effect (in the model). Its funny though, if I were to guess, it seems like this predictor is the most consistent across species and treatments.</p>
 <pre class="r"><code>plot_groups(response = ht, predictor = ht_13, title = &quot;Height vs 2013 height&quot;)</code></pre>
 <p><img src="03_pred_ht_files/figure-html/unnamed-chunk-13-1.png" width="1008" /></p>

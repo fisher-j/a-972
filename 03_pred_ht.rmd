@@ -115,14 +115,22 @@ get_model_stats <- function(formula, grouping) {
         lower.tail = FALSE
       )
     ) %>%
-    unnest(summary)
+    unnest(summary) %>%
+    select(-c(data, mod))
 }
 ```
 
 ```{r}
-get_model_stats(formula = ht_inc_2 ~ dbh * spp, grouping = treatment)
+stat <- get_model_stats(formula = ht_inc_2 ~ dbh * spp, grouping = treatment)
+stat %>%
+  color_groups() %>%
+  row_spec(which(stat$p.value < .05), background = "MistyRose")
 
-get_model_stats(formula = ht_inc_2 ~ dbh + spp, grouping = treatment)
+
+stat <- get_model_stats(formula = ht_inc_2 ~ dbh + spp, grouping = treatment)
+stat %>%
+  color_groups() %>%
+  row_spec(which(stat$p.value < .05), background = "MistyRose")
 ```
 
 Now I'm combining treatments so we only have a C, H, and L. Again slopes are not significantly different and neither are constants between species.
@@ -136,16 +144,22 @@ plot_groups(str_extract(treatment, "C|H|L"), title = "Height increment vs dbh")
 # do ancova, look at interaction first and then see if 
 # y-intercepts are any different between models.
 
-get_model_stats(
+stat <- get_model_stats(
   formula = ht_inc_2 ~ dbh * spp,
   grouping = str_extract(treatment, "C|L|H"))
+stat %>%
+  color_groups() %>%
+  row_spec(which(stat$p.value < .05), background = "MistyRose")
 
-get_model_stats(
+stat <- get_model_stats(
   formula = ht_inc_2 ~ dbh + spp,
   grouping = str_extract(treatment, "C|L|H"))
+stat %>%
+  color_groups() %>%
+  row_spec(which(stat$p.value < .05), background = "MistyRose")
 ```
 
-I'll look at what happens if I group by treatment intensity instead. Again, this does not seem to reveal any 
+I'll look at what happens if I group by treatment intensity instead. Again, this does not seem to reveal any especially significant 
 
 ```{r, fig.height=4, fig.width=10.5, warning=FALSE}
 # for comparison I'll combine treatment intensities instead
@@ -154,48 +168,48 @@ plot_groups(str_extract(treatment, "C|40|80"), title = "Height increment vs dbh"
 
 Perhaps a height model that includes more predictors would reveal a difference in response between treatments, our current models are not capturing much variance. I had the thought that we already have height data for our trees, shouldn't that be a pretty good predictor of height in the next period? For that matter, I can also use height_inc from period 1 and current dbh as well and vary these all by treatment.
 
+I'll start with a full model for height and then remove variables (or interactions of variables) based on AIC.
+
 ```{r}
  mod1 <- lm(ht ~ (ht_13 + ht_inc_1 + dbh) * treatment * spp, data = test_d)
 summary(mod1)
 ```
 
-It turns out the varying first period increment or dbh by treatment doesn't add much. So I will only vary 2013 ht by treatment
+
+It turns out the varying first period increment by spp and treatment lowers AIC, so I'll pull it out of the interaction. Pulling out dbh or ht_13 don't appear to result in any significant improvement in AIC.
 
 ```{r}
 drop1(mod1)
-```
-
-```{r}
-form2 <- ht ~ ht_13 * treatment * spp + ht_inc_1 + dbh
-mod2 <- lm(form2, data = test_d)
+mod2 <- lm(ht ~ (ht_13 + dbh) * treatment * spp  + ht_inc_1, data = test_d)
 summary(mod2)
-
-form3 <- ht ~ (dbh + ht_inc_1) * treatment * spp + ht_13
-mod3 <- lm(form3, data = test_d)
-summary(mod3)
+drop1(mod2)
 ```
 
-
-Here I'll show the plots of how 2018 height varies with each of the predictors, starting with dbh, which is highly correlated with heights. There is a clear difference between the constants for redwood and douglas-fir. While most of the slopes seem parallel, Treatment H40 seems different and if we look at just that treatment, the interaction is significant. Perhaps we should include a dummy variable for just H40? Or let dbh interact with treatment and species even though that interaction was removed earlier?
+Here I'll show the plots of how 2018 height varies with each of the predictors, starting with dbh, which is highly correlated with heights. There is a clear difference between the constants for redwood and douglas-fir. While most of the slopes seem parallel, Treatment H40 seems different and if we look at just that treatment, the interaction is significant.
 
 ```{r, fig.height=7.5, fig.width=10.5}
 plot_groups(response = ht, predictor = dbh, title = "Height vs dbh")
-
-test_d %>% filter(treatment == "H40") %>% lm(ht ~ dbh * spp, data = .) %>% tidy()
-
-test_d %>% 
-  mutate(dum_h40 = treatment == "H40") %>%
-  lm(update(form2, ~ . + dbh:spp:dum_h40), data = .) %>%
-  tidy() %>%
-  filter(str_detect(term, "dbh:dum"))
 ```
 
 It would seem that when included in the entire model, the effect adding a dummy variable for the interaction between spp, dbh and treatment is not quite significant.
 
-Next I'll plot first period ht increment, this was included in the model but without any interactions. 
+Next I'll plot first period ht increment, this was included in the model but without any interactions, so the first plot shows its effect without any groupings. The second plot shows its relationship with spp and treatment groups, this variation is not included in the model.
 
-```{r, fig.height=7.5, fig.width=10.5}
-plot_groups(response = ht, predictor = ht_inc_1, title = "Height vs first period ht increment")
+```{r, fig.height=4, fig.width=4}
+plot_groups(
+  group = TRUE,
+  response = ht,
+  predictor = ht_inc_1, title = "Height vs first period ht increment",
+  by_spp = FALSE
+)
+```
+
+```{r, fig.width=10, fig.height=6.5}
+plot_groups(
+  response = ht,
+  predictor = ht_inc_1,
+  title = "Height vs first period ht increment\nwith interactions"
+)
 ```
 
 Finally, here is a plot of 2013 ht and 2018 heights. Because the model currently has this variable interacting with treatment and species, this is a more accurate representation of its effect (in the model). Its funny though, if I were to guess, it seems like this predictor is the most consistent across species and treatments.
