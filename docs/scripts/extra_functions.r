@@ -86,3 +86,24 @@ circular2xy <- function(distance, bearing, center.x = 0, center.y = 0) {
   tree.y <- center.y + delta.y
   return(data.frame(x=tree.x,y=tree.y))
 }
+
+# get equations for models
+lm_eqn <- function(m){
+  r2 <- round(summary(m)$r.squared, digits = 2)
+  a <- round(unname(coef(m)[1]), digits = 3)
+  b <- round(unname(coef(m)[2]), digits = 3)
+  n <- nrow(m$model)
+  eqn <- as.character(
+    as.expression(bquote(italic(y) == .(a) + .(b) %.% italic(x)))
+  )
+  r_sq <- as.character(as.expression(bquote(italic(r)^2~"="~.(r2))))
+  n <- as.character(as.expression(bquote(italic(N)~"="~.(n)))) 
+  data.frame(eqn = eqn, r_sq = r_sq, n = n)
+}
+
+# Scale data to min/max (0 - 1) for easy plotting
+npc <- function(dat, x) {
+  range <- max(dat, na.rm = TRUE) - min(dat, na.rm = TRUE)
+  low <- min(dat, na.rm = TRUE)
+  x * range + low
+}

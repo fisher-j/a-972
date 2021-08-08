@@ -6,7 +6,7 @@ title: "Variability"
 knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
 ```
 
-Here are boxplots showing the variability of some potentially important variables
+Here are boxplots showing the variability in 2018 of some potentially important variables.
 
 ```{r}
 p_h %>%

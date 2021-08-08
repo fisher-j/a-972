@@ -1,0 +1,206 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+### Predicting missing heights
+
+It might be important to fill in missing heights (especially for dominant trees) in 2018. First I'll explore a simple linear relationship between dbh and height increment. I'm only looking at live, unbroken redwood and Douglas-fir.
+
+```{r}
+
+test_d <- d_l %>%
+  # add increment data
+  group_by(tree_id) %>%
+  mutate(
+    ht_inc_2 = nth(lead(ht) - ht, 3, order_by = year) / 5,
+    ht_inc_1 = nth(lead(ht) - ht, 2, order_by = year) / 5,
+    ht_13 = nth(ht, 3, order_by = year)) %>%
+  # only use unbroken live sese or psme from 2018
+  filter(
+    spp %in% c("SESE3", "PSMEM"),
+    year == "18",
+    status == 1,
+    !get_cond(2, 3)
+  ) %>%
+  ungroup()
+  
+# fit model to each group to generate lables for plot
+plot_groups <- function(
+  group = treatment,
+  response = ht_inc_2,
+  predictor = dbh,
+  by_spp = TRUE
+  ) {
+  palette("Tableau 10")
+  x <- substitute(predictor)
+  y <- substitute(response)
+  form <- formula(bquote(.(y) ~ .(x)))
+  if (by_spp) {
+    dat <- group_by(test_d, group = {{group}}, spp)
+  } else {
+    dat <- group_by(test_d, group = {{group}})
+  }
+  mytext <- dat %>%
+    summarize(lm_eqn(lm(form, data = cur_data())))
+  if (by_spp) {
+    mytext <- pivot_longer(mytext, !c(group, spp)) %>%
+    arrange(group, name) %>%
+    mutate(
+      x = npc(dat[[x]], c(0, 0, .7, .7, .7, .7)),
+      y = npc(dat[[y]], c(1.1, 1, .1, 0, 1.1, 1))
+    )
+  } else {
+    mytext <- pivot_longer(mytext, !c(group)) %>%
+    arrange(group, name) %>%
+    group_by(group) %>%
+    mutate(
+      x = npc(dat[[x]], c(0, .7, .7)),
+      y = npc(dat[[y]], c(1.1,.1,1.1))
+    )
+  }
+  # Plot based on specified group and always species
+  p <- if (by_spp) {
+    ggplot(
+      dat,
+      aes(x = {{predictor}},
+      y = {{response}},
+      fill = spp,
+      color = spp)
+    )
+  } else {
+    ggplot(dat, aes(x = {{predictor}}, y = {{response}}))
+  }
+  print(p +
+      geom_point(size = 1.3, shape = 16, alpha = .6) +
+      geom_smooth(method = "lm", alpha = .25) +
+      facet_wrap(~ group) +
+      geom_text(
+        data = mytext,
+        aes(x = x, y = y, label = value, hjust = 0),
+        parse = TRUE,
+        family = "mono",
+        fontface = "bold"
+      ) +
+      labs(title = "Height increment vs dbh") +
+      theme_bw() +
+      scale_color_manual(
+        values = palette(),
+        aesthetics = c("color", "fill")) +
+      guides(fill = guide_legend(override.aes = aes(label = "")))
+  )
+}
+```
+
+Out of these models, the H40, H80 and L80 have a p < 0.05. In none of them is there a significant difference in slope (between species). Constants are significantly different for H40, L80.
+
+```{r, fig.height=7.5, fig.width=10.5, warning=FALSE}
+plot_groups(treatment)
+```
+
+```{r}
+library(broom)
+
+get_model_stats <- function(formula, grouping) {
+  test_d %>% 
+    nest_by(group = {{grouping}}) %>%
+    mutate(
+      mod = list(lm(formula, data = data)),
+      summary = list(tidy(mod)),
+      pf = pf(
+        summary(mod)$fstatistic[1],
+        summary(mod)$fstatistic[2],
+        summary(mod)$fstatistic[3],
+        lower.tail = FALSE
+      )
+    ) %>%
+    unnest(summary)
+}
+```
+
+```{r}
+get_model_stats(formula = ht_inc_2 ~ dbh * spp, grouping = treatment)
+
+get_model_stats(formula = ht_inc_2 ~ dbh + spp, grouping = treatment)
+```
+
+Now I'm combining treatments so we only have a C, H, and L. Again slopes are not significantly different and neither are constants between species.
+
+```{r, fig.height=4, fig.width=10.5, warning=FALSE}
+# Now I'll combine treatments so we just have a H, L and C
+plot_groups(str_extract(treatment, "C|H|L"))
+```
+
+```{r}
+# do ancova, look at interaction first and then see if 
+# y-intercepts are any different between models.
+
+get_model_stats(
+  formula = ht_inc_2 ~ dbh * spp,
+  grouping = str_extract(treatment, "C|L|H"))
+
+get_model_stats(
+  formula = ht_inc_2 ~ dbh + spp,
+  grouping = str_extract(treatment, "C|L|H"))
+```
+
+I'll look at what happens if I group by treatment intensity instead. Again, this does not seem to reveal any 
+
+```{r, fig.height=4, fig.width=10.5, warning=FALSE}
+# for comparison I'll combine treatment intensities instead
+plot_groups(str_extract(treatment, "C|40|80"))
+```
+
+Perhaps a height model that includes more predictors would reveal a difference in response between treatments, our current models are not capturing much variance. I had the thought that we already have height data for our trees, shouldn't that be a pretty good predictor of height in the next period? For that matter, I can also use height_inc from period 1 and current dbh as well and vary these all by treatment.
+
+```{r}
+ mod1 <- lm(ht ~ (ht_13 + ht_inc_1 + dbh) * treatment * spp, data = test_d)
+summary(mod1)
+```
+
+It turns out the varying first period increment or dbh by treatment doesn't add much. So I will only vary 2013 ht by treatment
+
+```{r}
+drop1(mod1)
+```
+
+```{r}
+form2 <- ht ~ ht_13 * treatment * spp + ht_inc_1 + dbh
+mod2 <- lm(form2, data = test_d)
+summary(mod2)
+
+form3 <- ht ~ (dbh + ht_inc_1) * treatment * spp + ht_13
+mod3 <- lm(form3, data = test_d)
+summary(mod3)
+```
+
+
+Here I'll show the plots of how 2018 height varies with each of the predictors, starting with dbh, which is highly correlated with heights. There is a clear difference between the constants for redwood and douglas-fir. While most of the slopes seem parallel, Treatment H40 seems different and if we look at just that treatment, the interaction is significant. Perhaps we should include a dummy variable for just H40? Or let dbh interact with treatment and species even though that interaction was removed earlier?
+
+```{r, fig.height=7.5, fig.width=10.5}
+plot_groups(response = ht, predictor = dbh)
+
+test_d %>% filter(treatment == "H40") %>% lm(ht ~ dbh * spp, data = .) %>% tidy()
+
+test_d %>% 
+  mutate(dum_h40 = treatment == "H40") %>%
+  lm(update(form2, ~ . + dbh:spp:dum_h40), data = .) %>%
+  tidy() %>%
+  filter(str_detect(term, "dbh:dum"))
+```
+
+It would seem that when included in the entire model, the effect adding a dummy variable for the interaction between spp, dbh and treatment is not quite significant.
+
+Next I'll plot first period ht increment, this was included in the model but without any interactions. 
+
+```{r, fig.height=7.5, fig.width=10.5}
+plot_groups(response = ht, predictor = ht_inc_1)
+```
+
+Finally, here is a plot of 2013 ht and 2018 heights. Because the model currently has this variable interacting with treatment and species, this is a more accurate representation of its effect (in the model). Its funny though, if I were to guess, it seems like this predictor is the most consistent across species and treatments.
+
+```{r, fig.height=7.5, fig.width=10.5}
+
+plot_groups(response = ht, predictor = ht_13)
+
+```

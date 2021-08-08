@@ -9,12 +9,14 @@ navbar:
       href: 01_import.html
     - text: "Data cleaning"
       href: 02_data_cleaning.html
+    - text: "Predicting missing heights"
+      href: 03_pred_ht.html
     - text: "Define new variables"
-      href: 03_define.html
+      href: 04_define.html
     - text: "Data summaries and figures"
-      href: 04_summary.html
+      href: 05_summary.html
     - text: "Variability"
-      href: 05_variability.html
+      href: 06_variability.html
 output:
   html_document:
     toc: true
