@@ -21,3 +21,7 @@ p_h %>%
     geom_boxplot() +
     facet_wrap(~ measure, scales = "free_y")
 ```
+
+```{r}
+boxplot(dbh ~ plot, data = p_h[p_h$year == "18", ])
+```

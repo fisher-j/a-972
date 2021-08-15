@@ -10,5 +10,6 @@ reference
 
 notes.txt
 
-# ignore spurious html files created in root
+# don't include hard copy of working dataset
 
+working

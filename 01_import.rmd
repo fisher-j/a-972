@@ -251,11 +251,3 @@ d_l <- d_l %>%
   filter(min(year) < "13") %>%
   ungroup()
 ```
-
-
-## Add plot coordinates
-
-```{r}
-d_l <- left_join(d_l, plot_info[c("plot","utm_x", "utm_y")], by = "plot") %>%
-  mutate(circular2xy(h_dist, azi, utm_x, utm_y), .keep = "unused")
-```

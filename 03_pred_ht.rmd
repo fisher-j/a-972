@@ -31,7 +31,8 @@ plot_groups <- function(
   response = ht_inc_2,
   predictor = dbh,
   by_spp = TRUE,
-  title
+  title,
+  pred = FALSE
   ) {
   palette("Tableau 10")
   x <- substitute(predictor)
@@ -60,7 +61,7 @@ plot_groups <- function(
       y = npc(dat[[y]], c(1.1,.1,1.1))
     )
   }
-  # Plot based on specified group and always species
+  # Plot based on specified group and species (if indicated)
   p <- if (by_spp) {
     ggplot(
       dat,
@@ -88,7 +89,10 @@ plot_groups <- function(
       scale_color_manual(
         values = palette(),
         aesthetics = c("color", "fill")) +
-      guides(fill = guide_legend(override.aes = aes(label = "")))
+      guides(fill = guide_legend(override.aes = aes(label = ""))) +
+      if(pred == TRUE) {
+        geom_point(data = miss, aes(color = spp), shape = 16)
+      }
   )
 }
 ```
@@ -183,6 +187,25 @@ drop1(mod1)
 mod2 <- lm(ht ~ (ht_13 + dbh) * treatment * spp  + ht_inc_1, data = test_d)
 summary(mod2)
 drop1(mod2)
+miss <- test_d %>% filter(is.na(ht), across(c(dbh, ht_13, ht_inc_1), ~ !is.na(.)))
+miss$ht <- predict(mod2, miss)
+
+plot(
+  test_d$dbh,
+  test_d$ht,
+  main = paste("Predicted and recorded heights for 2018", format(formula(mod2)), sep = "\n"),
+  xlab = "dbh",
+  ylab = "Height"
+)
+points(miss$dbh, miss$ht, col = "indianred", pch = 16, cex = .8)
+
+```
+
+Testing another model. We have previous heights and previous increments,  If I was going to predict heights by hand, that's how I would do it.
+
+```{r}
+mod3 <- lm(ht ~ ht_13*treatment*spp, data = test_d)
+summary(mod3)
 ```
 
 Here I'll show the plots of how 2018 height varies with each of the predictors, starting with dbh, which is highly correlated with heights. There is a clear difference between the constants for redwood and douglas-fir. While most of the slopes seem parallel, Treatment H40 seems different and if we look at just that treatment, the interaction is significant.
@@ -219,3 +242,78 @@ Finally, here is a plot of 2013 ht and 2018 heights. Because the model currently
 plot_groups(response = ht, predictor = ht_13, title = "Height vs 2013 height")
 
 ```
+
+This is what it looks like if I group 2018 heights into thinned and unthinned groups.
+
+```{r}
+test_d2 <- mutate(
+  test_d, treatment = if_else(
+    str_detect(treatment, "C"),
+    "unthinned",
+    "thinned"
+    )
+  )
+
+mod4 <- lm(ht ~ 0 + ht_13:spp:treatment, data = test_d2)
+summary(mod4)
+
+plot_groups(
+  predictor = ht_13,
+  response = ht,
+  group = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
+  title = "Height increment vs dbh\nthinned vs unthinned"
+)
+```
+
+# Non-linear height-dbh model
+
+What if I just use a height/dbh model suggested by Eng, Hanus et al. and Curtis. And what if I combine 2013 and 2018 datasets? This contributes a lot more data. Maybe averaging across all treatments represents a conservative strategy in that any significant differences would likely not be due to the prediction.
+
+```{r}
+palette("Set 2")
+d <- p_h %>% filter(year %in% c("13", "18"), status == 1, !get_cond(2, 3), spp %in% c("SESE3", "PSMEM"))
+d1 <- d %>% filter(spp == "SESE3")
+d2 <- d %>% filter(spp == "PSMEM")
+
+ht_mod1 <- nls(
+  ht ~ 1.3 + exp(b0 + b1 * I(dbh^b2)),
+  data = d1, 
+  start = list(b0 = 5, b1 = -5, b2 = -.5)
+)
+ht_mod2 <- nls(ht ~ 1.3 + exp(b0 + b1 * I(dbh^b2)),
+  data = d2,
+  start = list(b0 = 5, b1 = -5, b2 = -.5)
+)
+
+nls_plot <- function(color = spp, facet = NULL, title, col = NULL) {
+  palette("Tableau 10")
+  if (is.null(col)) col <- 1:length(palette())
+  facet <- enquo(facet)
+  aesth <- aes(dbh, ht, color = {{color}})
+  p <- ggplot(arrange(d, spp), aesth) +
+  geom_jitter(height = .5, width = .5, alpha = .3) +
+  geom_smooth(
+    method = "nls",
+    formula = y ~ 1.3 + exp(b0 + b1 * I(x^b2)),
+    method.args = list(start = list(b0 = 5, b1 = -5, b2 = -.5)),
+    se = FALSE,
+    size = 1.3
+    ) +
+  scale_color_manual(values = palette()[col]) +
+  labs(title = title) +
+  if(!is.null(facet)) facet_wrap(vars(!!facet))
+  print(p)
+}
+```
+
+```{r, fig.height=8, fig.width=8}
+title <- "Non linear model by species for 2013 and 2018\nAll treatments"
+nls_plot(title = title)
+title <- "difference in fit between 2013 and 2018"
+nls_plot(color = year, facet = spp, title = title, col = c(9, 7))
+title <- "Difference in fit between treatments\nyears 2013 and 2018"
+nls_plot(facet = treatment, color = spp, title = title)
+title <- "Differences between treatments\nyears 2013 and 2018"
+nls_plot(color = treatment, facet = spp, title = title)
+```
+

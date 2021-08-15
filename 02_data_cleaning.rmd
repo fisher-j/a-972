@@ -535,7 +535,7 @@ p_h %>%
     ht_pctile = round(ecdf(ht)(ht), 2)
   ) %>%
   filter(widest <= 4, ht_pctile < .75, !is.na(ht)) %>%
-  select(-c(widest, x, y, treatment, cc, rot, status)) %>%
+  select(-c(widest, h_dist, azi, treatment, cc, rot, status)) %>%
   group_by(tree_id) %>%
   color_groups()
 ```
