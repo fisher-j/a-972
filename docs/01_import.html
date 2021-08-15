@@ -298,7 +298,6 @@ $(document).ready(function () {
 <li><a href="#bearrot-column">Bear/rot column</a></li>
 <li><a href="#initial-complete-dataset">Initial Complete dataset</a></li>
 <li><a href="#ingrowth">Ingrowth</a></li>
-<li><a href="#add-plot-coordinates">Add plot coordinates</a></li>
 </ul></li>
 </ul>
 </div>
@@ -532,11 +531,6 @@ d_l &lt;- d_l %&gt;%
   group_by(tree_id) %&gt;%
   filter(min(year) &lt; &quot;13&quot;) %&gt;%
   ungroup()</code></pre>
-</div>
-<div id="add-plot-coordinates" class="section level2">
-<h2>Add plot coordinates</h2>
-<pre class="r"><code>d_l &lt;- left_join(d_l, plot_info[c(&quot;plot&quot;,&quot;utm_x&quot;, &quot;utm_y&quot;)], by = &quot;plot&quot;) %&gt;%
-  mutate(circular2xy(h_dist, azi, utm_x, utm_y), .keep = &quot;unused&quot;)</code></pre>
 </div>
 </div>
 

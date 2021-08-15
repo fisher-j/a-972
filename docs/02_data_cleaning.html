@@ -7579,7 +7579,7 @@ SESE3
     ht_pctile = round(ecdf(ht)(ht), 2)
   ) %&gt;%
   filter(widest &lt;= 4, ht_pctile &lt; .75, !is.na(ht)) %&gt;%
-  select(-c(widest, x, y, treatment, cc, rot, status)) %&gt;%
+  select(-c(widest, h_dist, azi, treatment, cc, rot, status)) %&gt;%
   group_by(tree_id) %&gt;%
   color_groups()</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">

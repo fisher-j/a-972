@@ -291,6 +291,7 @@ $(document).ready(function () {
 <div id="TOC">
 <ul>
 <li><a href="#predicting-missing-heights">Predicting missing heights</a></li>
+<li><a href="#non-linear-height-dbh-model">Non-linear height-dbh model</a></li>
 </ul>
 </div>
 
@@ -319,7 +320,8 @@ plot_groups &lt;- function(
   response = ht_inc_2,
   predictor = dbh,
   by_spp = TRUE,
-  title
+  title,
+  pred = FALSE
   ) {
   palette(&quot;Tableau 10&quot;)
   x &lt;- substitute(predictor)
@@ -348,7 +350,7 @@ plot_groups &lt;- function(
       y = npc(dat[[y]], c(1.1,.1,1.1))
     )
   }
-  # Plot based on specified group and always species
+  # Plot based on specified group and species (if indicated)
   p &lt;- if (by_spp) {
     ggplot(
       dat,
@@ -376,7 +378,10 @@ plot_groups &lt;- function(
       scale_color_manual(
         values = palette(),
         aesthetics = c(&quot;color&quot;, &quot;fill&quot;)) +
-      guides(fill = guide_legend(override.aes = aes(label = &quot;&quot;)))
+      guides(fill = guide_legend(override.aes = aes(label = &quot;&quot;))) +
+      if(pred == TRUE) {
+        geom_point(data = miss, aes(color = spp), shape = 16)
+      }
   )
 }</code></pre>
 <p>Out of these models, the H40, H80 and L80 have a p &lt; 0.05. In none of them is there a significant difference in slope (between species). Constants are significantly different for H40, L80.</p>
@@ -1977,9 +1982,61 @@ summary(mod2)</code></pre>
 ## ht_inc_1             1    6.1461 1053.5 437.56
 ## ht_13:treatment:spp  4   19.5566 1067.0 437.62
 ## dbh:treatment:spp    4   14.3087 1061.7 435.25</code></pre>
+<pre class="r"><code>miss &lt;- test_d %&gt;% filter(is.na(ht), across(c(dbh, ht_13, ht_inc_1), ~ !is.na(.)))
+miss$ht &lt;- predict(mod2, miss)
+
+plot(
+  test_d$dbh,
+  test_d$ht,
+  main = paste(&quot;Predicted and recorded heights for 2018&quot;, format(formula(mod2)), sep = &quot;\n&quot;),
+  xlab = &quot;dbh&quot;,
+  ylab = &quot;Height&quot;
+)
+points(miss$dbh, miss$ht, col = &quot;indianred&quot;, pch = 16, cex = .8)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p>Testing another model. We have previous heights and previous increments, If I was going to predict heights by hand, that’s how I would do it.</p>
+<pre class="r"><code>mod3 &lt;- lm(ht ~ ht_13*treatment*spp, data = test_d)
+summary(mod3)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = ht ~ ht_13 * treatment * spp, data = test_d)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.4943 -0.8998  0.0824  0.8832  5.8985 
+## 
+## Coefficients:
+##                             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                  1.93177    1.37972   1.400   0.1621    
+## ht_13                        0.98744    0.05689  17.358   &lt;2e-16 ***
+## treatmentH40                 2.87739    2.91452   0.987   0.3240    
+## treatmentH80                -3.36357    2.18882  -1.537   0.1250    
+## treatmentL40                 5.11258    3.67753   1.390   0.1651    
+## treatmentL80                -4.04905    2.48538  -1.629   0.1040    
+## sppSESE3                    -2.10316    1.88339  -1.117   0.2647    
+## ht_13:treatmentH40          -0.09260    0.11618  -0.797   0.4259    
+## ht_13:treatmentH80           0.14269    0.08920   1.600   0.1104    
+## ht_13:treatmentL40          -0.18567    0.14213  -1.306   0.1921    
+## ht_13:treatmentL80           0.18876    0.10126   1.864   0.0629 .  
+## ht_13:sppSESE3               0.08831    0.08120   1.088   0.2773    
+## treatmentH40:sppSESE3       -3.78829    3.39842  -1.115   0.2655    
+## treatmentH80:sppSESE3        1.91501    2.65115   0.722   0.4704    
+## treatmentL40:sppSESE3       -1.98431    4.96603  -0.400   0.6896    
+## treatmentL80:sppSESE3        1.09875    3.19967   0.343   0.7315    
+## ht_13:treatmentH40:sppSESE3  0.12510    0.14039   0.891   0.3733    
+## ht_13:treatmentH80:sppSESE3 -0.07228    0.11245  -0.643   0.5207    
+## ht_13:treatmentL40:sppSESE3  0.03134    0.20760   0.151   0.8801    
+## ht_13:treatmentL80:sppSESE3 -0.04142    0.13554  -0.306   0.7601    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.605 on 471 degrees of freedom
+##   (487 observations deleted due to missingness)
+## Multiple R-squared:  0.8891, Adjusted R-squared:  0.8846 
+## F-statistic: 198.8 on 19 and 471 DF,  p-value: &lt; 2.2e-16</code></pre>
 <p>Here I’ll show the plots of how 2018 height varies with each of the predictors, starting with dbh, which is highly correlated with heights. There is a clear difference between the constants for redwood and douglas-fir. While most of the slopes seem parallel, Treatment H40 seems different and if we look at just that treatment, the interaction is significant.</p>
 <pre class="r"><code>plot_groups(response = ht, predictor = dbh, title = &quot;Height vs dbh&quot;)</code></pre>
-<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-10-1.png" width="1008" /></p>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="1008" /></p>
 <p>It would seem that when included in the entire model, the effect adding a dummy variable for the interaction between spp, dbh and treatment is not quite significant.</p>
 <p>Next I’ll plot first period ht increment, this was included in the model but without any interactions, so the first plot shows its effect without any groupings. The second plot shows its relationship with spp and treatment groups, this variation is not included in the model.</p>
 <pre class="r"><code>plot_groups(
@@ -1988,16 +2045,105 @@ summary(mod2)</code></pre>
   predictor = ht_inc_1, title = &quot;Height vs first period ht increment&quot;,
   by_spp = FALSE
 )</code></pre>
-<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="384" /></p>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="384" /></p>
 <pre class="r"><code>plot_groups(
   response = ht,
   predictor = ht_inc_1,
   title = &quot;Height vs first period ht increment\nwith interactions&quot;
 )</code></pre>
-<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="960" /></p>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-13-1.png" width="960" /></p>
 <p>Finally, here is a plot of 2013 ht and 2018 heights. Because the model currently has this variable interacting with treatment and species, this is a more accurate representation of its effect (in the model). Its funny though, if I were to guess, it seems like this predictor is the most consistent across species and treatments.</p>
 <pre class="r"><code>plot_groups(response = ht, predictor = ht_13, title = &quot;Height vs 2013 height&quot;)</code></pre>
-<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-13-1.png" width="1008" /></p>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-14-1.png" width="1008" /></p>
+<p>This is what it looks like if I group 2018 heights into thinned and unthinned groups.</p>
+<pre class="r"><code>test_d2 &lt;- mutate(
+  test_d, treatment = if_else(
+    str_detect(treatment, &quot;C&quot;),
+    &quot;unthinned&quot;,
+    &quot;thinned&quot;
+    )
+  )
+
+mod4 &lt;- lm(ht ~ 0 + ht_13:spp:treatment, data = test_d2)
+summary(mod4)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = ht ~ 0 + ht_13:spp:treatment, data = test_d2)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.7858 -0.9317  0.0713  0.9658  5.9924 
+## 
+## Coefficients:
+##                                   Estimate Std. Error t value Pr(&gt;|t|)    
+## ht_13:sppPSMEM:treatmentthinned   1.078411   0.004403  244.93   &lt;2e-16 ***
+## ht_13:sppSESE3:treatmentthinned   1.071188   0.005991  178.79   &lt;2e-16 ***
+## ht_13:sppPSMEM:treatmentunthinned 1.066489   0.007061  151.03   &lt;2e-16 ***
+## ht_13:sppSESE3:treatmentunthinned 1.068227   0.013877   76.98   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1.625 on 487 degrees of freedom
+##   (487 observations deleted due to missingness)
+## Multiple R-squared:  0.996,  Adjusted R-squared:  0.9959 
+## F-statistic: 3.017e+04 on 4 and 487 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>plot_groups(
+  predictor = ht_13,
+  response = ht,
+  group = if_else(str_detect(treatment, &quot;C&quot;), &quot;unthinned&quot;, &quot;thinned&quot;),
+  title = &quot;Height increment vs dbh\nthinned vs unthinned&quot;
+)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+</div>
+<div id="non-linear-height-dbh-model" class="section level1">
+<h1>Non-linear height-dbh model</h1>
+<p>What if I just use a height/dbh model suggested by Eng, Hanus et al. and Curtis. And what if I combine 2013 and 2018 datasets? This contributes a lot more data. Maybe averaging across all treatments represents a conservative strategy in that any significant differences would likely not be due to the prediction.</p>
+<pre class="r"><code>palette(&quot;Set 2&quot;)
+d &lt;- p_h %&gt;% filter(year %in% c(&quot;13&quot;, &quot;18&quot;), status == 1, !get_cond(2, 3), spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;))
+d1 &lt;- d %&gt;% filter(spp == &quot;SESE3&quot;)
+d2 &lt;- d %&gt;% filter(spp == &quot;PSMEM&quot;)
+
+ht_mod1 &lt;- nls(
+  ht ~ 1.3 + exp(b0 + b1 * I(dbh^b2)),
+  data = d1, 
+  start = list(b0 = 5, b1 = -5, b2 = -.5)
+)
+ht_mod2 &lt;- nls(ht ~ 1.3 + exp(b0 + b1 * I(dbh^b2)),
+  data = d2,
+  start = list(b0 = 5, b1 = -5, b2 = -.5)
+)
+
+nls_plot &lt;- function(color = spp, facet = NULL, title, col = NULL) {
+  palette(&quot;Tableau 10&quot;)
+  if (is.null(col)) col &lt;- 1:length(palette())
+  facet &lt;- enquo(facet)
+  aesth &lt;- aes(dbh, ht, color = {{color}})
+  p &lt;- ggplot(arrange(d, spp), aesth) +
+  geom_jitter(height = .5, width = .5, alpha = .3) +
+  geom_smooth(
+    method = &quot;nls&quot;,
+    formula = y ~ 1.3 + exp(b0 + b1 * I(x^b2)),
+    method.args = list(start = list(b0 = 5, b1 = -5, b2 = -.5)),
+    se = FALSE,
+    size = 1.3
+    ) +
+  scale_color_manual(values = palette()[col]) +
+  labs(title = title) +
+  if(!is.null(facet)) facet_wrap(vars(!!facet))
+  print(p)
+}</code></pre>
+<pre class="r"><code>title &lt;- &quot;Non linear model by species for 2013 and 2018\nAll treatments&quot;
+nls_plot(title = title)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-17-1.png" width="768" /></p>
+<pre class="r"><code>title &lt;- &quot;difference in fit between 2013 and 2018&quot;
+nls_plot(color = year, facet = spp, title = title, col = c(9, 7))</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-17-2.png" width="768" /></p>
+<pre class="r"><code>title &lt;- &quot;Difference in fit between treatments\nyears 2013 and 2018&quot;
+nls_plot(facet = treatment, color = spp, title = title)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-17-3.png" width="768" /></p>
+<pre class="r"><code>title &lt;- &quot;Differences between treatments\nyears 2013 and 2018&quot;
+nls_plot(color = treatment, facet = spp, title = title)</code></pre>
+<p><img src="03_pred_ht_files/figure-html/unnamed-chunk-17-4.png" width="768" /></p>
 </div>
 
 

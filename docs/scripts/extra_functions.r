@@ -107,3 +107,28 @@ npc <- function(dat, x) {
   low <- min(dat, na.rm = TRUE)
   x * range + low
 }
+
+cross_product <- function(a, b) {
+  if(length(a)!=3 || length(b)!=3){
+        stop("Cross product is only defined for 3D vectors.")
+    }
+  i1 <- c(2, 3, 1)
+  i2 <- c(3, 1, 2)
+  a[i1] * b[i2] - a[i2] * b[i1]
+}
+
+tri_area <- function(tri, points) {
+  apply(tri, 1, function(point) {
+    AB <- points[point[2], ] - points[point[1], ]
+    AC <- points[point[3], ] - points[point[1], ]
+    sqrt(sum(cross_product(AB, AC)^2))
+  })
+}
+
+sci_metric <- function(x, y, z) {
+  points <- as.matrix(cbind(x, y, z))
+  deln_obj <- delaunayn(points[, 1:2], output.options = "Fa")
+  area3d <- sum(tri_area(deln_obj$tri, points))
+  area2d <- sum(deln_obj$areas)
+  area3d / area2d
+}
