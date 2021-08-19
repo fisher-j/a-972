@@ -37,20 +37,23 @@ nrow(filter(group_by(d_l, tree_id), any(!live & lead(live))))
 p_h <- filter(d_l, year > "init")
 ```
 
-## Define diameter increment
+## Define diameter and height increment
 
-I looked at increment earlier to try to suss out bad dbh entries. Here I will formally add annual diameter increment to the long-form dataset. Each observation will be associated with a p1 and p2 increment. These are 5-year increments. Should I divide this number by 5?
+I looked at increment earlier to try to suss out bad dbh entries. Here I will add annual height and diameter increment to the long-form dataset.
 
 ```{r}
 # Add increment data and update post-harvest data
 d_l <- d_l %>%
   group_by(tree_id) %>%
   mutate(
-    inc_1 = nth(lead(dbh) - dbh, 2, order_by = year),
-    inc_2 = nth(lead(dbh) - dbh, 3, order_by = year)
+    d_inc = dbh - lag(dbh, order_by = year) / 5,
+    ht_inc = ht - lag(ht, order_by = year) / 5
   ) %>%
   ungroup()
 
 p_h <- filter(d_l, year > "init")
 
 ```
+
+##
+

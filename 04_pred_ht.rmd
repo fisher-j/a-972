@@ -1,0 +1,404 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+
+### Predicting missing heights
+
+I need to predict missing heights in 2018 in order to complete other steps of the analysis and provide better summary data. To accomplish this, I will model height increment as a function of the continuous predictor, dbh, as well as a combination of nested groupings: year, treatment, plot, and species. Additionally, height increment response is of interest in it's own right. While height growth in trees is less responsive to conditions then diameter, it would be important to see whether there is a difference detected between treatments.
+
+First, I'll 
+
+```{r}
+
+test_d <- d_l %>%
+  # only use unbroken live sese or psme from 2018
+  filter(
+    spp %in% c("SESE3", "PSMEM"),
+    year == "18",
+    status == 1,
+    !get_cond(2, 3, 5)
+  )
+  
+# fit model to each group to generate lables for plot
+plot_groups <- function(
+  group = treatment,
+  response = ht_inc,
+  predictor = dbh,
+  by_spp = TRUE,
+  title,
+  pred = FALSE
+  ) {
+  palette("Tableau 10")
+  x <- substitute(predictor)
+  y <- substitute(response)
+  form <- formula(bquote(.(y) ~ .(x)))
+  if (by_spp) {
+    dat <- group_by(test_d, group = {{group}}, spp)
+  } else {
+    dat <- group_by(test_d, group = {{group}})
+  }
+  mytext <- dat %>%
+    summarize(lm_eqn(lm(form, data = cur_data())))
+  if (by_spp) {
+    mytext <- pivot_longer(mytext, !c(group, spp)) %>%
+    arrange(group, name) %>%
+    mutate(
+      x = npc(dat[[x]], c(0, 0, .7, .7, .7, .7)),
+      y = npc(dat[[y]], c(1.1, 1, .1, 0, 1.1, 1))
+    )
+  } else {
+    mytext <- pivot_longer(mytext, !c(group)) %>%
+    arrange(group, name) %>%
+    group_by(group) %>%
+    mutate(
+      x = npc(dat[[x]], c(0, .7, .7)),
+      y = npc(dat[[y]], c(1.1,.1,1.1))
+    )
+  }
+  # Plot based on specified group and species (if indicated)
+  p <- if (by_spp) {
+    ggplot(
+      dat,
+      aes(x = {{predictor}},
+      y = {{response}},
+      fill = spp,
+      color = spp)
+    )
+  } else {
+    ggplot(dat, aes(x = {{predictor}}, y = {{response}}))
+  }
+  print(p +
+      geom_point(size = 1.3, shape = 16, alpha = .6) +
+      geom_smooth(method = "lm", formula = y ~ log(x), alpha = .25) +
+      facet_wrap(~ group) +
+      geom_text(
+        data = mytext,
+        aes(x = x, y = y, label = value, hjust = 0),
+        parse = TRUE,
+        family = "mono",
+        fontface = "bold"
+      ) +
+      labs(title = title) +
+      theme_bw() +
+      scale_color_manual(
+        values = palette(),
+        aesthetics = c("color", "fill")) +
+      guides(fill = guide_legend(override.aes = aes(label = ""))) +
+      if(pred == TRUE) {
+        geom_point(data = miss, aes(color = spp), shape = 16)
+      }
+  )
+}
+```
+
+```{r}
+library(broom)
+
+get_model_stats <- function(formula, grouping) {
+  test_d %>% 
+    nest_by(group = {{grouping}}) %>%
+    mutate(
+      mod = list(lm(formula, data = data)),
+      summary = list(tidy(mod)),
+      pf = pf(
+        summary(mod)$fstatistic[1],
+        summary(mod)$fstatistic[2],
+        summary(mod)$fstatistic[3],
+        lower.tail = FALSE
+      )
+    ) %>%
+    unnest(summary) %>%
+    select(-c(data, mod))
+}
+```
+
+Out of these models, the H40, H80 and L80 have a p < 0.05. In none of them is there a significant difference in slope (between species). Constants are significantly different for H40, L80.
+
+```{r, fig.height=7.5, fig.width=10.5, warning=FALSE}
+plot_groups(title = "Height increment vs dbh")
+```
+
+
+```{r}
+stat <- get_model_stats(formula = ht_inc ~ log(dbh) * spp, grouping = treatment)
+stat %>%
+  color_groups() %>%
+  row_spec(which(stat$p.value < .05), background = "MistyRose")
+
+
+stat <- get_model_stats(formula = ht_inc ~ log(dbh) + spp, grouping = treatment)
+stat %>%
+  color_groups() %>%
+  row_spec(which(stat$p.value < .05), background = "MistyRose")
+```
+
+Now I'm combining treatments so we only have a C, H, and L. Again slopes are not significantly different and neither are constants between species.
+
+```{r, fig.height=4, fig.width=10.5, warning=FALSE}
+# Now I'll combine treatments so we just have a H, L and C
+plot_groups(str_extract(treatment, "C|H|L"), title = "Height increment vs dbh")
+```
+
+```{r}
+# do ancova, look at interaction first and then see if 
+# y-intercepts are any different between models.
+
+stat <- get_model_stats(
+  formula = ht_inc ~ dbh * spp,
+  grouping = str_extract(treatment, "C|L|H"))
+stat %>%
+  color_groups() %>%
+  row_spec(which(stat$p.value < .05), background = "MistyRose")
+
+stat <- get_model_stats(
+  formula = ht_inc ~ dbh + spp,
+  grouping = str_extract(treatment, "C|L|H"))
+stat %>%
+  color_groups() %>%
+  row_spec(which(stat$p.value < .05), background = "MistyRose")
+```
+
+I'll look at what happens if I group by treatment intensity instead. Again, this does not seem to reveal any especially significant 
+
+```{r, fig.height=4, fig.width=10.5, warning=FALSE}
+# for comparison I'll combine treatment intensities instead
+plot_groups(str_extract(treatment, "C|40|80"), title = "Height increment vs dbh")
+```
+
+
+
+This is what it looks like if I group 2018 heights into thinned and unthinned groups.
+
+```{r, fig.width=5, fig.height=5}
+plot_groups(
+  predictor = dbh,
+  response = ht_inc,
+  group = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
+  title = "Height increment vs dbh\nthinned vs unthinned"
+)
+
+```
+
+# This is where we did some models together
+
+I've since changed some things, firstly realizing that we were using REML models to compare fixed effects which results in nonsense. Then I decided that I wanted to pursue using more of the dataset rather than splitting it up.
+
+```{r}
+test_d2 <- mutate(
+  test_d, treatment2 = if_else(
+    str_detect(treatment, "C"),
+    "unthinned",
+    "thinned"
+    )
+)
+
+formula_aic <- function(form){
+  psme <- lmer(form, data = test_d2, subset = spp == "PSMEM", REML = FALSE)
+  sese <- lmer(form, data = test_d2, subset = spp == "SESE3", REML = FALSE)
+  list(formula = format(form), spp = c("psme", "sese"), aic = c(AIC(psme), AIC(sese)))
+}
+
+formula_aic2 <- function(form){
+  print(format(form))
+  mod <- lmer(form, data = test_d2, REML = FALSE)
+  list(formula = format(form), aic = AIC(mod))
+}
+
+
+formlist <- list(
+  (ht_inc ~ log(dbh) + (1 | plot)),
+  (ht_inc ~ log(dbh) + (log(dbh) | plot)),
+  (ht_inc ~ log(dbh) + treatment + (1 | plot)),
+  (ht_inc ~ log(dbh) + treatment + (log(dbh) | plot)),
+  (ht_inc ~ log(dbh) * treatment + (1 | plot)),
+  (ht_inc ~ log(dbh) + treatment + spp + (1 | plot)),
+  (ht_inc ~ log(dbh) + treatment * spp + (1 | plot)),
+  (ht_inc ~ log(dbh) + treatment * spp + (log(dbh) | plot)),
+  (ht_inc ~ log(dbh) * treatment * spp + (log(dbh) | plot)),
+  (ht_inc ~ log(dbh) + treatment2 + (1 | plot)),
+  (ht_inc ~ log(dbh) + treatment2 + (log(dbh) | plot)),
+  (ht_inc ~ log(dbh) * treatment2 + (1 | plot)),
+  (ht_inc ~ log(dbh) + treatment2 + spp + (1 | plot)),
+  (ht_inc ~ log(dbh) + treatment2 * spp + (1 | plot)),
+  (ht_inc ~ log(dbh) + treatment2 * spp + (log(dbh) | plot)),
+  (ht_inc ~ log(dbh) * treatment2 * spp + (log(dbh) | plot)),
+  (ht_inc ~ log(dbh) * treatment2 * spp + (log(dbh) | plot))
+)
+
+map_df(formlist, ~ formula_aic2(.x)) %>%
+  arrange(aic) %>%
+  mutate(delta = aic - first(aic)) %>%
+  filter(delta < 6) %>%
+  mutate(wi = exp(-.5 * delta) / sum(exp(-.5 * delta)))
+
+lmer(ht_inc ~ log(dbh) + (1 | plot) + (1 | tree_id), data = test_d2, REML = FALSE) %>% summary()
+
+
+se_mm <- lmer(ht_inc ~ log(dbh) + (1 | plot), data = test_d2, subset = spp == "SESE3", REML = FALSE)
+do_mm <- lmer(ht_inc ~ log(dbh) + (1 | plot), data = test_d2, subset = spp == "PSMEM", REML = FALSE)
+AIC(se_mm)
+AIC(do_mm)
+
+se_mm_treat <- lmer(ht_inc ~ log(dbh) + treatment + (1 | plot), data = test_d2, subset = spp == "SESE3", REML = FALSE)
+do_mm_treat <- lmer(ht_inc ~ log(dbh) + treatment + (1 | plot), data = test_d2, subset = spp == "PSMEM", REML = FALSE)
+AIC(se_mm_treat)
+AIC(do_mm_treat)
+
+se_null <- lmer(
+  ht_inc ~ treatment2 + (1 | plot),
+  data = test_d2,
+  subset = spp == "SESE3", REML = FALSE
+)
+do_null <- lmer(
+  ht_inc ~ treatment2 + (1 | plot),
+  data = test_d2,
+  subset = spp == "PSMEM", REML = FALSE
+)
+AIC(se_null)
+AIC(do_null)
+
+
+
+# this shows that a model with interaction is close, but not identical to a
+# a model with separate datasets
+(test1 <- lmer(ht_inc ~ log(dbh) *  spp + (log(dbh) | plot:spp), data = test_d2))
+(test2a <- lmer(ht_inc ~ log(dbh) + (1 | plot), data = test_d2, subset = spp == "PSMEM"))
+(test2b <- lmer(ht_inc ~ log(dbh) + (1 | plot), data = test_d2, subset = spp == "SESE3"))
+
+
+```
+
+# Modeling with both years 2013 and 2018
+
+It should be possible with mixed modeling to account the correlation between remeasure years and to take advantage of a larger data set that includes remeasures. I'm still not exactly sure how to control for the autocorrelation, but I think that the first step would be to quantify it, ie, make sure it is there.
+
+```{r}
+# prepare dataset, make factor regular (for lmer)
+# exclude broken, dead-top, and leaning trees and any
+# observation with missing height increment data
+# treatment2 identifies thinned vs unthinned plots
+test_all <- p_h %>% 
+  group_by(tree_id) %>%
+  mutate(
+    year = factor(year, ordered = FALSE),
+    treatment2 = if_else(str_detect(treatment, "C"), "unthinned", "thinned")
+  ) %>%
+  filter(
+    year %in% c("13", "18"),
+    !get_cond(2, 3, 5),
+    spp %in% c("SESE3", "PSMEM"),
+    status == 1,
+    !is.na(ht_inc)
+  ) %>%
+  ungroup()
+
+# how many observations in first only, second only and both periods (or neither)
+test_all %>% group_by(tree_id) %>%
+  summarize(
+    measured = case_when(
+      sum(!is.na(ht_inc)) == 2           ~ "both",
+      any(year == "13" & !is.na(ht_inc)) ~ "first only",
+      any(year == "18" & !is.na(ht_inc)) ~ "second only",
+      all(is.na(ht_inc))                 ~ "neither",
+    )
+  ) %>% count(measured)
+
+# for experimenting with models
+(mta <- lmer(
+  ht_inc ~ log(dbh) + year + treatment * spp  + (1 | plot) ,
+  data = test_all,
+  )) %>%
+  summary()
+
+(mt0 <- lmer(
+  ht_inc ~ log(dbh) + treatment * spp  + (1 | plot),
+  data = test_all,
+  )) %>%
+  summary()
+m.slope <- update(mta, . ~ . - (1 | plot))
+
+exactRLRT(m.slope, mta, mt0)
+
+# look for autocorrelation in predictor lag
+ht_incs <- test_all %>% 
+  group_by(tree_id) %>% 
+  filter(!any(sum(!is.na(ht_inc)) < 2))  %>% # ungroup() %>% count(year)
+  pull(ht_inc)
+
+(acf(ht_incs, lag.max = 6))
+
+ht_incs0 <- ht_incs[-1]
+ht_incs1 <- ht_incs[-length(ht_incs)]
+
+cor(ht_incs0, ht_incs1)
+
+plot(ht_incs0, ht_incs1)
+
+# correlation between repeated observations
+t_p <- test_all %>% 
+  group_by(tree_id) %>% 
+  filter(!any(is.na(ht_inc))) %>%
+  summarize(inc1 = first(ht_inc), inc2 = last(ht_inc)) %>%
+  select(-tree_id)
+x1 <- t_p[[1]]
+x2 <- t_p[[2]]
+
+cor(t_p[[1]], t_p[[2]])  
+
+plot(t_p)
+abline(0,1)
+```
+
+# Non-linear height-dbh model
+
+What if I just use a height/dbh model suggested by Eng, Hanus et al. and Curtis. And what if I combine 2013 and 2018 datasets? This contributes a lot more data. Maybe averaging across all treatments represents a conservative strategy in that any significant differences would likely not be due to the prediction.
+
+```{r}
+palette("Set 2")
+d <- p_h %>% filter(year %in% c("13", "18"), status == 1, !get_cond(2, 3), spp %in% c("SESE3", "PSMEM"))
+d1 <- d %>% filter(spp == "SESE3")
+d2 <- d %>% filter(spp == "PSMEM")
+
+ht_mod1 <- nls(
+  ht ~ 1.3 + exp(b0 + b1 * I(dbh^b2)),
+  data = d1, 
+  start = list(b0 = 5, b1 = -5, b2 = -.5)
+)
+ht_mod2 <- nls(ht ~ 1.3 + exp(b0 + b1 * I(dbh^b2)),
+  data = d2,
+  start = list(b0 = 5, b1 = -5, b2 = -.5)
+)
+
+nls_plot <- function(color = spp, facet = NULL, title, col = NULL) {
+  palette("Tableau 10")
+  if (is.null(col)) col <- 1:length(palette())
+  facet <- enquo(facet)
+  aesth <- aes(dbh, ht, color = {{color}})
+  p <- ggplot(arrange(d, spp), aesth) +
+  geom_jitter(height = .5, width = .5, alpha = .3) +
+  geom_smooth(
+    method = "nls",
+    formula = y ~ 1.3 + exp(b0 + b1 * I(x^b2)),
+    method.args = list(start = list(b0 = 5, b1 = -5, b2 = -.5)),
+    se = FALSE,
+    size = 1.3
+    ) +
+  scale_color_manual(values = palette()[col]) +
+  labs(title = title) +
+  if(!is.null(facet)) facet_wrap(vars(!!facet))
+  print(p)
+}
+```
+
+```{r, fig.height=8, fig.width=8}
+title <- "Non linear model by species for 2013 and 2018\nAll treatments"
+nls_plot(title = title)
+title <- "difference in fit between 2013 and 2018"
+nls_plot(color = year, facet = spp, title = title, col = c(9, 7))
+title <- "Difference in fit between treatments\nyears 2013 and 2018"
+nls_plot(facet = treatment, color = spp, title = title)
+title <- "Differences between treatments\nyears 2013 and 2018"
+nls_plot(color = treatment, facet = spp, title = title)
+```
+

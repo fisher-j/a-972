@@ -108,6 +108,9 @@ npc <- function(dat, x) {
   x * range + low
 }
 
+# These are the functions for calculating the SCI metric
+# for structural heterogeity
+
 cross_product <- function(a, b) {
   if(length(a)!=3 || length(b)!=3){
         stop("Cross product is only defined for 3D vectors.")
@@ -117,6 +120,7 @@ cross_product <- function(a, b) {
   a[i1] * b[i2] - a[i2] * b[i1]
 }
 
+# area is the magnitude of two vectors
 tri_area <- function(tri, points) {
   apply(tri, 1, function(point) {
     AB <- points[point[2], ] - points[point[1], ]

@@ -540,3 +540,18 @@ p_h %>%
   color_groups()
 ```
 
+## Trees with extreme lean
+
+These trees are leaning trees without broken or dead tops that have a loss in height greater than 2 meters in one 5 year period. They may be falling over, or the fact that they are leaning may lead to greater error in height measurements.
+
+```{r}
+p_h %>% 
+  group_by(tree_id) %>%
+  filter(
+    any(get_cond(5)),
+    any(ht - lag(ht, order_by = year) < -2),
+    !any(get_cond(2, 3)) 
+    ) %>%
+  select(-c(azi, h_dist, treatment)) %>%
+  color_groups()
+```
