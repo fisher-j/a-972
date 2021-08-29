@@ -3,7 +3,7 @@ title: "Detailed data cleaning"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 # Detailed data cleaning
@@ -503,7 +503,7 @@ I need to check to see that there are heights recorded for all **dominant trees*
 
 There are 12 plots that are missing dominant tree height data and all of them are in 2018---a total of 26 trees. It also looks like there are very few trees of the same species/plot to predict missing values from in some plots. I've included the average dbh of the missing tree as well as the range of dbh for which heights are available by plot/species. 
 
-```{r, warning = FALSE}
+```{r}
 p_h %>%
   group_by(plot, year) %>%
   filter(status == 1, !get_cond(2, 3)) %>%

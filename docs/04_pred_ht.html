@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Modeling height growth and predicting missing heights</title>
+
+<script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">A-972 10-year Study</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="01_import.html">Data import</a>
+</li>
+<li>
+  <a href="02_data_cleaning.html">Data cleaning</a>
+</li>
+<li>
+  <a href="03_define.html">Define new variables</a>
+</li>
+<li>
+  <a href="04_pred_ht.html">Predicting missing heights</a>
+</li>
+<li>
+  <a href="05_summary.html">Data summaries and figures</a>
+</li>
+<li>
+  <a href="06_variability.html">Variability</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+<div class="btn-group pull-right float-right">
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Modeling height growth and predicting missing heights</h1>
+
+</div>
+
+<div id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#defining-trees-of-interest">Defining trees of interest</a></li>
+<li><a href="#assessment-of-linear-relationship-between-dbh-and-height-increment">Assessment of linear relationship between dbh and height increment</a></li>
+<li><a href="#global-model">Global Model</a></li>
+<li><a href="#optimal-random-effects-specification">Optimal random effects specification</a></li>
+<li><a href="#choosing-a-submodel-for-fixed-effects">Choosing a submodel for fixed effects</a></li>
+<li><a href="#estimated-marginal-means">Estimated marginal means</a></li>
+<li><a href="#predictions">Predictions</a></li>
+<li><a href="#validation-of-selected-models">Validation of selected models</a></li>
+<li><a href="#homogeneity-of-random-group-residuals">Homogeneity of random group residuals</a></li>
+<li><a href="#normality-of-residuals">Normality of residuals</a></li>
+<li><a href="#leverage-and-cooks-distance">Leverage and Cooks distance</a></li>
+<li><a href="#random-effects-distribution">Random effects distribution</a></li>
+<li><a href="#spatial-autocorrelation">Spatial autocorrelation</a></li>
+<li><a href="#temporal-autocorrelation">Temporal autocorrelation</a></li>
+</ul>
+</div>
+
+<pre class="r"><code>library(lme4)
+palette(&quot;Tableau 10&quot;)</code></pre>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>I need to predict missing heights in 2018 in order to complete other steps of the analysis and provide better summary data. To accomplish this, I will model height increment as a function of the continuous predictor, dbh, as well as a combination of nested groupings: year, treatment, plot, and species. Additionally, height increment response is of interest in it’s own right. While height growth in trees is less responsive to conditions then diameter, it would be important to see whether there is a difference detected between treatments.</p>
+</div>
+<div id="defining-trees-of-interest" class="section level2">
+<h2>Defining trees of interest</h2>
+<p>First, I’ll define the dataset of interest as only years 2013 and 2018 observations of healthy, non-leaning trees. I’ll also define three other alternative treatment groupings for consideration: thinned/unthinned, H/L/C (thinning type), and 40/80/C (thinning intensity).</p>
+<pre class="r"><code>test_d &lt;- d_l %&gt;%
+  # only use unbroken live sese or psme from 2018
+  filter(
+    spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;),
+    year %in% c(&quot;18&quot;, &quot;13&quot;),
+    status == 1,
+    !get_cond(2, 3, 5),
+    !is.na(ht_inc) &amp; !is.na(dbh)
+  ) %&gt;%
+  mutate(
+    treatment2 = str_extract(treatment, &quot;C|H|L&quot;),
+    treatment3 = str_extract(treatment, &quot;C|40|80&quot;),
+    treatment4 = if_else(str_detect(treatment, &quot;C&quot;), &quot;unthinned&quot;, &quot;thinned&quot;),
+    year = factor(year, levels = c(&quot;13&quot;, &quot;18&quot;), ordered = FALSE)
+  ) %&gt;%
+  select(starts_with(&quot;treatment&quot;), spp, year, tree_id, dbh, ht_inc, plot, x, y)</code></pre>
+</div>
+<div id="assessment-of-linear-relationship-between-dbh-and-height-increment" class="section level2">
+<h2>Assessment of linear relationship between dbh and height increment</h2>
+<p>We are pretty sure that height growth is correlated with diameter, in that larger trees are capable of more height growth than smaller ones. We also think that this relationship is probably not linear. I will take a look at log and square root transformations of dbh for linear prediction of height growth.</p>
+<pre class="r"><code>m0 &lt;- lm(ht_inc ~ dbh * treatment * spp, data = test_d)
+m1 &lt;- update(m0, . ~ . - dbh + sqrt(dbh))
+m2 &lt;- update(m0, . ~ . - dbh + log(dbh))
+
+
+test_d %&gt;%
+  ggplot(aes(x = dbh, y = ht_inc, color = spp)) +
+    geom_point(aes(color = spp), alpha = .5) +
+    facet_wrap(vars(treatment)) +
+    geom_line(aes(y = predict(m0), linetype = &quot;linear&quot;), size = 1) +
+    geom_line(aes(y = predict(m1), linetype = &quot;sqrt&quot;), size = 1.25) + 
+    geom_line(aes(y = predict(m2), linetype = &quot;log&quot;), size = 1.25) + 
+    scale_color_manual(
+      values = palette(),
+      name = &quot;&quot;,
+      breaks = c(&quot;PSMEM&quot;, &quot;SESE3&quot;, &quot;linear&quot;, &quot;sqrt&quot;, &quot;log&quot;),
+    )</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-3-1.png" width="960" /></p>
+<p>It doesn’t look like it matters a whole lot with this noisy data. I’m going to use log transformation.</p>
+</div>
+<div id="global-model" class="section level2">
+<h2>Global Model</h2>
+<p>The next step is going to specify our likely global model. In general, we want to answer questions about how a given treatment affected growth for each species. There may have also been different responses between years. This will be a mixed model and I want to control for the random effect of plot and tree_id. The global model will include <code>log(dbh)</code> as well as the categoricals: <code>treatment</code>, <code>species</code>, <code>year</code>, and all their interactions. Resulting in the fixed effects:</p>
+<p><code>ht_inc ~ log(dbh) * treatment * spp * year</code></p>
+</div>
+<div id="optimal-random-effects-specification" class="section level2">
+<h2>Optimal random effects specification</h2>
+<p>We will determine the optimal random effects structure using the global fixed effects structure.</p>
+<pre class="r"><code>library(nlme)
+library(MuMIn)
+
+f0 &lt;- formula(ht_inc ~ log(dbh) * treatment * spp * year)
+m0 &lt;- gls(f0, data = test_d, method = &quot;REML&quot;)
+m1 &lt;- lmer(update(f0, ~ . + (1 | plot)), REML = TRUE, data = test_d)
+m2 &lt;- update(m1, ~ . + (1 | tree_id))
+m3 &lt;- update(m2, ~ . + (0 + log(dbh) | plot))
+
+AICc(m0, m1, m2, m3)</code></pre>
+<pre><code>##    df     AICc
+## m0 41 998.2696
+## m1 42 969.3265
+## m2 43 971.4429
+## m3 44 973.5622</code></pre>
+<p>The optimal random effects structure, judged by AIC (and using fixed effects coefficients determined by REML), includes the random intercept only for <code>plot</code>. We will assume this random effects structure in all further models.</p>
+</div>
+<div id="choosing-a-submodel-for-fixed-effects" class="section level2">
+<h2>Choosing a submodel for fixed effects</h2>
+<p>The next step is to define a list of potential submodels for fixed effects to determine the optimal structure. These will be determined for Douglas-fir and redwood separately so I’ll start by splitting the two datasets.</p>
+<pre class="r"><code>sese_d &lt;- subset(test_d, spp == &quot;SESE3&quot;)
+psme_d &lt;- subset(test_d, spp == &quot;PSMEM&quot;)
+
+fl &lt;- list(
+  ht_inc ~ log(dbh) + (1 | plot),
+  ht_inc ~ log(dbh) + treatment + (1 | plot),
+  ht_inc ~ log(dbh) + treatment + year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment + year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment * year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment * year + (1 | plot)
+)
+
+# tibble(models = sapply(fl, deparse)) %&gt;%
+#   kbl(caption = &quot;List of submodels to test for each species&quot;) %&gt;%
+#   kable_styling(full_width = FALSE)</code></pre>
+<p>I use AICc to assess the fit of each of the submodels with coefficients estimated with ML in order to compare among various fixed effects.</p>
+<pre class="r"><code>get_aic(fl, data = psme_d) %&gt;%
+  kbl(caption = &quot;AICS for set of Douglas-fir submodels&quot;) %&gt;%
+  kable_styling(full_width = FALSE)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+AICS for set of Douglas-fir submodels
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+row
+</th>
+<th style="text-align:left;">
+formula
+</th>
+<th style="text-align:right;">
+aicc
+</th>
+<th style="text-align:right;">
+rmse
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+5
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+536.3
+</td>
+<td style="text-align:right;">
+0.301
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment + (1 | plot)
+</td>
+<td style="text-align:right;">
+542.6
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+543.4
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+6
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+543.9
+</td>
+<td style="text-align:right;">
+0.299
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + (1 | plot)
+</td>
+<td style="text-align:right;">
+547.9
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+549.6
+</td>
+<td style="text-align:right;">
+0.302
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>get_aic(fl, data = sese_d) %&gt;%
+  kbl(caption = &quot;AICS for set of redwood submodels&quot;) %&gt;%
+  kable_styling(full_width = FALSE)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+AICS for set of redwood submodels
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+row
+</th>
+<th style="text-align:left;">
+formula
+</th>
+<th style="text-align:right;">
+aicc
+</th>
+<th style="text-align:right;">
+rmse
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+2
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment + (1 | plot)
+</td>
+<td style="text-align:right;">
+298.5
+</td>
+<td style="text-align:right;">
+0.332
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + (1 | plot)
+</td>
+<td style="text-align:right;">
+298.9
+</td>
+<td style="text-align:right;">
+0.329
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+299.0
+</td>
+<td style="text-align:right;">
+0.331
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+6
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+301.0
+</td>
+<td style="text-align:right;">
+0.320
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+5
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+301.3
+</td>
+<td style="text-align:right;">
+0.328
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+303.1
+</td>
+<td style="text-align:right;">
+0.329
+</td>
+</tr>
+</tbody>
+</table>
+<p>Based on this, I will select model five for Douglas-fir because it is substantially better than the next best model. For redwood, I select model one because it is almost equivalent to the next better model, but is simpler.</p>
+<pre class="r"><code>sese &lt;- lmer(fl[[1]], data = sese_d, REML = TRUE)
+psme &lt;- lmer(fl[[5]], data = psme_d, REML = TRUE)
+
+# augment data with fitted, residual cooks distance and leverage
+augment1 &lt;- function(dat, mod) {
+  dat %&gt;% mutate(
+    fitted = fitted(mod),
+    resid = resid(mod, type = &quot;pearson&quot;, scaled = TRUE),
+    cooks = cooks.distance(mod),
+    lev = hatvalues(mod)
+  )
+}
+
+sese_d &lt;- augment1(sese_d, sese)
+psme_d &lt;- augment1(psme_d, psme)</code></pre>
+</div>
+<div id="estimated-marginal-means" class="section level2">
+<h2>Estimated marginal means</h2>
+<p>First, the model for sese was not fit with any factors, so its only mean is the prediction for the mean dbh</p>
+<pre class="r"><code>library(emmeans)
+emmeans(sese, ~log(dbh))</code></pre>
+<pre><code>##   dbh emmean     SE   df lower.CL upper.CL
+##  31.7  0.324 0.0247 17.2    0.272    0.376
+## 
+## Degrees-of-freedom method: kenward-roger 
+## Confidence level used: 0.95</code></pre>
+<p>Next, psme was fit with factors (<code>treatment * year</code>) we can do pairwise comparisons, or, alternatively, treatment vs control comparisons.</p>
+<pre class="r"><code>psme_em &lt;- emmeans(psme, ~ treatment + year)
+pairs(psme_em, by = &quot;year&quot;)</code></pre>
+<pre><code>## year = 13:
+##  contrast  estimate     SE   df t.ratio p.value
+##  C - H40    -0.0696 0.0635 22.8  -1.095  0.8071
+##  C - H80    -0.2349 0.0555 14.0  -4.232  0.0063
+##  C - L40    -0.1106 0.0625 22.5  -1.769  0.4152
+##  C - L80    -0.1729 0.0540 12.6  -3.201  0.0469
+##  H40 - H80  -0.1653 0.0657 25.9  -2.517  0.1176
+##  H40 - L40  -0.0410 0.0703 34.1  -0.583  0.9768
+##  H40 - L80  -0.1033 0.0644 23.9  -1.605  0.5087
+##  H80 - L40   0.1243 0.0644 25.2   1.930  0.3279
+##  H80 - L80   0.0620 0.0568 15.3   1.092  0.8079
+##  L40 - L80  -0.0623 0.0630 23.1  -0.988  0.8578
+## 
+## year = 18:
+##  contrast  estimate     SE   df t.ratio p.value
+##  C - H40    -0.1070 0.0774 50.0  -1.383  0.6412
+##  C - H80    -0.0485 0.0666 27.3  -0.728  0.9481
+##  C - L40    -0.0306 0.0812 52.5  -0.377  0.9956
+##  C - L80    -0.1605 0.0711 36.5  -2.258  0.1819
+##  H40 - H80   0.0586 0.0771 48.3   0.760  0.9408
+##  H40 - L40   0.0764 0.0891 74.6   0.857  0.9114
+##  H40 - L80  -0.0535 0.0809 60.0  -0.661  0.9639
+##  H80 - L40   0.0179 0.0808 50.6   0.221  0.9995
+##  H80 - L80  -0.1120 0.0709 35.4  -1.581  0.5191
+##  L40 - L80  -0.1299 0.0845 61.8  -1.538  0.5423
+## 
+## Degrees-of-freedom method: kenward-roger 
+## P value adjustment: tukey method for comparing a family of 5 estimates</code></pre>
+<pre class="r"><code>contrast(psme_em, &quot;trt.vs.ctrl1&quot;, by = &quot;year&quot;)</code></pre>
+<pre><code>## year = 13:
+##  contrast estimate     SE   df t.ratio p.value
+##  H40 - C    0.0696 0.0635 22.8   1.095  0.6328
+##  H80 - C    0.2349 0.0555 14.0   4.232  0.0030
+##  L40 - C    0.1106 0.0625 22.5   1.769  0.2627
+##  L80 - C    0.1729 0.0540 12.6   3.201  0.0246
+## 
+## year = 18:
+##  contrast estimate     SE   df t.ratio p.value
+##  H40 - C    0.1070 0.0774 50.0   1.383  0.4480
+##  H80 - C    0.0485 0.0666 27.3   0.728  0.8397
+##  L40 - C    0.0306 0.0812 52.5   0.377  0.9646
+##  L80 - C    0.1605 0.0711 36.5   2.258  0.0989
+## 
+## Degrees-of-freedom method: kenward-roger 
+## P value adjustment: dunnettx method for 4 tests</code></pre>
+<p>A plot of estimated means by treatment and year can reveal patterns in the interactions</p>
+<pre class="r"><code>emmip(psme_em, treatment ~ year)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>The author of <code>emmeans</code> is opposed to the use of “significance” letters on estimated means plots and suggests this plot as an alternative.</p>
+<pre class="r"><code>pwpp(psme_em, by = &quot;year&quot;)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>I’m a little bit confused about</p>
+<pre class="r"><code>bind_rows(psme_d, sese_d) %&gt;%
+  ggplot(aes(y = ht_inc, x = year, color = treatment, group = treatment)) +
+    stat_summary(fun = mean, geom = &quot;line&quot;, aes(linetype = &quot;observed&quot;)) +
+    stat_summary(aes(y = fitted, linetype = &quot;predicted&quot;), fun = mean, geom = &quot;line&quot;) +
+    facet_wrap(vars(spp)) +
+    scale_color_manual(values = palette()) +
+    scale_linetype_manual(
+      values = c(2, 1),
+      name = &quot;&quot;,
+      breaks = c(&quot;observed&quot;, &quot;predicted&quot;)
+    )</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<pre class="r"><code>with(psme_d, interaction.plot(year, treatment, ht_inc))</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code>with(sese_d, interaction.plot(year, treatment, ht_inc))</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
+</div>
+<div id="predictions" class="section level2">
+<h2>Predictions</h2>
+<p>Predicted heights fit with a loess smoother, not a great plot.</p>
+<pre class="r"><code>test_d &lt;- left_join(
+  test_d,
+  bind_rows(sese_d, psme_d) %&gt;% dplyr::select(tree_id, year, fitted),
+  by = c(&quot;tree_id&quot;, &quot;year&quot;)
+)
+
+ggplot(test_d, aes(x = dbh, y = ht_inc)) +
+  geom_smooth(aes(linetype = spp)) +
+  facet_wrap(vars(treatment))</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p>Here I so the differences between each plot, these are avearaged over both years, another noisy plot</p>
+<pre class="r"><code>palette(&quot;tableau10&quot;)
+ggplot(test_d, aes(x = dbh, y = ht_inc)) +
+  geom_smooth(aes(linetype = spp, color = str_extract(plot, &quot;\\d&quot;)), method = &quot;lm&quot;, formula = y ~ log(x), se = FALSE) +
+  facet_wrap(vars(treatment)) +
+  scale_color_manual(values = palette())</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+</div>
+<div id="validation-of-selected-models" class="section level2">
+<h2>Validation of selected models</h2>
+<p>Next I will perform some model validation. I’ll start by looking at residuals vs fitted and residual vs continuous predictor (log(dbh)) and for the Douglas-fir model, the residuals for each combination of the categorical predictors: <code>treatment</code> and <code>year</code>.</p>
+<pre class="r"><code>par(mfrow = c(2, 2))
+plot(
+  resid ~ fitted,
+  data = sese_d,
+  pch = 16,
+  xlab = &quot;fitted values&quot;,
+  ylab = &quot;Scaled residuals&quot;,
+  main = &quot;Residual vs fitted for SESE&quot;,
+  col = 2
+)
+abline(0,0)
+plot(
+  resid ~ fitted,
+  data = psme_d,
+  pch = 16,
+  xlab = &quot;fitted values&quot;,
+  ylab = &quot;Scaled residuals&quot;,
+  main = &quot;Residual vs fitted for PSME&quot;,
+  col = 1
+)
+abline(0,0)
+plot(
+  resid ~ log(dbh),
+  data = sese_d,
+  xlab = &quot;log(dbh)&quot;,
+  ylab = &quot;Scaled residuals&quot;,
+  main = &quot;Residual vs log(dbh) for SESE&quot;,
+  col = 2,
+  pch = 16
+)
+abline(0,0)
+
+plot(
+  resid ~ log(dbh),
+  data = sese_d,
+  xlab = &quot;log(dbh)&quot;,
+  ylab = &quot;Scaled residuals&quot;,
+  main = &quot;Residual vs log(dbh) for PSME&quot;,
+  col = 1,
+  pch = 16
+)
+abline(0,0)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-16-1.png" width="960" /></p>
+<pre class="r"><code>with(
+  model.frame(psme),
+  boxplot(
+    resid(psme, type = &quot;pearson&quot;) ~ treatment + year,
+    xlab = &quot;by treatment and year&quot;,
+    ylab = &quot;Residuals&quot;,
+    main = &quot;Distribution of residuals by treatment and year for PSME&quot;
+  )
+)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+</div>
+<div id="homogeneity-of-random-group-residuals" class="section level2">
+<h2>Homogeneity of random group residuals</h2>
+<p>I can check that random group residuals are homogenous</p>
+<pre class="r"><code>plot(
+  psme,
+  resid(., scaled=TRUE) ~ fitted(.)| plot,
+  abline = 0,
+  pch = 16,
+  xlab = &quot;Fitted values&quot;,
+  ylab = &quot;Standardised residuals&quot;
+)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+</div>
+<div id="normality-of-residuals" class="section level2">
+<h2>Normality of residuals</h2>
+<p>Checking for normality of residuals. The tails are perhaps a bit fat for PSME. I’m not sure if this requires attention or not.</p>
+<pre class="r"><code>par(mfrow = c(1, 2))
+qqnorm(resid(psme), pch=16, col = 1,  main = &quot;QQplot for PSME&quot;)
+qqline(resid(psme))
+qqnorm(resid(sese), pch=16, col = 2, main = &quot;QQplot for SESE&quot;)
+qqline(resid(sese))</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-19-1.png" width="960" /></p>
+</div>
+<div id="leverage-and-cooks-distance" class="section level2">
+<h2>Leverage and Cooks distance</h2>
+<p>Cooks outliers, defined as &gt; 3 x mean(cooks distance) are colored in red. None of these “outliers” seem like they would disproportionately affect regression.</p>
+<pre class="r"><code>par(mfrow = c(2, 1))
+#Plot leverage against standardised residuals
+plot(
+  resid ~ lev,
+  data = psme_d,
+  las = 1,
+  ylab = &quot;Standardised residuals&quot;,
+  xlab = &quot;Leverage&quot;,
+  col = palette.colors(palette = &quot;tableau10&quot;, alpha = .5)[1],
+  main = &quot;Leverage vs residuals for PSME&quot;,
+  pch = 16
+)
+points(resid ~ lev, data = filter(psme_d, cooks &gt; 3 * mean(cooks)), pch = 16, col =3)
+plot(
+  resid ~ lev,
+  data = sese_d,
+  las = 1,
+  ylab = &quot;Standardised residuals&quot;,
+  xlab = &quot;Leverage&quot;,
+  col = palette.colors(palette = &quot;tableau10&quot;, alpha = .5)[2],
+  main = &quot;Leverage vs residuals for SESE&quot;,
+  pch = 16
+)
+points(resid ~ lev, data = filter(sese_d, cooks &gt; 3 * mean(cooks)), pch = 16, col =3)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-20-1.png" width="960" /></p>
+</div>
+<div id="random-effects-distribution" class="section level2">
+<h2>Random effects distribution</h2>
+<p>The distribution of random effects (plots) should be roughly normal.</p>
+<pre class="r"><code>hist(as.vector(unlist(ranef(psme)$plot)), col = 1)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<pre class="r"><code>hist(as.vector(unlist(ranef(sese)$plot)), col = 2)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-21-2.png" width="672" /></p>
+</div>
+<div id="spatial-autocorrelation" class="section level2">
+<h2>Spatial autocorrelation</h2>
+<p>Semivariograms for our two selected models, the first set indicates average semivariance within plots. The second set indicates semivariance across all trees. It seems like correlation increases with distance within plots for PSME, this is usually the opposite but may make sense in that at the plot level, larger trees may be farther from each other. For SESE, the reverse is true. This also may be artefacts of noisy data. Either way, it appears that their is not a</p>
+<pre class="r"><code>sese1 &lt;- lme(ht_inc ~ log(dbh), random = ~ 1 | plot, data = sese_d)
+psme1 &lt;- lme(ht_inc ~ log(dbh) + treatment * year, random = ~ 1 | plot, data = psme_d)
+plot(Variogram(sese1, form = ~ x + y | plot))</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<pre class="r"><code>plot(Variogram(psme1, form = ~ x + y | plot))</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-22-2.png" width="672" /></p>
+<pre class="r"><code>library(geoR)
+par(mfrow = c(2, 1))
+vp &lt;- variog(
+  coords = cbind(psme_d$x, psme_d$y),
+  data = resid(psme, type = &quot;pearson&quot;),
+  option=&quot;bin&quot;,
+  uvec = 50
+)</code></pre>
+<pre><code>## variog: computing omnidirectional variogram
+## variog: co-locatted data found, adding one bin at the origin</code></pre>
+<pre class="r"><code>plot(vp, col = 1, pch = 16, main = &quot;semivariance across study for psme&quot;)
+lines(fitted(loess(vp$v ~ vp$u)) ~ vp$u, col = &quot;darkblue&quot;)
+
+
+vs &lt;-  variog(
+  coords = cbind(sese_d$x, sese_d$y),
+  data = resid(sese, type = &quot;pearson&quot;),
+  option=&quot;bin&quot;,
+  uvec = 50
+)</code></pre>
+<pre><code>## variog: computing omnidirectional variogram
+## variog: co-locatted data found, adding one bin at the origin</code></pre>
+<pre class="r"><code>plot(vs, col = 2, pch = 16, main = &quot;semivariance across study for sese&quot;)
+lines(fitted(loess(vs$v ~ vs$u)) ~ vs$u, col = &quot;darkblue&quot;)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-23-1.png" width="960" /></p>
+</div>
+<div id="temporal-autocorrelation" class="section level2">
+<h2>Temporal autocorrelation</h2>
+<p>We are looking at data for 2013 and 2018, year was included in the model for psme but not for sese. I’ll look at an autocorrelation plot</p>
+<pre class="r"><code>par(mfrow = c(1, 2))
+acf(resid(psme, type = &quot;pearson&quot;), lag.max = 4, col = 1)
+acf(resid(sese, type = &quot;pearson&quot;), lag.max = 4, col = 2)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-24-1.png" width="960" /></p>
+<p>I can also look for correlation between the residuals of observations using a correlation test. Observations of the same tree among psme and sese are both negatively correlated.</p>
+<pre class="r"><code>obs_pairs_corr &lt;- function(d) {
+  tp &lt;- d %&gt;% 
+    group_by(tree_id) %&gt;% 
+    filter(!n() &lt; 2) %&gt;%
+    summarize(resid1 = nth(resid, 1), resid2 = nth(resid, 2)) %&gt;%
+    select(resid1, resid2)
+  cor.test(tp$resid2, tp$resid1)
+}
+
+obs_pairs_corr(sese_d)</code></pre>
+<pre><code>## 
+##  Pearson&#39;s product-moment correlation
+## 
+## data:  tp$resid2 and tp$resid1
+## t = -2.1508, df = 167, p-value = 0.03293
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.30751223 -0.01354924
+## sample estimates:
+##        cor 
+## -0.1641735</code></pre>
+<pre class="r"><code>obs_pairs_corr(psme_d)</code></pre>
+<pre><code>## 
+##  Pearson&#39;s product-moment correlation
+## 
+## data:  tp$resid2 and tp$resid1
+## t = -3.0323, df = 293, p-value = 0.002644
+## alternative hypothesis: true correlation is not equal to 0
+## 95 percent confidence interval:
+##  -0.28299273 -0.06145837
+## sample estimates:
+##       cor 
+## -0.174432</code></pre>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

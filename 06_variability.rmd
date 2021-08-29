@@ -11,7 +11,7 @@ Here are boxplots showing the variability in 2018 of some potentially important 
 ```{r}
 p_h %>%
   filter(year == "18") %>%
-  select(treatment, spp, dbh, ht, cr, inc_1, inc_2) %>%
+  select(treatment, spp, dbh, ht, cr, ht_inc) %>%
   pivot_longer(
     !c(treatment, spp),
     names_to = "measure",

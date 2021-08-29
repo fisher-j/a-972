@@ -9,10 +9,10 @@ navbar:
       href: 01_import.html
     - text: "Data cleaning"
       href: 02_data_cleaning.html
-    - text: "Predicting missing heights"
-      href: 03_pred_ht.html
     - text: "Define new variables"
-      href: 04_define.html
+      href: 03_define.html
+    - text: "Predicting missing heights"
+      href: 04_pred_ht.html
     - text: "Data summaries and figures"
       href: 05_summary.html
     - text: "Variability"

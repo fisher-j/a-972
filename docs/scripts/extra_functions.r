@@ -108,6 +108,9 @@ npc <- function(dat, x) {
   x * range + low
 }
 
+# These are the functions for calculating the SCI metric
+# for structural heterogeity
+
 cross_product <- function(a, b) {
   if(length(a)!=3 || length(b)!=3){
         stop("Cross product is only defined for 3D vectors.")
@@ -117,6 +120,7 @@ cross_product <- function(a, b) {
   a[i1] * b[i2] - a[i2] * b[i1]
 }
 
+# area is the magnitude of two vectors
 tri_area <- function(tri, points) {
   apply(tri, 1, function(point) {
     AB <- points[point[2], ] - points[point[1], ]
@@ -131,4 +135,32 @@ sci_metric <- function(x, y, z) {
   area3d <- sum(tri_area(deln_obj$tri, points))
   area2d <- sum(deln_obj$areas)
   area3d / area2d
+}
+
+# here is a function to to get a an AIC from a formula
+# optionally split by species
+formula_aic <- function(form, data, species){
+  if(missing(species)) species <- unique(data$spp)
+  dat <- data[data$spp %in% species, ]
+  mod <- lmer(form, data = dat, REML = FALSE)
+  list(
+    formula = deparse1(form),
+    aicc = AICc(mod),
+    rmse = sqrt(mean(resid(mod)^2))
+  )
+}
+
+# get AICs from list of formulas and calculate AIC weights
+aic_weights <- function(formlist, delta_max = 6, ...) {
+  map_dfr(formlist, formula_aic, .id = "row", ...) %>%
+  arrange(aicc) %>%
+  mutate(delta = aicc - first(aicc)) %>%
+  filter(delta < delta_max) %>%
+  mutate(wi = round(exp(-.5 * delta) / sum(exp(-.5 * delta)), 3))
+}
+
+get_aic <- function(formlist, ...) {
+  map_dfr(formlist, formula_aic, .id = "row", ...) %>%
+  arrange(aicc) %>%
+  mutate(aicc = round(aicc, 1), rmse = round(rmse, 3))
 }

@@ -136,3 +136,31 @@ sci_metric <- function(x, y, z) {
   area2d <- sum(deln_obj$areas)
   area3d / area2d
 }
+
+# here is a function to to get a an AIC from a formula
+# optionally split by species
+formula_aic <- function(form, data, species){
+  if(missing(species)) species <- unique(data$spp)
+  dat <- data[data$spp %in% species, ]
+  mod <- lmer(form, data = dat, REML = FALSE)
+  list(
+    formula = deparse1(form),
+    aicc = AICc(mod),
+    rmse = sqrt(mean(resid(mod)^2))
+  )
+}
+
+# get AICs from list of formulas and calculate AIC weights
+aic_weights <- function(formlist, delta_max = 6, ...) {
+  map_dfr(formlist, formula_aic, .id = "row", ...) %>%
+  arrange(aicc) %>%
+  mutate(delta = aicc - first(aicc)) %>%
+  filter(delta < delta_max) %>%
+  mutate(wi = round(exp(-.5 * delta) / sum(exp(-.5 * delta)), 3))
+}
+
+get_aic <- function(formlist, ...) {
+  map_dfr(formlist, formula_aic, .id = "row", ...) %>%
+  arrange(aicc) %>%
+  mutate(aicc = round(aicc, 1), rmse = round(rmse, 3))
+}

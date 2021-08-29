@@ -14,6 +14,7 @@ Status and condition codes provided do not necessarily define mortality, because
 2. trees broken below dbh and uprooted trees (status 30, 32)
 3. any non-sprouting species broken above dbh (status 31)
 4. any sprouting species broken below 3 meters
+5. missing live trees
 
 
 ```{r define-live}
@@ -21,7 +22,7 @@ Status and condition codes provided do not necessarily define mortality, because
 d_l <- d_l %>%
   mutate(
     live = case_when(
-      status %in% c(5:9, -5:-9)                                  ~ FALSE,
+      status %in% c(5:9, -5:-9, -1)                                  ~ FALSE,
       status %in% c(30, 32)                                      ~ FALSE,
       (spp %in% c("PSMEM", "PISI") & status == 31)               ~ FALSE,
       (spp %in% c("SESE3", "ALRU") & status == 31 & ht < 3)      ~ FALSE,
@@ -33,8 +34,6 @@ d_l <- d_l %>%
 # Do any trees go from being dead to being alive?
 nrow(filter(group_by(d_l, tree_id), any(!live & lead(live))))
 
-# update post-harvest data
-p_h <- filter(d_l, year > "init")
 ```
 
 ## Define diameter and height increment
@@ -46,14 +45,46 @@ I looked at increment earlier to try to suss out bad dbh entries. Here I will ad
 d_l <- d_l %>%
   group_by(tree_id) %>%
   mutate(
-    d_inc = dbh - lag(dbh, order_by = year) / 5,
-    ht_inc = ht - lag(ht, order_by = year) / 5
+    d_inc = (dbh - lag(dbh, order_by = year)) / 5,
+    ht_inc = (ht - lag(ht, order_by = year)) / 5
   ) %>%
   ungroup()
 
-p_h <- filter(d_l, year > "init")
 
 ```
 
-##
+## Define UTM coordinates for each tree
 
+```{r}
+d_l <- d_l %>%
+  left_join(plot_info[, c("plot", "utm_x", "utm_y")], by = "plot") %>%
+  mutate(
+    circular2xy(h_dist, azi, center.x = utm_x, center.y = utm_y)
+  ) %>%
+  select(-c(utm_x, utm_y))
+```
+
+## Structural diversity SCI
+
+```{r}
+library(geometry)
+# calculate within plot coordinates, plot center = origin
+# this does not work with missing values currently.
+# d_l %>%
+#   group_by(plot, year) %>%
+#   mutate(
+#     circular2xy(h_dist, azi),
+#     sci_ht = sci_metric(x, y, ht),
+#     sci_d = sci_metric(x, y, dbh)
+#   ) %>%
+#   arrange(plot, year)
+# temp <- d_l %>% filter(plot == "1H40", year == "18") %>% select(h_dist, azi, ht, dbh)
+```
+
+## Update post-harvest data
+
+Make sure that this is the last step
+
+```{r}
+p_h <- filter(d_l, year > "init")
+```

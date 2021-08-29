@@ -252,10 +252,10 @@ $(document).ready(function () {
   <a href="02_data_cleaning.html">Data cleaning</a>
 </li>
 <li>
-  <a href="03_pred_ht.html">Predicting missing heights</a>
+  <a href="03_define.html">Define new variables</a>
 </li>
 <li>
-  <a href="04_define.html">Define new variables</a>
+  <a href="04_pred_ht.html">Predicting missing heights</a>
 </li>
 <li>
   <a href="05_summary.html">Data summaries and figures</a>
@@ -290,7 +290,10 @@ $(document).ready(function () {
 <div id="TOC">
 <ul>
 <li><a href="#defining-livedead-trees">Defining live/dead trees</a></li>
-<li><a href="#define-diameter-increment">Define diameter increment</a></li>
+<li><a href="#define-diameter-and-height-increment">Define diameter and height increment</a></li>
+<li><a href="#define-utm-coordinates-for-each-tree">Define UTM coordinates for each tree</a></li>
+<li><a href="#structural-diversity-sci">Structural diversity SCI</a></li>
+<li><a href="#update-post-harvest-data">Update post-harvest data</a></li>
 </ul>
 </div>
 
@@ -302,11 +305,12 @@ $(document).ready(function () {
 <li>trees broken below dbh and uprooted trees (status 30, 32)</li>
 <li>any non-sprouting species broken above dbh (status 31)</li>
 <li>any sprouting species broken below 3 meters</li>
+<li>missing live trees</li>
 </ol>
 <pre class="r"><code>d_l &lt;- d_l %&gt;%
   mutate(
     live = case_when(
-      status %in% c(5:9, -5:-9)                                  ~ FALSE,
+      status %in% c(5:9, -5:-9, -1)                                  ~ FALSE,
       status %in% c(30, 32)                                      ~ FALSE,
       (spp %in% c(&quot;PSMEM&quot;, &quot;PISI&quot;) &amp; status == 31)               ~ FALSE,
       (spp %in% c(&quot;SESE3&quot;, &quot;ALRU&quot;) &amp; status == 31 &amp; ht &lt; 3)      ~ FALSE,
@@ -318,22 +322,47 @@ $(document).ready(function () {
 # Do any trees go from being dead to being alive?
 nrow(filter(group_by(d_l, tree_id), any(!live &amp; lead(live))))</code></pre>
 <pre><code>## [1] 0</code></pre>
-<pre class="r"><code># update post-harvest data
-p_h &lt;- filter(d_l, year &gt; &quot;init&quot;)</code></pre>
 </div>
-<div id="define-diameter-increment" class="section level2">
-<h2>Define diameter increment</h2>
-<p>I looked at increment earlier to try to suss out bad dbh entries. Here I will formally add annual diameter increment to the long-form dataset. Each observation will be associated with a p1 and p2 increment. These are 5-year increments. Should I divide this number by 5?</p>
+<div id="define-diameter-and-height-increment" class="section level2">
+<h2>Define diameter and height increment</h2>
+<p>I looked at increment earlier to try to suss out bad dbh entries. Here I will add annual height and diameter increment to the long-form dataset.</p>
 <pre class="r"><code># Add increment data and update post-harvest data
 d_l &lt;- d_l %&gt;%
   group_by(tree_id) %&gt;%
   mutate(
-    inc_1 = nth(lead(dbh) - dbh, 2, order_by = year),
-    inc_2 = nth(lead(dbh) - dbh, 3, order_by = year)
+    d_inc = (dbh - lag(dbh, order_by = year)) / 5,
+    ht_inc = (ht - lag(ht, order_by = year)) / 5
   ) %&gt;%
-  ungroup()
-
-p_h &lt;- filter(d_l, year &gt; &quot;init&quot;)</code></pre>
+  ungroup()</code></pre>
+</div>
+<div id="define-utm-coordinates-for-each-tree" class="section level2">
+<h2>Define UTM coordinates for each tree</h2>
+<pre class="r"><code>d_l &lt;- d_l %&gt;%
+  left_join(plot_info[, c(&quot;plot&quot;, &quot;utm_x&quot;, &quot;utm_y&quot;)], by = &quot;plot&quot;) %&gt;%
+  mutate(
+    circular2xy(h_dist, azi, center.x = utm_x, center.y = utm_y)
+  ) %&gt;%
+  select(-c(utm_x, utm_y))</code></pre>
+</div>
+<div id="structural-diversity-sci" class="section level2">
+<h2>Structural diversity SCI</h2>
+<pre class="r"><code>library(geometry)
+# calculate within plot coordinates, plot center = origin
+# this does not work with missing values currently.
+# d_l %&gt;%
+#   group_by(plot, year) %&gt;%
+#   mutate(
+#     circular2xy(h_dist, azi),
+#     sci_ht = sci_metric(x, y, ht),
+#     sci_d = sci_metric(x, y, dbh)
+#   ) %&gt;%
+#   arrange(plot, year)
+# temp &lt;- d_l %&gt;% filter(plot == &quot;1H40&quot;, year == &quot;18&quot;) %&gt;% select(h_dist, azi, ht, dbh)</code></pre>
+</div>
+<div id="update-post-harvest-data" class="section level2">
+<h2>Update post-harvest data</h2>
+<p>Make sure that this is the last step</p>
+<pre class="r"><code>p_h &lt;- filter(d_l, year &gt; &quot;init&quot;)</code></pre>
 </div>
 
 
