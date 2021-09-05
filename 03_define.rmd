@@ -36,22 +36,23 @@ nrow(filter(group_by(d_l, tree_id), any(!live & lead(live))))
 
 ```
 
-## Define diameter and height increment
+## Define diameter, basal area, and height increment
 
-I looked at increment earlier to try to suss out bad dbh entries. Here I will add annual height and diameter increment to the long-form dataset.
+I looked at increment earlier to try to suss out bad dbh entries. Here I will add annual height, diameter and basal area increments to the long-form dataset.
 
 ```{r}
-# Add increment data and update post-harvest data
+# Add diameter increment data and update post-harvest data
 d_l <- d_l %>%
   group_by(tree_id) %>%
   mutate(
     d_inc = (dbh - lag(dbh, order_by = year)) / 5,
-    ht_inc = (ht - lag(ht, order_by = year)) / 5
+    ht_inc = (ht - lag(ht, order_by = year)) / 5,
+    ba = pi * (dbh / 2)^2,
+    ba_inc = (ba - lag(ba, order_by = year)) / 5
   ) %>%
   ungroup()
-
-
 ```
+
 
 ## Define UTM coordinates for each tree
 
