@@ -258,10 +258,13 @@ $(document).ready(function () {
   <a href="04_pred_ht.html">Predicting missing heights</a>
 </li>
 <li>
+  <a href="05_analyzing_ba_increment.html">Analyzing Ba increment</a>
+</li>
+<li>
   <a href="05_summary.html">Data summaries and figures</a>
 </li>
 <li>
-  <a href="06_variability.html">Variability</a>
+  <a href="07_variability.html">Variability</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -301,9 +304,9 @@ $(document).ready(function () {
     geom_boxplot() +
     facet_wrap(~ measure, scales = &quot;free_y&quot;)</code></pre>
 <pre><code>## Warning: Removed 3021 rows containing non-finite values (stat_boxplot).</code></pre>
-<p><img src="06_variability_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p><img src="07_variability_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
 <pre class="r"><code>boxplot(dbh ~ plot, data = p_h[p_h$year == &quot;18&quot;, ])</code></pre>
-<p><img src="06_variability_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="07_variability_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 
 
 

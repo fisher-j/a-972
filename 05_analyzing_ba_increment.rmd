@@ -1,0 +1,55 @@
+---
+title: "Modeling height growth and predicting missing heights"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = TRUE)
+```
+
+```{r}
+library(lme4)
+palette("Tableau 10")
+```
+
+# Introduction
+
+Basal area increment is a key feature for analysis. Dbh data is available for almost all trees in boths periods, it is more precise and diameter growth (as opposed to height growth) is expected to have a strong response to thinning treatments.
+
+# Define trees of interest
+
+For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements.
+
+```{r}
+test_d <- d_l %>%
+  # only use unbroken live sese or psme from 2018
+  filter(
+    spp %in% c("SESE3", "PSMEM"),
+    year %in% c("18", "13"),
+    status == 1,
+    !get_cond(2, 3),
+    !is.na(dbh)
+  ) %>%
+  select(-c(h_dist, azi, status, rot, cc, x, y, live))
+```
+
+# Data exploration
+
+## Outliers
+
+Here I'm looking for any outliers in basal area increment, or extreme changes.
+
+```{r}
+ggplot(test_d, aes(x = ba_inc, y = tree_id)) +
+  geom_point(aes(color = year), alpha = .5) +
+  geom_line(aes(group = tree_id)) +
+  scale_y_discrete(breaks = NULL) +
+  scale_color_manual(values = palette())
+
+test_d %>%
+  group_by(tree_id) %>%
+  filter(any(ba_inc < 0)) %>%
+  mutate(min = min(ba_inc)) %>%
+  arrange(min) %>%
+  select(-min) %>%
+  color_groups()
+```

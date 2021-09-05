@@ -3,7 +3,7 @@ title: "Modeling height growth and predicting missing heights"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = TRUE)
 ```
 
 ```{r}
@@ -73,7 +73,13 @@ The next step is going to specify our likely global model. In general, we want t
 
 ## Optimal random effects specification
 
-We will determine the optimal random effects structure using the global fixed effects structure.
+We will determine the optimal random effects structure using the global fixed effects structure. I will select the best of the following random effects structures:
+
+```
+(1 | plot)
+(1 | plot) + (1 | tree_id)
+(log(dbh) | plot) + (1 | tree_id)
+```
 
 ```{r}
 library(nlme)
@@ -104,7 +110,22 @@ fl <- list(
   ht_inc ~ log(dbh) + treatment + year + (1 | plot),
   ht_inc ~ log(dbh) * treatment + year + (1 | plot),
   ht_inc ~ log(dbh) + treatment * year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment * year + (1 | plot)
+  ht_inc ~ log(dbh) * treatment * year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment2 + (1 | plot),
+  ht_inc ~ log(dbh) + treatment2 + year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment2 + year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment2 * year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment2 * year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment3 + (1 | plot),
+  ht_inc ~ log(dbh) + treatment3 + year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment3 + year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment3 * year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment3 * year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment4 + (1 | plot),
+  ht_inc ~ log(dbh) + treatment4 + year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment4 + year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment4 * year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment4 * year + (1 | plot)
 )
 
 # tibble(models = sapply(fl, deparse)) %>%
@@ -124,10 +145,10 @@ get_aic(fl, data = sese_d) %>%
   kable_styling(full_width = FALSE)
 ```
 
-Based on this, I will select model five for Douglas-fir because it is substantially better than the next best model. For redwood, I select model one because it is almost equivalent to the next better model, but is simpler.
+Based on this, I will select model five for Douglas-fir because it is substantially better than the next best model. For redwood, I select model 21 because it has the lowest AIC. I have doubts about whether this model captures any more valuable information than model 1, with `log(dbh)` only, but I'll go with it for now. 
 
 ```{r}
-sese <- lmer(fl[[1]], data = sese_d, REML = TRUE)
+sese <- lmer(fl[[21]], data = sese_d, REML = TRUE)
 psme <- lmer(fl[[5]], data = psme_d, REML = TRUE)
 
 # augment data with fitted, residual cooks distance and leverage
@@ -147,80 +168,140 @@ psme_d <- augment1(psme_d, psme)
 
 ## Estimated marginal means
 
-First, the model for sese was not fit with any factors, so its only mean is the prediction for the mean dbh
+In both cases, I'm separating results of comparisons by year, because interaction with year was included in the model. If we decide to hold year at its mean effect, then comparisons will likely be different.
+
+First, the model for sese was fit with interactions between treatment, year, and dbh. I could test at multiple dbh's if we were interested in a certain range of sizes because the model includes interaction with dbh.
+
 ```{r}
 library(emmeans)
-emmeans(sese, ~log(dbh))
+sese_em <- emmeans(sese, ~ dbh * treatment4 * year)
+sese_em
+pairs(sese_em, by = "year")
 ```
 
-Next, psme was fit with factors (`treatment * year`) we can do pairwise comparisons, or, alternatively, treatment vs control comparisons.
+Next, psme was fit with factors (`treatment * year`) we can do pairwise comparisons, or, alternatively, treatment vs control comparisons. Pairwise comparison does not have enough power to reveal any significant differences, but comparing just to control provides more power and shows some treatments are different than control.
 
 ```{r}
-psme_em <- emmeans(psme, ~ treatment + year)
+psme_em <- emmeans(psme, ~ treatment * year)
 pairs(psme_em, by = "year")
 contrast(psme_em, "trt.vs.ctrl1", by = "year")
 ```
 
-A plot of estimated means by treatment and year can reveal patterns in the interactions
+A plot of estimated means by treatment and year can reveal patterns in the interactions, the fact that effects change so much between measurement periods is probably due to the noisiness of the data and perhaps also systematic differences between measurement crews. We could ignore `year` to try to identify a signal for `treatment` despite the noise. By ignoring year we would be weighting the 2013 data, because less data was taken in 2018.
 
-```{r}
-emmip(psme_em, treatment ~ year)
+```{r, fig.height=4.5, fig.width=6.5}
+emmip(psme_em, treatment ~ year) +
+  scale_color_manual(values = palette()) +
+  scale_x_discrete(expand = expansion(mult = .2))
+
+emmip(sese_em, treatment4 ~ year) +
+  scale_color_manual(values = palette()) +
+  scale_x_discrete(expand = expansion(mult = .2))
 ```
 
-The author of `emmeans` is opposed to the use of "significance" letters on estimated means plots and suggests this plot as an alternative.
+The author of `emmeans` is opposed to the use of compact letter displays (significance letters) on estimated means plots and suggests this plot as an alternative:
 
-```{r}
-pwpp(psme_em, by = "year")
+```{r, fig.width=10.5, fig.height=5.5}
+pwpp(psme_em, by = "year") +
+  scale_color_manual(values = palette())
+  
+pwpp(sese_em, by = "year") +
+  scale_color_manual(values = palette()) +
+  scale_y_discrete(labels = c("unthinned (avg. dbh)", "thinned (av. dbh)")) +
+  scale_x_log10(breaks = waiver(), expand = expansion(mult = .2))
+
 ```
 
-I'm a little bit confused about
+Here I look at means of predictions and observed values by treatment and year. Predicted means are at the mean dbh for species/year, whereas observed values are at the mean of all observed height increments, this was mostly for me to understand the difference between least squares means (estimated marginal means) and regular marginal means.
 
-```{r}
+```{r, fig.width=10.5, fig.height=5.5}
 bind_rows(psme_d, sese_d) %>%
   ggplot(aes(y = ht_inc, x = year, color = treatment, group = treatment)) +
-    stat_summary(fun = mean, geom = "line", aes(linetype = "observed")) +
-    stat_summary(aes(y = fitted, linetype = "predicted"), fun = mean, geom = "line") +
+    stat_summary(
+      fun = mean,
+      geom = "line",
+      aes(linetype = "observed"),
+      size = 1.25) +
+    stat_summary(
+      data = as_tibble(psme_em),
+      aes(y = emmean, linetype = "predicted"),
+      fun = mean, geom = "line",size = 1
+    ) +
     facet_wrap(vars(spp)) +
     scale_color_manual(values = palette()) +
     scale_linetype_manual(
       values = c(2, 1),
       name = "",
       breaks = c("observed", "predicted")
-    )
-
+    ) +
+    scale_x_discrete(expand = expansion(mult = .2))
 ```
-
-```{r}
-with(psme_d, interaction.plot(year, treatment, ht_inc))
-with(sese_d, interaction.plot(year, treatment, ht_inc))
-```
-
 
 ## Predictions
 
-Predicted heights fit with a loess smoother, not a great plot.
+Here I predict heights for a range of values while holding the random effect of `plot` at its mean according to our selected models. The model for PSME does not include interactions between dbh and treatment or year, so slopes are parallel. The model for sese does include interactions with dbh and slopes change dramatically (flip-flop) between years. It seems likely to me that we are either modeling noise, or systematic differences between different crews doing height measurements.
 
-```{r}
-test_d <- left_join(
-  test_d,
-  bind_rows(sese_d, psme_d) %>% dplyr::select(tree_id, year, fitted),
-  by = c("tree_id", "year")
-)
+```{r, fig.width=9, fig.height=9}
+library(ggpubr)
+library(patchwork)
 
-ggplot(test_d, aes(x = dbh, y = ht_inc)) +
-  geom_smooth(aes(linetype = spp)) +
-  facet_wrap(vars(treatment))
+plot_emmeans_models <- function(by_year){
+  if (by_year == TRUE) {
+    psme_form <- ~ dbh + treatment * year
+    sese_form <- ~ dbh * treatment4 * year
+    facet_vars <- vars(interaction(spp, year, sep = " "))
+  } else {
+    psme_form <- ~ dbh + treatment
+    sese_form <- ~ dbh * treatment4
+    facet_vars <- vars(spp)
+  }
+  bind_rows(
+    emmeans(
+      psme,
+      psme_form,
+      at = list(dbh = seq(10, 60, 2))
+    ) %>%
+    as_tibble() %>%
+    mutate(spp = "PSME"),
+    emmeans(
+      sese,
+      sese_form,
+      at = list(dbh = seq(10, 60, 2))
+      ) %>%
+    as_tibble() %>% 
+    rename(treatment = treatment4) %>%
+    mutate(spp = "SESE")
+  ) %>%
+    ggplot(aes(x = dbh, y = emmean, group = treatment)) +
+      geom_line(aes(color = treatment), size = 1) +
+      scale_color_manual(values = palette()) +
+      labs(x = "dbh (cm)", y = "Height increment (m)") +
+      facet_wrap(facet_vars) +
+      theme_classic2()
 
+}
+plot_emmeans_models(by_year = TRUE)
 ```
 
-Here I so the differences between each plot, these are avearaged over both years, another noisy plot
+Here are the model predictions if we hold the effect of year at its mean. This makes the model seem a bit more coherent, but when we don't include the effect of year, there is no difference between treatments for sese, because the difference was mostly to do with the difference between years. This might be a good reason to remove year from the model.
 
 ```{r}
+plot_emmeans_models(by_year = FALSE)
+```
+
+Here I plot the differences between each plot, these are averaged over both years and seems to show there is quite a bit of variability in plots.
+
+```{r, fig.height=6, fig.width=9}
 palette("tableau10")
 ggplot(test_d, aes(x = dbh, y = ht_inc)) +
-  geom_smooth(aes(linetype = spp, color = str_extract(plot, "\\d")), method = "lm", formula = y ~ log(x), se = FALSE) +
+  geom_smooth(
+    aes(linetype = spp, color = str_extract(plot, "\\d")),
+    method = "lm",
+    formula = y ~ log(x),
+    se = FALSE
+  ) +
   facet_wrap(vars(treatment)) +
-  scale_color_manual(values = palette())
+  scale_color_manual(values = palette(), name = "plot number")
 ```
 
 ## Validation of selected models
@@ -344,7 +425,7 @@ points(resid ~ lev, data = filter(sese_d, cooks > 3 * mean(cooks)), pch = 16, co
 
 ## Random effects distribution
 
-The distribution of random effects (plots) should be roughly normal.
+The distribution of random effects (plots) should be roughly normal. Obviously, this is not the case for SESE, I'm not sure of what the implications for this are.
 
 ```{r}
 hist(as.vector(unlist(ranef(psme)$plot)), col = 1)

@@ -260,10 +260,13 @@ $(document).ready(function () {
   <a href="04_pred_ht.html">Predicting missing heights</a>
 </li>
 <li>
+  <a href="05_analyzing_ba_increment.html">Analyzing Ba increment</a>
+</li>
+<li>
   <a href="05_summary.html">Data summaries and figures</a>
 </li>
 <li>
-  <a href="06_variability.html">Variability</a>
+  <a href="07_variability.html">Variability</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -309,8 +312,14 @@ $(document).ready(function () {
 </ul>
 </div>
 
-<pre class="r"><code>library(lme4)
-palette(&quot;Tableau 10&quot;)</code></pre>
+<pre class="r"><code>library(lme4)</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## 
+## Attaching package: &#39;Matrix&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
+## 
+##     expand, pack, unpack</code></pre>
+<pre class="r"><code>palette(&quot;Tableau 10&quot;)</code></pre>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
 <p>I need to predict missing heights in 2018 in order to complete other steps of the analysis and provide better summary data. To accomplish this, I will model height increment as a function of the continuous predictor, dbh, as well as a combination of nested groupings: year, treatment, plot, and species. Additionally, height increment response is of interest in it’s own right. While height growth in trees is less responsive to conditions then diameter, it would be important to see whether there is a difference detected between treatments.</p>
@@ -365,17 +374,29 @@ test_d %&gt;%
 </div>
 <div id="optimal-random-effects-specification" class="section level2">
 <h2>Optimal random effects specification</h2>
-<p>We will determine the optimal random effects structure using the global fixed effects structure.</p>
-<pre class="r"><code>library(nlme)
-library(MuMIn)
+<p>We will determine the optimal random effects structure using the global fixed effects structure. I will select the best of the following random effects structures:</p>
+<pre><code>(1 | plot)
+(1 | plot) + (1 | tree_id)
+(log(dbh) | plot) + (1 | tree_id)</code></pre>
+<pre class="r"><code>library(nlme)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;nlme&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:lme4&#39;:
+## 
+##     lmList</code></pre>
+<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     collapse</code></pre>
+<pre class="r"><code>library(MuMIn)
 
 f0 &lt;- formula(ht_inc ~ log(dbh) * treatment * spp * year)
 m0 &lt;- gls(f0, data = test_d, method = &quot;REML&quot;)
 m1 &lt;- lmer(update(f0, ~ . + (1 | plot)), REML = TRUE, data = test_d)
-m2 &lt;- update(m1, ~ . + (1 | tree_id))
-m3 &lt;- update(m2, ~ . + (0 + log(dbh) | plot))
-
-AICc(m0, m1, m2, m3)</code></pre>
+m2 &lt;- update(m1, ~ . + (1 | tree_id))</code></pre>
+<pre><code>## boundary (singular) fit: see ?isSingular</code></pre>
+<pre class="r"><code>m3 &lt;- update(m2, ~ . + (0 + log(dbh) | plot))</code></pre>
+<pre><code>## boundary (singular) fit: see ?isSingular</code></pre>
+<pre class="r"><code>AICc(m0, m1, m2, m3)</code></pre>
 <pre><code>##    df     AICc
 ## m0 41 998.2696
 ## m1 42 969.3265
@@ -395,7 +416,22 @@ fl &lt;- list(
   ht_inc ~ log(dbh) + treatment + year + (1 | plot),
   ht_inc ~ log(dbh) * treatment + year + (1 | plot),
   ht_inc ~ log(dbh) + treatment * year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment * year + (1 | plot)
+  ht_inc ~ log(dbh) * treatment * year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment2 + (1 | plot),
+  ht_inc ~ log(dbh) + treatment2 + year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment2 + year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment2 * year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment2 * year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment3 + (1 | plot),
+  ht_inc ~ log(dbh) + treatment3 + year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment3 + year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment3 * year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment3 * year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment4 + (1 | plot),
+  ht_inc ~ log(dbh) + treatment4 + year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment4 + year + (1 | plot),
+  ht_inc ~ log(dbh) + treatment4 * year + (1 | plot),
+  ht_inc ~ log(dbh) * treatment4 * year + (1 | plot)
 )
 
 # tibble(models = sapply(fl, deparse)) %&gt;%
@@ -442,6 +478,146 @@ ht_inc ~ log(dbh) + treatment * year + (1 | plot)
 </tr>
 <tr>
 <td style="text-align:left;">
+15
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment3 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+537.5
+</td>
+<td style="text-align:right;">
+0.302
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+12
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment3 + (1 | plot)
+</td>
+<td style="text-align:right;">
+538.6
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment3 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+539.3
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+21
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment4 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+539.4
+</td>
+<td style="text-align:right;">
+0.301
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+16
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment3 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+539.7
+</td>
+<td style="text-align:right;">
+0.301
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+20
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment4 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+540.2
+</td>
+<td style="text-align:right;">
+0.302
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+17
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment4 + (1 | plot)
+</td>
+<td style="text-align:right;">
+540.7
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+11
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment2 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+541.1
+</td>
+<td style="text-align:right;">
+0.300
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment4 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+541.4
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+10
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment2 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+541.8
+</td>
+<td style="text-align:right;">
+0.302
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2
 </td>
 <td style="text-align:left;">
@@ -449,6 +625,20 @@ ht_inc ~ log(dbh) + treatment + (1 | plot)
 </td>
 <td style="text-align:right;">
 542.6
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+7
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment2 + (1 | plot)
+</td>
+<td style="text-align:right;">
+542.7
 </td>
 <td style="text-align:right;">
 0.303
@@ -470,6 +660,48 @@ ht_inc ~ log(dbh) + treatment + year + (1 | plot)
 </tr>
 <tr>
 <td style="text-align:left;">
+14
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment3 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+543.4
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+19
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment4 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+543.4
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+8
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment2 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+543.5
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 6
 </td>
 <td style="text-align:left;">
@@ -480,6 +712,20 @@ ht_inc ~ log(dbh) * treatment * year + (1 | plot)
 </td>
 <td style="text-align:right;">
 0.299
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+9
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment2 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+547.1
+</td>
+<td style="text-align:right;">
+0.303
 </td>
 </tr>
 <tr>
@@ -538,6 +784,48 @@ rmse
 <tbody>
 <tr>
 <td style="text-align:left;">
+21
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment4 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+294.2
+</td>
+<td style="text-align:right;">
+0.322
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+11
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment2 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+296.0
+</td>
+<td style="text-align:right;">
+0.321
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+16
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment3 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+297.3
+</td>
+<td style="text-align:right;">
+0.324
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 2
 </td>
 <td style="text-align:left;">
@@ -548,6 +836,48 @@ ht_inc ~ log(dbh) + treatment + (1 | plot)
 </td>
 <td style="text-align:right;">
 0.332
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+12
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment3 + (1 | plot)
+</td>
+<td style="text-align:right;">
+298.6
+</td>
+<td style="text-align:right;">
+0.331
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+7
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment2 + (1 | plot)
+</td>
+<td style="text-align:right;">
+298.7
+</td>
+<td style="text-align:right;">
+0.329
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment3 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+298.7
+</td>
+<td style="text-align:right;">
+0.330
 </td>
 </tr>
 <tr>
@@ -580,6 +910,104 @@ ht_inc ~ log(dbh) + treatment + year + (1 | plot)
 </tr>
 <tr>
 <td style="text-align:left;">
+8
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment2 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+299.2
+</td>
+<td style="text-align:right;">
+0.328
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+20
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment4 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+299.8
+</td>
+<td style="text-align:right;">
+0.327
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+14
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment3 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+299.8
+</td>
+<td style="text-align:right;">
+0.329
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+15
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment3 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+299.8
+</td>
+<td style="text-align:right;">
+0.329
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+17
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment4 + (1 | plot)
+</td>
+<td style="text-align:right;">
+300.2
+</td>
+<td style="text-align:right;">
+0.329
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+10
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment2 * year + (1 | plot)
+</td>
+<td style="text-align:right;">
+300.3
+</td>
+<td style="text-align:right;">
+0.327
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) + treatment4 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+300.5
+</td>
+<td style="text-align:right;">
+0.328
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 6
 </td>
 <td style="text-align:left;">
@@ -590,6 +1018,34 @@ ht_inc ~ log(dbh) * treatment * year + (1 | plot)
 </td>
 <td style="text-align:right;">
 0.320
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+9
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment2 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+301.3
+</td>
+<td style="text-align:right;">
+0.327
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+19
+</td>
+<td style="text-align:left;">
+ht_inc ~ log(dbh) * treatment4 + year + (1 | plot)
+</td>
+<td style="text-align:right;">
+301.3
+</td>
+<td style="text-align:right;">
+0.328
 </td>
 </tr>
 <tr>
@@ -622,8 +1078,8 @@ ht_inc ~ log(dbh) * treatment + year + (1 | plot)
 </tr>
 </tbody>
 </table>
-<p>Based on this, I will select model five for Douglas-fir because it is substantially better than the next best model. For redwood, I select model one because it is almost equivalent to the next better model, but is simpler.</p>
-<pre class="r"><code>sese &lt;- lmer(fl[[1]], data = sese_d, REML = TRUE)
+<p>Based on this, I will select model five for Douglas-fir because it is substantially better than the next best model. For redwood, I select model 21 because it has the lowest AIC. I have doubts about whether this model captures any more valuable information than model 1, with <code>log(dbh)</code> only, but I’ll go with it for now.</p>
+<pre class="r"><code>sese &lt;- lmer(fl[[21]], data = sese_d, REML = TRUE)
 psme &lt;- lmer(fl[[5]], data = psme_d, REML = TRUE)
 
 # augment data with fitted, residual cooks distance and leverage
@@ -641,16 +1097,35 @@ psme_d &lt;- augment1(psme_d, psme)</code></pre>
 </div>
 <div id="estimated-marginal-means" class="section level2">
 <h2>Estimated marginal means</h2>
-<p>First, the model for sese was not fit with any factors, so its only mean is the prediction for the mean dbh</p>
+<p>In both cases, I’m separating results of comparisons by year, because interaction with year was included in the model. If we decide to hold year at its mean effect, then comparisons will likely be different.</p>
+<p>First, the model for sese was fit with interactions between treatment, year, and dbh. I could test at multiple dbh’s if we were interested in a certain range of sizes because the model includes interaction with dbh.</p>
 <pre class="r"><code>library(emmeans)
-emmeans(sese, ~log(dbh))</code></pre>
-<pre><code>##   dbh emmean     SE   df lower.CL upper.CL
-##  31.7  0.324 0.0247 17.2    0.272    0.376
+sese_em &lt;- emmeans(sese, ~ dbh * treatment4 * year)
+sese_em</code></pre>
+<pre><code>##   dbh treatment4 year emmean     SE   df lower.CL upper.CL
+##  31.7 thinned    13    0.346 0.0318 25.9    0.281    0.412
+##  31.7 unthinned  13    0.297 0.0650 35.8    0.166    0.429
+##  31.7 thinned    18    0.292 0.0357 37.9    0.220    0.364
+##  31.7 unthinned  18    0.332 0.0764 59.8    0.179    0.485
 ## 
 ## Degrees-of-freedom method: kenward-roger 
 ## Confidence level used: 0.95</code></pre>
-<p>Next, psme was fit with factors (<code>treatment * year</code>) we can do pairwise comparisons, or, alternatively, treatment vs control comparisons.</p>
-<pre class="r"><code>psme_em &lt;- emmeans(psme, ~ treatment + year)
+<pre class="r"><code>pairs(sese_em, by = &quot;year&quot;)</code></pre>
+<pre><code>## year = 13:
+##  contrast                                            estimate     SE   df
+##  31.736874715262 thinned - 31.736874715262 unthinned   0.0488 0.0723 33.5
+##  t.ratio p.value
+##    0.675  0.5045
+## 
+## year = 18:
+##  contrast                                            estimate     SE   df
+##  31.736874715262 thinned - 31.736874715262 unthinned  -0.0400 0.0843 54.8
+##  t.ratio p.value
+##   -0.474  0.6373
+## 
+## Degrees-of-freedom method: kenward-roger</code></pre>
+<p>Next, psme was fit with factors (<code>treatment * year</code>) we can do pairwise comparisons, or, alternatively, treatment vs control comparisons. Pairwise comparison does not have enough power to reveal any significant differences, but comparing just to control provides more power and shows some treatments are different than control.</p>
+<pre class="r"><code>psme_em &lt;- emmeans(psme, ~ treatment * year)
 pairs(psme_em, by = &quot;year&quot;)</code></pre>
 <pre><code>## year = 13:
 ##  contrast  estimate     SE   df t.ratio p.value
@@ -697,50 +1172,109 @@ pairs(psme_em, by = &quot;year&quot;)</code></pre>
 ## 
 ## Degrees-of-freedom method: kenward-roger 
 ## P value adjustment: dunnettx method for 4 tests</code></pre>
-<p>A plot of estimated means by treatment and year can reveal patterns in the interactions</p>
-<pre class="r"><code>emmip(psme_em, treatment ~ year)</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
-<p>The author of <code>emmeans</code> is opposed to the use of “significance” letters on estimated means plots and suggests this plot as an alternative.</p>
-<pre class="r"><code>pwpp(psme_em, by = &quot;year&quot;)</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
-<p>I’m a little bit confused about</p>
+<p>A plot of estimated means by treatment and year can reveal patterns in the interactions, the fact that effects change so much between measurement periods is probably due to the noisiness of the data and perhaps also systematic differences between measurement crews. We could ignore <code>year</code> to try to identify a signal for <code>treatment</code> despite the noise. By ignoring year we would be weighting the 2013 data, because less data was taken in 2018.</p>
+<pre class="r"><code>emmip(psme_em, treatment ~ year) +
+  scale_color_manual(values = palette()) +
+  scale_x_discrete(expand = expansion(mult = .2))</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-10-1.png" width="624" /></p>
+<pre class="r"><code>emmip(sese_em, treatment4 ~ year) +
+  scale_color_manual(values = palette()) +
+  scale_x_discrete(expand = expansion(mult = .2))</code></pre>
+<pre><code>## NOTE: Results may be misleading due to involvement in interactions</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-10-2.png" width="624" /></p>
+<p>The author of <code>emmeans</code> is opposed to the use of compact letter displays (significance letters) on estimated means plots and suggests this plot as an alternative:</p>
+<pre class="r"><code>pwpp(psme_em, by = &quot;year&quot;) +
+  scale_color_manual(values = palette())</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="1008" /></p>
+<pre class="r"><code>pwpp(sese_em, by = &quot;year&quot;) +
+  scale_color_manual(values = palette()) +
+  scale_y_discrete(labels = c(&quot;unthinned (avg. dbh)&quot;, &quot;thinned (av. dbh)&quot;)) +
+  scale_x_log10(breaks = waiver(), expand = expansion(mult = .2))</code></pre>
+<pre><code>## Scale for &#39;x&#39; is already present. Adding another scale for &#39;x&#39;, which will
+## replace the existing scale.</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-11-2.png" width="1008" /></p>
+<p>Here I look at means of predictions and observed values by treatment and year. Predicted means are at the mean dbh for species/year, whereas observed values are at the mean of all observed height increments, this was mostly for me to understand the difference between least squares means (estimated marginal means) and regular marginal means.</p>
 <pre class="r"><code>bind_rows(psme_d, sese_d) %&gt;%
   ggplot(aes(y = ht_inc, x = year, color = treatment, group = treatment)) +
-    stat_summary(fun = mean, geom = &quot;line&quot;, aes(linetype = &quot;observed&quot;)) +
-    stat_summary(aes(y = fitted, linetype = &quot;predicted&quot;), fun = mean, geom = &quot;line&quot;) +
+    stat_summary(
+      fun = mean,
+      geom = &quot;line&quot;,
+      aes(linetype = &quot;observed&quot;),
+      size = 1.25) +
+    stat_summary(
+      data = as_tibble(psme_em),
+      aes(y = emmean, linetype = &quot;predicted&quot;),
+      fun = mean, geom = &quot;line&quot;,size = 1
+    ) +
     facet_wrap(vars(spp)) +
     scale_color_manual(values = palette()) +
     scale_linetype_manual(
       values = c(2, 1),
       name = &quot;&quot;,
       breaks = c(&quot;observed&quot;, &quot;predicted&quot;)
-    )</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
-<pre class="r"><code>with(psme_d, interaction.plot(year, treatment, ht_inc))</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
-<pre class="r"><code>with(sese_d, interaction.plot(year, treatment, ht_inc))</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
+    ) +
+    scale_x_discrete(expand = expansion(mult = .2))</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="1008" /></p>
 </div>
 <div id="predictions" class="section level2">
 <h2>Predictions</h2>
-<p>Predicted heights fit with a loess smoother, not a great plot.</p>
-<pre class="r"><code>test_d &lt;- left_join(
-  test_d,
-  bind_rows(sese_d, psme_d) %&gt;% dplyr::select(tree_id, year, fitted),
-  by = c(&quot;tree_id&quot;, &quot;year&quot;)
-)
+<p>Here I predict heights for a range of values while holding the random effect of <code>plot</code> at its mean according to our selected models. The model for PSME does not include interactions between dbh and treatment or year, so slopes are parallel. The model for sese does include interactions with dbh and slopes change dramatically (flip-flop) between years. It seems likely to me that we are either modeling noise, or systematic differences between different crews doing height measurements.</p>
+<pre class="r"><code>library(ggpubr)
+library(patchwork)
 
-ggplot(test_d, aes(x = dbh, y = ht_inc)) +
-  geom_smooth(aes(linetype = spp)) +
-  facet_wrap(vars(treatment))</code></pre>
+plot_emmeans_models &lt;- function(by_year){
+  if (by_year == TRUE) {
+    psme_form &lt;- ~ dbh + treatment * year
+    sese_form &lt;- ~ dbh * treatment4 * year
+    facet_vars &lt;- vars(interaction(spp, year, sep = &quot; &quot;))
+  } else {
+    psme_form &lt;- ~ dbh + treatment
+    sese_form &lt;- ~ dbh * treatment4
+    facet_vars &lt;- vars(spp)
+  }
+  bind_rows(
+    emmeans(
+      psme,
+      psme_form,
+      at = list(dbh = seq(10, 60, 2))
+    ) %&gt;%
+    as_tibble() %&gt;%
+    mutate(spp = &quot;PSME&quot;),
+    emmeans(
+      sese,
+      sese_form,
+      at = list(dbh = seq(10, 60, 2))
+      ) %&gt;%
+    as_tibble() %&gt;% 
+    rename(treatment = treatment4) %&gt;%
+    mutate(spp = &quot;SESE&quot;)
+  ) %&gt;%
+    ggplot(aes(x = dbh, y = emmean, group = treatment)) +
+      geom_line(aes(color = treatment), size = 1) +
+      scale_color_manual(values = palette()) +
+      labs(x = &quot;dbh (cm)&quot;, y = &quot;Height increment (m)&quot;) +
+      facet_wrap(facet_vars) +
+      theme_classic2()
+
+}
+plot_emmeans_models(by_year = TRUE)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-13-1.png" width="864" /></p>
+<p>Here are the model predictions if we hold the effect of year at its mean. This makes the model seem a bit more coherent, but when we don’t include the effect of year, there is no difference between treatments for sese, because the difference was mostly to do with the difference between years. This might be a good reason to remove year from the model.</p>
+<pre class="r"><code>plot_emmeans_models(by_year = FALSE)</code></pre>
+<pre><code>## NOTE: Results may be misleading due to involvement in interactions</code></pre>
 <p><img src="04_pred_ht_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
-<p>Here I so the differences between each plot, these are avearaged over both years, another noisy plot</p>
+<p>Here I plot the differences between each plot, these are averaged over both years and seems to show there is quite a bit of variability in plots.</p>
 <pre class="r"><code>palette(&quot;tableau10&quot;)
 ggplot(test_d, aes(x = dbh, y = ht_inc)) +
-  geom_smooth(aes(linetype = spp, color = str_extract(plot, &quot;\\d&quot;)), method = &quot;lm&quot;, formula = y ~ log(x), se = FALSE) +
+  geom_smooth(
+    aes(linetype = spp, color = str_extract(plot, &quot;\\d&quot;)),
+    method = &quot;lm&quot;,
+    formula = y ~ log(x),
+    se = FALSE
+  ) +
   facet_wrap(vars(treatment)) +
-  scale_color_manual(values = palette())</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+  scale_color_manual(values = palette(), name = &quot;plot number&quot;)</code></pre>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-15-1.png" width="864" /></p>
 </div>
 <div id="validation-of-selected-models" class="section level2">
 <h2>Validation of selected models</h2>
@@ -853,7 +1387,7 @@ points(resid ~ lev, data = filter(sese_d, cooks &gt; 3 * mean(cooks)), pch = 16,
 </div>
 <div id="random-effects-distribution" class="section level2">
 <h2>Random effects distribution</h2>
-<p>The distribution of random effects (plots) should be roughly normal.</p>
+<p>The distribution of random effects (plots) should be roughly normal. Obviously, this is not the case for SESE, I’m not sure of what the implications for this are.</p>
 <pre class="r"><code>hist(as.vector(unlist(ranef(psme)$plot)), col = 1)</code></pre>
 <p><img src="04_pred_ht_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
 <pre class="r"><code>hist(as.vector(unlist(ranef(sese)$plot)), col = 2)</code></pre>
@@ -868,8 +1402,15 @@ plot(Variogram(sese1, form = ~ x + y | plot))</code></pre>
 <p><img src="04_pred_ht_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
 <pre class="r"><code>plot(Variogram(psme1, form = ~ x + y | plot))</code></pre>
 <p><img src="04_pred_ht_files/figure-html/unnamed-chunk-22-2.png" width="672" /></p>
-<pre class="r"><code>library(geoR)
-par(mfrow = c(2, 1))
+<pre class="r"><code>library(geoR)</code></pre>
+<pre><code>## &#39;RandomFieldsUtils&#39; will use OMP
+## &#39;RandomFields&#39; will use OMP</code></pre>
+<pre><code>## --------------------------------------------------------------
+##  Analysis of Geostatistical Data
+##  For an Introduction to geoR go to http://www.leg.ufpr.br/geoR
+##  geoR version 1.8-1 (built on 2020-02-08) is now loaded
+## --------------------------------------------------------------</code></pre>
+<pre class="r"><code>par(mfrow = c(2, 1))
 vp &lt;- variog(
   coords = cbind(psme_d$x, psme_d$y),
   data = resid(psme, type = &quot;pearson&quot;),
@@ -916,13 +1457,13 @@ obs_pairs_corr(sese_d)</code></pre>
 ##  Pearson&#39;s product-moment correlation
 ## 
 ## data:  tp$resid2 and tp$resid1
-## t = -2.1508, df = 167, p-value = 0.03293
+## t = -1.8517, df = 167, p-value = 0.06583
 ## alternative hypothesis: true correlation is not equal to 0
 ## 95 percent confidence interval:
-##  -0.30751223 -0.01354924
+##  -0.286662586  0.009318915
 ## sample estimates:
 ##        cor 
-## -0.1641735</code></pre>
+## -0.1418407</code></pre>
 <pre class="r"><code>obs_pairs_corr(psme_d)</code></pre>
 <pre><code>## 
 ##  Pearson&#39;s product-moment correlation

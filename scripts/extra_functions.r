@@ -10,13 +10,15 @@ group_vars <- function(by_species = FALSE) {
 }
 
 # color table by groups function, only works if table is
-# properly arranged.
+# properly arranged. 
 color_groups <- function(x, caption = "", background = "#EEE9E9") {
   even_groups <- x %>%
     rownames_to_column() %>%
-    filter(cur_group_id() %% 2 == 0) %>%
-    pull(rowname) %>%
-    as.numeric()
+    mutate(rowname = as.numeric(rowname), first_row = first(rowname)) %>%
+    ungroup() %>%
+    mutate(group_id = dense_rank(first_row)) %>%
+    filter(group_id %% 2 == 0) %>%
+    pull(rowname)
   x %>%
     kbl(caption = caption) %>%
     kable_styling(full_width = FALSE) %>%

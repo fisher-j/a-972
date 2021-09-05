@@ -13,10 +13,12 @@ navbar:
       href: 03_define.html
     - text: "Predicting missing heights"
       href: 04_pred_ht.html
+    - text: "Analyzing Ba increment"
+      href: 05_analyzing_ba_increment.html
     - text: "Data summaries and figures"
       href: 05_summary.html
     - text: "Variability"
-      href: 06_variability.html
+      href: 07_variability.html
 output:
   html_document:
     toc: true
