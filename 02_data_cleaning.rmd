@@ -74,7 +74,7 @@ change_d %>%
 
 I'll look at change outliers that occur in p1 or p2, but not both and I'll manually select entries to remove from the dbh summary. 
 
-* If the first or las dbh seems unlikely, project a value using either the other periods dbh change or the average change for that species/treatment.
+* If the first or last dbh seems unlikely, project a value using either the other periods dbh change or the average change for that species/treatment.
 * If the tree seems very unhealthy, allow up to 10% shrinkage per measurement period with a 15% maximum.
 * If the middle measurement seems unlikely:
   * consider averaging first and last

@@ -13,8 +13,8 @@
 
 <title>Detailed data cleaning</title>
 
-<script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
-<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
@@ -263,7 +263,7 @@ $(document).ready(function () {
   <a href="05_analyzing_ba_increment.html">Analyzing Ba increment</a>
 </li>
 <li>
-  <a href="05_summary.html">Data summaries and figures</a>
+  <a href="06_summary.html">Data summaries and figures</a>
 </li>
 <li>
   <a href="07_variability.html">Variability</a>
@@ -684,7 +684,7 @@ NA
 <h3>Identify dbh to fix</h3>
 <p>I’ll look at change outliers that occur in p1 or p2, but not both and I’ll manually select entries to remove from the dbh summary.</p>
 <ul>
-<li>If the first or las dbh seems unlikely, project a value using either the other periods dbh change or the average change for that species/treatment.</li>
+<li>If the first or last dbh seems unlikely, project a value using either the other periods dbh change or the average change for that species/treatment.</li>
 <li>If the tree seems very unhealthy, allow up to 10% shrinkage per measurement period with a 15% maximum.</li>
 <li>If the middle measurement seems unlikely:
 <ul>

@@ -82,6 +82,24 @@ library(geometry)
 # temp <- d_l %>% filter(plot == "1H40", year == "18") %>% select(h_dist, azi, ht, dbh)
 ```
 
+## Standardize crown ratio
+
+```{r}
+d_l <- d_l %>%
+  mutate(
+    cr = case_when(
+      cr %in% c(-999, -99) ~ NA_real_,
+      cr == 0 & is.na(ht)  ~ NA_real_,
+      cr %in% 1:5          ~ 5,
+      cr %in% 21:25        ~ 25,
+      cr %in% 31:35        ~ 35,
+      cr %in% 41:50        ~ 50,
+      cr %in% 55:80        ~ 60,
+      TRUE                 ~ cr
+    )
+  )
+```
+
 ## Update post-harvest data
 
 Make sure that this is the last step

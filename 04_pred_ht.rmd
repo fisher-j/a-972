@@ -45,8 +45,8 @@ We are pretty sure that height growth is correlated with diameter, in that large
 
 ```{r, fig.height=7, fig.width=10}
 m0 <- lm(ht_inc ~ dbh * treatment * spp, data = test_d)
-m1 <- update(m0, . ~ . - dbh + sqrt(dbh))
-m2 <- update(m0, . ~ . - dbh + log(dbh))
+m1 <- update(m0, ~ sqrt(dbh) * treatment * spp)
+m2 <- update(m0, ~ log(dbh) * treatment * spp)
 
 
 test_d %>%
@@ -96,9 +96,9 @@ AICc(m0, m1, m2, m3)
 
 The optimal random effects structure, judged by AIC (and using fixed effects coefficients determined by REML), includes the random intercept only for `plot`. We will assume this random effects structure in all further models.
 
-## Choosing a submodel for fixed effects
+## Choosing a sub-model for fixed effects
 
-The next step is to define a list of potential submodels for fixed effects to determine the optimal structure. These will be determined for Douglas-fir and redwood separately so I'll start by splitting the two datasets.
+The next step is to define a list of potential sub-models for fixed effects to determine the optimal structure. These will be determined for Douglas-fir and redwood separately so I'll start by splitting the two datasets.
 
 ```{r}
 sese_d <- subset(test_d, spp == "SESE3")

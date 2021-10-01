@@ -13,8 +13,8 @@
 
 <title>Modeling height growth and predicting missing heights</title>
 
-<script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
-<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
@@ -263,7 +263,7 @@ $(document).ready(function () {
   <a href="05_analyzing_ba_increment.html">Analyzing Ba increment</a>
 </li>
 <li>
-  <a href="05_summary.html">Data summaries and figures</a>
+  <a href="06_summary.html">Data summaries and figures</a>
 </li>
 <li>
   <a href="07_variability.html">Variability</a>
@@ -299,7 +299,7 @@ $(document).ready(function () {
 <li><a href="#assessment-of-linear-relationship-between-dbh-and-height-increment">Assessment of linear relationship between dbh and height increment</a></li>
 <li><a href="#global-model">Global Model</a></li>
 <li><a href="#optimal-random-effects-specification">Optimal random effects specification</a></li>
-<li><a href="#choosing-a-submodel-for-fixed-effects">Choosing a submodel for fixed effects</a></li>
+<li><a href="#choosing-a-sub-model-for-fixed-effects">Choosing a sub-model for fixed effects</a></li>
 <li><a href="#estimated-marginal-means">Estimated marginal means</a></li>
 <li><a href="#predictions">Predictions</a></li>
 <li><a href="#validation-of-selected-models">Validation of selected models</a></li>
@@ -312,14 +312,8 @@ $(document).ready(function () {
 </ul>
 </div>
 
-<pre class="r"><code>library(lme4)</code></pre>
-<pre><code>## Loading required package: Matrix</code></pre>
-<pre><code>## 
-## Attaching package: &#39;Matrix&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
-## 
-##     expand, pack, unpack</code></pre>
-<pre class="r"><code>palette(&quot;Tableau 10&quot;)</code></pre>
+<pre class="r"><code>library(lme4)
+palette(&quot;Tableau 10&quot;)</code></pre>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
 <p>I need to predict missing heights in 2018 in order to complete other steps of the analysis and provide better summary data. To accomplish this, I will model height increment as a function of the continuous predictor, dbh, as well as a combination of nested groupings: year, treatment, plot, and species. Additionally, height increment response is of interest in it’s own right. While height growth in trees is less responsive to conditions then diameter, it would be important to see whether there is a difference detected between treatments.</p>
@@ -348,8 +342,8 @@ $(document).ready(function () {
 <h2>Assessment of linear relationship between dbh and height increment</h2>
 <p>We are pretty sure that height growth is correlated with diameter, in that larger trees are capable of more height growth than smaller ones. We also think that this relationship is probably not linear. I will take a look at log and square root transformations of dbh for linear prediction of height growth.</p>
 <pre class="r"><code>m0 &lt;- lm(ht_inc ~ dbh * treatment * spp, data = test_d)
-m1 &lt;- update(m0, . ~ . - dbh + sqrt(dbh))
-m2 &lt;- update(m0, . ~ . - dbh + log(dbh))
+m1 &lt;- update(m0, ~ sqrt(dbh) * treatment * spp)
+m2 &lt;- update(m0, ~ log(dbh) * treatment * spp)
 
 
 test_d %&gt;%
@@ -378,16 +372,8 @@ test_d %&gt;%
 <pre><code>(1 | plot)
 (1 | plot) + (1 | tree_id)
 (log(dbh) | plot) + (1 | tree_id)</code></pre>
-<pre class="r"><code>library(nlme)</code></pre>
-<pre><code>## 
-## Attaching package: &#39;nlme&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:lme4&#39;:
-## 
-##     lmList</code></pre>
-<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
-## 
-##     collapse</code></pre>
-<pre class="r"><code>library(MuMIn)
+<pre class="r"><code>library(nlme)
+library(MuMIn)
 
 f0 &lt;- formula(ht_inc ~ log(dbh) * treatment * spp * year)
 m0 &lt;- gls(f0, data = test_d, method = &quot;REML&quot;)
@@ -404,9 +390,9 @@ m2 &lt;- update(m1, ~ . + (1 | tree_id))</code></pre>
 ## m3 44 973.5622</code></pre>
 <p>The optimal random effects structure, judged by AIC (and using fixed effects coefficients determined by REML), includes the random intercept only for <code>plot</code>. We will assume this random effects structure in all further models.</p>
 </div>
-<div id="choosing-a-submodel-for-fixed-effects" class="section level2">
-<h2>Choosing a submodel for fixed effects</h2>
-<p>The next step is to define a list of potential submodels for fixed effects to determine the optimal structure. These will be determined for Douglas-fir and redwood separately so I’ll start by splitting the two datasets.</p>
+<div id="choosing-a-sub-model-for-fixed-effects" class="section level2">
+<h2>Choosing a sub-model for fixed effects</h2>
+<p>The next step is to define a list of potential sub-models for fixed effects to determine the optimal structure. These will be determined for Douglas-fir and redwood separately so I’ll start by splitting the two datasets.</p>
 <pre class="r"><code>sese_d &lt;- subset(test_d, spp == &quot;SESE3&quot;)
 psme_d &lt;- subset(test_d, spp == &quot;PSMEM&quot;)
 
@@ -1402,15 +1388,8 @@ plot(Variogram(sese1, form = ~ x + y | plot))</code></pre>
 <p><img src="04_pred_ht_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
 <pre class="r"><code>plot(Variogram(psme1, form = ~ x + y | plot))</code></pre>
 <p><img src="04_pred_ht_files/figure-html/unnamed-chunk-22-2.png" width="672" /></p>
-<pre class="r"><code>library(geoR)</code></pre>
-<pre><code>## &#39;RandomFieldsUtils&#39; will use OMP
-## &#39;RandomFields&#39; will use OMP</code></pre>
-<pre><code>## --------------------------------------------------------------
-##  Analysis of Geostatistical Data
-##  For an Introduction to geoR go to http://www.leg.ufpr.br/geoR
-##  geoR version 1.8-1 (built on 2020-02-08) is now loaded
-## --------------------------------------------------------------</code></pre>
-<pre class="r"><code>par(mfrow = c(2, 1))
+<pre class="r"><code>library(geoR)
+par(mfrow = c(2, 1))
 vp &lt;- variog(
   coords = cbind(psme_d$x, psme_d$y),
   data = resid(psme, type = &quot;pearson&quot;),

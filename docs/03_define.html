@@ -13,8 +13,8 @@
 
 <title>Define new data</title>
 
-<script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
-<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
@@ -261,7 +261,7 @@ $(document).ready(function () {
   <a href="05_analyzing_ba_increment.html">Analyzing Ba increment</a>
 </li>
 <li>
-  <a href="05_summary.html">Data summaries and figures</a>
+  <a href="06_summary.html">Data summaries and figures</a>
 </li>
 <li>
   <a href="07_variability.html">Variability</a>
@@ -296,6 +296,7 @@ $(document).ready(function () {
 <li><a href="#define-diameter-basal-area-and-height-increment">Define diameter, basal area, and height increment</a></li>
 <li><a href="#define-utm-coordinates-for-each-tree">Define UTM coordinates for each tree</a></li>
 <li><a href="#structural-diversity-sci">Structural diversity SCI</a></li>
+<li><a href="#standardize-crown-ratio">Standardize crown ratio</a></li>
 <li><a href="#update-post-harvest-data">Update post-harvest data</a></li>
 </ul>
 </div>
@@ -363,6 +364,22 @@ d_l &lt;- d_l %&gt;%
 #   ) %&gt;%
 #   arrange(plot, year)
 # temp &lt;- d_l %&gt;% filter(plot == &quot;1H40&quot;, year == &quot;18&quot;) %&gt;% select(h_dist, azi, ht, dbh)</code></pre>
+</div>
+<div id="standardize-crown-ratio" class="section level2">
+<h2>Standardize crown ratio</h2>
+<pre class="r"><code>d_l &lt;- d_l %&gt;%
+  mutate(
+    cr = case_when(
+      cr %in% c(-999, -99) ~ NA_real_,
+      cr == 0 &amp; is.na(ht)  ~ NA_real_,
+      cr %in% 1:5          ~ 5,
+      cr %in% 21:25        ~ 25,
+      cr %in% 31:35        ~ 35,
+      cr %in% 41:50        ~ 50,
+      cr %in% 55:80        ~ 60,
+      TRUE                 ~ cr
+    )
+  )</code></pre>
 </div>
 <div id="update-post-harvest-data" class="section level2">
 <h2>Update post-harvest data</h2>

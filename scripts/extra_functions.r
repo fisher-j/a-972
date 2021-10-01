@@ -141,10 +141,13 @@ sci_metric <- function(x, y, z) {
 
 # here is a function to to get a an AIC from a formula
 # optionally split by species
-formula_aic <- function(form, data, species){
-  if(missing(species)) species <- unique(data$spp)
-  dat <- data[data$spp %in% species, ]
-  mod <- lmer(form, data = dat, REML = FALSE)
+formula_aic <- function(form, data, method = "lm"){
+  if(method == "lm") {
+    mod <- lmer(form, data = data, REML = FALSE)
+  }
+  if(method == "glm") {
+    mod <- glmer(form, data = data, family = Gamma(link = "log"))
+  }
   list(
     formula = deparse1(form),
     aicc = AICc(mod),

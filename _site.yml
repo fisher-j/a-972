@@ -16,7 +16,7 @@ navbar:
     - text: "Analyzing Ba increment"
       href: 05_analyzing_ba_increment.html
     - text: "Data summaries and figures"
-      href: 05_summary.html
+      href: 06_summary.html
     - text: "Variability"
       href: 07_variability.html
 output:

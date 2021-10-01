@@ -13,8 +13,8 @@
 
 <title>Modeling height growth and predicting missing heights</title>
 
-<script src="site_libs/header-attrs-2.9/header-attrs.js"></script>
-<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
 <script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
@@ -263,7 +263,7 @@ $(document).ready(function () {
   <a href="05_analyzing_ba_increment.html">Analyzing Ba increment</a>
 </li>
 <li>
-  <a href="05_summary.html">Data summaries and figures</a>
+  <a href="06_summary.html">Data summaries and figures</a>
 </li>
 <li>
   <a href="07_variability.html">Variability</a>
@@ -299,20 +299,33 @@ $(document).ready(function () {
 <li><a href="#data-exploration">Data exploration</a>
 <ul>
 <li><a href="#outliers">Outliers</a></li>
+<li><a href="#crown-ratio">Crown ratio</a></li>
+<li><a href="#plotting-data">Plotting data</a></li>
+</ul></li>
+<li><a href="#exploring-models">Exploring models</a>
+<ul>
+<li><a href="#basic-model-form">Basic model form</a></li>
+<li><a href="#modeling-with-subsets">Modeling with subsets</a></li>
+<li><a href="#exploring-marginal-means-of-the-most-useful-model">Exploring marginal means of the most useful model</a></li>
 </ul></li>
 </ul>
 </div>
 
 <pre class="r"><code>library(lme4)
-palette(&quot;Tableau 10&quot;)</code></pre>
+palette(&quot;Tableau 10&quot;)
+library(patchwork)</code></pre>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>Basal area increment is a key feature for analysis. Dbh data is available for almost all trees in boths periods, it is more precise and diameter growth (as opposed to height growth) is expected to have a strong response to thinning treatments.</p>
+<p>Basal area increment is a key feature for analysis. Dbh data is available for almost all trees in both periods, it is more precise and diameter growth (as opposed to height growth) is expected to have a strong response to thinning treatments.</p>
 </div>
 <div id="define-trees-of-interest" class="section level1">
 <h1>Define trees of interest</h1>
-<p>For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements.</p>
+<p>For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements. I am excluding bear damaged trees.</p>
 <pre class="r"><code>test_d &lt;- d_l %&gt;%
+  # calculate SDI for each plot (additive method)
+  group_by(plot) %&gt;%
+  mutate(sdi_plot = sum(12.5 * (dbh / 25.4)^1.605, na.rm = TRUE)) %&gt;%
+  ungroup() %&gt;%
   # only use unbroken live sese or psme from 2018
   filter(
     spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;),
@@ -321,25 +334,76 @@ palette(&quot;Tableau 10&quot;)</code></pre>
     !get_cond(2, 3),
     !is.na(dbh)
   ) %&gt;%
-  select(-c(h_dist, azi, status, rot, cc, x, y, live))</code></pre>
+  mutate(
+    treat_method = str_extract(treatment, &quot;C|H|L&quot;),
+    treat_density = str_extract(treatment, &quot;C|40|80&quot;),
+    treat_status = if_else(str_detect(treatment, &quot;C&quot;), &quot;unthinned&quot;, &quot;thinned&quot;),
+    year = factor(year, levels = c(&quot;13&quot;, &quot;18&quot;), ordered = FALSE)
+  ) %&gt;%
+  mutate(year = factor(year, ordered = FALSE)) %&gt;%
+  select(-c(h_dist, azi, status, rot, cc, x, y, live))
+
+# Remove bear damaged trees
+test_d_bear &lt;- test_d
+test_d &lt;- test_d[test_d$bear == FALSE, ]
+
+# Alter one outlier record by using data from previous year
+big_tree &lt;- &quot;4H80.4019&quot;
+replacement_data &lt;- filter(test_d, tree_id == big_tree, year == &quot;13&quot;) %&gt;%
+  mutate(
+    dbh = dbh + d_inc * 5,
+    d_inc = d_inc,
+    ba = ba + ba_inc * 5,
+    ba_inc = ba_inc
+  )
+bad_rec &lt;- with(test_d, which(tree_id == big_tree &amp; year == &quot;18&quot;))
+test_d[bad_rec, names(replacement_data)] &lt;- replacement_data
+
+display_vars &lt;- function(x) {
+  select(x, c(tree_id, year, dbh, ht, bear, cr, notes, cond, d_inc, ba_inc))
+}</code></pre>
+<p>Number of redwoods and Douglas fir trees in each plot and each treatment. Not including bear damaged trees.</p>
+<pre class="r"><code>test_d %&gt;%
+  group_by(plot) %&gt;%
+  filter(year == &quot;18&quot;) %&gt;%
+  mutate(n_sese = sum(spp == &quot;SESE3&quot;)) %&gt;%
+  ggplot(aes(fct_reorder(plot, n_sese))) +
+    geom_bar(aes(fill = spp)) +
+    geom_text(
+      aes(label = after_stat(count), group = spp),
+      stat = &quot;count&quot;,
+      position = position_stack(vjust = .5)
+    ) +
+    scale_fill_manual(values = palette())</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>test_d %&gt;%
+  group_by(treatment) %&gt;%
+  filter(year == &quot;18&quot;) %&gt;%
+  mutate(n_sese = sum(spp == &quot;SESE3&quot;)) %&gt;%
+  ggplot(aes(fct_reorder(treatment, n_sese))) +
+    geom_bar(aes(fill = spp)) +
+    geom_text(
+      aes(label = after_stat(count),
+      group = spp),
+      stat = &quot;count&quot;,
+      position = position_stack(vjust = .5)
+    ) +
+    scale_fill_manual(values = palette())</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-3-2.png" width="672" /></p>
 </div>
 <div id="data-exploration" class="section level1">
 <h1>Data exploration</h1>
 <div id="outliers" class="section level2">
 <h2>Outliers</h2>
-<p>Here I’m looking for any outliers in basal area increment, or extreme changes.</p>
-<pre class="r"><code>ggplot(test_d, aes(x = ba_inc, y = tree_id)) +
-  geom_point(aes(color = year), alpha = .5) +
-  geom_line(aes(group = tree_id)) +
-  scale_y_discrete(breaks = NULL) +
-  scale_color_manual(values = palette())</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<pre class="r"><code>test_d %&gt;%
+<p>Here I’m looking for any outliers in basal area increment, or extreme changes. There are definitely basal area outliers some of the most extreme can be explained by having bear damage, but on average, bear-damaged trees have diameter increments almost double those of non-bear-damaged. It is unclear whether this is due to loose bark, or the fact that these trees tend to be faster growing. This question might need further investigation. Following Dagley et. al 2018, I will remove bear damaged trees from analysis. Another option could be including bear damage as a covariate.</p>
+<pre class="r"><code># outliers defined as 1.5 times above or below IQR
+test_d %&gt;%
+  filter(
+    out(ba_inc)
+  ) %&gt;%
   group_by(tree_id) %&gt;%
-  filter(any(ba_inc &lt; 0)) %&gt;%
-  mutate(min = min(ba_inc)) %&gt;%
-  arrange(min) %&gt;%
-  select(-min) %&gt;%
+  arrange(ba_inc) %&gt;%
+  display_vars %&gt;%
   color_groups()</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
@@ -347,16 +411,7 @@ palette(&quot;Tableau 10&quot;)</code></pre>
 <thead>
 <tr>
 <th style="text-align:left;">
-plot
-</th>
-<th style="text-align:left;">
-treatment
-</th>
-<th style="text-align:left;">
 tree_id
-</th>
-<th style="text-align:left;">
-spp
 </th>
 <th style="text-align:left;">
 year
@@ -367,11 +422,11 @@ dbh
 <th style="text-align:right;">
 ht
 </th>
-<th style="text-align:right;">
-cr
-</th>
 <th style="text-align:left;">
 bear
+</th>
+<th style="text-align:right;">
+cr
 </th>
 <th style="text-align:left;">
 notes
@@ -383,12 +438,6 @@ cond
 d_inc
 </th>
 <th style="text-align:right;">
-ht_inc
-</th>
-<th style="text-align:right;">
-ba
-</th>
-<th style="text-align:right;">
 ba_inc
 </th>
 </tr>
@@ -396,110 +445,164 @@ ba_inc
 <tbody>
 <tr>
 <td style="text-align:left;">
-4L40
-</td>
-<td style="text-align:left;">
-L40
-</td>
-<td style="text-align:left;">
-4L40.3274
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-38.354
-</td>
-<td style="text-align:right;">
-23.46845
-</td>
-<td style="text-align:right;">
-30
-</td>
-<td style="text-align:left;">
-TRUE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-4,18
-</td>
-<td style="text-align:right;">
-1.4732
-</td>
-<td style="text-align:right;">
-0.3657422
-</td>
-<td style="text-align:right;">
-1155.34372
-</td>
-<td style="text-align:right;">
-80.2320622
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4L40
-</td>
-<td style="text-align:left;">
-L40
-</td>
-<td style="text-align:left;">
-4L40.3274
-</td>
-<td style="text-align:left;">
-SESE3
+C1.4180
 </td>
 <td style="text-align:left;">
 18
 </td>
 <td style="text-align:right;">
-31.242
+52.324
 </td>
 <td style="text-align:right;">
-24.68760
-</td>
-<td style="text-align:right;">
-15
+28.34502
 </td>
 <td style="text-align:left;">
-TRUE
+FALSE
+</td>
+<td style="text-align:right;">
+NA
 </td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
-4,19
 </td>
 <td style="text-align:right;">
--1.4224
+0.9144
 </td>
 <td style="text-align:right;">
-0.2438281
-</td>
-<td style="text-align:right;">
-766.59775
-</td>
-<td style="text-align:right;">
--77.7491956
+71.87139
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-4H40
+C1.4179
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-H40
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+50.292
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.82109
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-4H40.3926
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.9652
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+72.59091
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C1.4169
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+58.928
+</td>
+<td style="text-align:right;">
+26.82109
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+BD grown over
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+0.8128
+</td>
+<td style="text-align:right;">
+72.64158
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3664
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+44.196
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4,22
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1176
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+72.68212
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H80.3574
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+41.148
+</td>
+<td style="text-align:right;">
+30.17373
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:right;">
+1.2192
+</td>
+<td style="text-align:right;">
+72.96588
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.3212
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
@@ -508,293 +611,612 @@ SESE3
 44.704
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-25.29717
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20
+28.64980
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-BD healed over
+flagged from raking; frass
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1176
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+73.57393
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H40.3029
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+46.736
+</td>
+<td style="text-align:right;">
+29.56416
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:left;">
+illegible note
+</td>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:right;">
+1.0668
+</td>
+<td style="text-align:right;">
+73.84755
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3670
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+43.180
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.43066
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+22
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1684
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+73.88808
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.1856
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+40.386
+</td>
+<td style="text-align:right;">
+27.73545
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.2700
+</td>
+<td style="text-align:right;">
+74.23265
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3662
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.990
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+22
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0668
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+74.27318
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.1860
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+41.910
+</td>
+<td style="text-align:right;">
+22.85888
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
 1.2192
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.2438281
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1569.57709
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-79.7760255
+<td style="text-align:right;">
+74.42519
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-4H40
+1L40.3679
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-H40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H40.3926
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-40.640
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-26.21152
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-5
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-100% bear girdle; 90% crown mortality
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-19
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.8128
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1828711
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1297.17115
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--54.4811882
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C4
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C4.4645
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
 13
 </td>
-<td style="text-align:right;">
-19.558
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+43.688
 </td>
-<td style="text-align:right;">
-23.16367
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+28.04023
 </td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
-</td>
-<td style="text-align:left;">
-check DBH with old data
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.5080
-</td>
-<td style="text-align:right;">
-0.9143554
-</td>
-<td style="text-align:right;">
-300.42686
-</td>
-<td style="text-align:right;">
--16.6200053
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40.3275
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-29.972
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-21.03017
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 25
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
+frass
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+22
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1684
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+74.82043
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2L40.3485
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+37.084
+</td>
+<td style="text-align:right;">
+29.56416
+</td>
+<td style="text-align:left;">
 FALSE
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:right;">
+1.4224
+</td>
+<td style="text-align:right;">
+74.91163
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H80.3528
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+43.942
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31.69765
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1684
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+75.28660
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L80.3405
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+45.720
+</td>
+<td style="text-align:right;">
+27.73545
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.1176
+</td>
+<td style="text-align:right;">
+75.35754
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L40.3510
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+39.878
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.82109
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FRASS
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.3208
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+75.88451
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4H40.3957
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+40.132
+</td>
+<td style="text-align:right;">
+28.64980
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+FRASS
+</td>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:right;">
+1.3208
+</td>
+<td style="text-align:right;">
+76.41149
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3670
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+48.514
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+22
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0668
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+76.82699
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L80.3405
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+50.800
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.0160
+</td>
+<td style="text-align:right;">
+77.01954
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3043
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+44.958
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.51631
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1684
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+77.15128
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C4.4700
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+44.958
+</td>
+<td style="text-align:right;">
+30.17373
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+may be alive?
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.1684
+</td>
+<td style="text-align:right;">
+77.15128
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3.4446
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+51.054
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0160
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+77.42490
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H40.3029
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+51.816
+</td>
+<td style="text-align:right;">
+32.30722
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:right;">
+1.0160
+</td>
+<td style="text-align:right;">
+78.64100
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L80.3389
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+45.974
+</td>
+<td style="text-align:right;">
+27.12588
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
 1
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.7620
+<td style="text-align:right;">
+1.1684
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.3657422
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-705.53949
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-33.5947059
+<td style="text-align:right;">
+79.01596
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40.3275
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
+4H40.3956
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-28.194
+42.926
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-23.16367
+29.25937
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,19
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.3556
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.4266992
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-624.31429
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--16.2450418
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4301
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-20.030
-</td>
-<td style="text-align:right;">
-18.28711
-</td>
-<td style="text-align:right;">
-5
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-check data DBH shrank, unexplained
-</td>
-<td style="text-align:left;">
-5
-</td>
-<td style="text-align:right;">
--0.4220
-</td>
-<td style="text-align:right;">
--0.6095703
-</td>
-<td style="text-align:right;">
-315.10245
-</td>
-<td style="text-align:right;">
--13.9767415
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4553
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-17.780
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20.72539
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
@@ -803,123 +1225,46 @@ NA
 4
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
--0.4064
+1.2700
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-0.2438281
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-248.28666
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--11.9988331
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4553
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-18.288
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-262.67716
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2.8780985
+79.29972
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C1.4215
-</td>
-<td style="text-align:left;">
-PSMEM
+4H40.3926
 </td>
 <td style="text-align:left;">
 13
 </td>
 <td style="text-align:right;">
-13.716
+44.704
 </td>
 <td style="text-align:right;">
-21.63974
-</td>
-<td style="text-align:right;">
-15
+25.29717
 </td>
 <td style="text-align:left;">
 FALSE
 </td>
+<td style="text-align:right;">
+20
+</td>
 <td style="text-align:left;">
-NA
+BD healed over
 </td>
 <td style="text-align:left;">
 </td>
 <td style="text-align:right;">
--0.5080
+1.2192
 </td>
 <td style="text-align:right;">
-1.3410546
-</td>
-<td style="text-align:right;">
-147.75590
-</td>
-<td style="text-align:right;">
--11.9582965
+79.77603
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40.3284
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
+3H40.1875
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
@@ -928,1311 +1273,130 @@ SESE3
 49.022
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-26.21152
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-big sweep
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4,7,19
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1524
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.3047851
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1887.43469
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--11.8265526
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40.3284
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-52.324
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-24.07803
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4,7,19
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.6604
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.4266992
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2150.26386
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-52.5658339
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-3H80.3811
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-15.748
-</td>
-<td style="text-align:right;">
-20.72539
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-DBH? Dispute from 2008
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.4064
-</td>
-<td style="text-align:right;">
-0.4876562
-</td>
-<td style="text-align:right;">
-194.77836
-</td>
-<td style="text-align:right;">
--10.7016620
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-3H80.3811
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-16.256
-</td>
-<td style="text-align:right;">
-20.42060
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-0.1016
-</td>
-<td style="text-align:right;">
--0.0609570
-</td>
-<td style="text-align:right;">
-207.54738
-</td>
-<td style="text-align:right;">
-2.5538057
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4243
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-12.446
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-18.89668
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-5
+27.43066
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2008 DBH 5.7”
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.4064
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0609570
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-121.66047
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--8.5937588
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4L80
-</td>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-4L80.3296
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-16.002
-</td>
-<td style="text-align:right;">
-22.24931
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.3196
-</td>
-<td style="text-align:right;">
-0.3047851
-</td>
-<td style="text-align:right;">
-201.11220
-</td>
-<td style="text-align:right;">
--8.4345473
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80.3317
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-16.256
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15.54404
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-past data DBH??
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.3048
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1219141
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-207.54738
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--8.1478563
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80.3317
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-16.510
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-214.08391
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.3073053
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4L80
-</td>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-4L80.1945
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-23.876
-</td>
-<td style="text-align:right;">
-19.81103
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1
-</td>
-<td style="text-align:right;">
-0.1524
-</td>
-<td style="text-align:right;">
-0.5486132
-</td>
-<td style="text-align:right;">
-447.72673
-</td>
-<td style="text-align:right;">
-5.6244530
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4L80
-</td>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-4L80.1945
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-22.860
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1
-</td>
-<td style="text-align:right;">
--0.2032
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-410.43306
-</td>
-<td style="text-align:right;">
--7.4587341
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4244
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-17.780
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20.11582
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-5
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2008 DBH backwards?
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.2540
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000000
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-248.28666
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--7.3472584
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3L80
-</td>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-3L80.3347
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-22.098
-</td>
-<td style="text-align:right;">
-22.55410
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-0.4064
-</td>
-<td style="text-align:right;">
-0.4876562
-</td>
-<td style="text-align:right;">
-383.52689
-</td>
-<td style="text-align:right;">
-13.4581506
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3L80
-</td>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-3L80.3347
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-21.082
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.2032
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-349.07078
-</td>
-<td style="text-align:right;">
--6.8912217
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80.3442
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-39.370
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.29717
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-Lost bark
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4,17,26
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1828711
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1217.36472
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--6.3237093
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80.3442
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-44.704
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4,17,26
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.0668
-</td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1569.57709
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-70.4424737
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-1H80.3603
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-26.162
-</td>
-<td style="text-align:right;">
-15.23926
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
-TRUE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1,19,26
-</td>
-<td style="text-align:right;">
-0.2032
-</td>
-<td style="text-align:right;">
-0.3047851
-</td>
-<td style="text-align:right;">
-537.56596
-</td>
-<td style="text-align:right;">
-8.1883929
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-1H80.3603
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-25.400
-</td>
-<td style="text-align:right;">
-14.62969
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-TRUE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1,19,26
-</td>
-<td style="text-align:right;">
--0.1524
-</td>
-<td style="text-align:right;">
--0.1219141
-</td>
-<td style="text-align:right;">
-506.70748
-</td>
-<td style="text-align:right;">
--6.1716971
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80.3400
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-37.338
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-22.85888
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-check HTT data almost brock
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4,5,7,18,26
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.2032
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.3717769
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1094.94419
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11.7556135
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80.3400
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-36.830
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4,5,7,34,18,26
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1065.35247
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--5.9183434
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-3H80.3813
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-23.368
-</td>
-<td style="text-align:right;">
-21.94453
-</td>
-<td style="text-align:right;">
-20
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-DBH dispute; frass
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
--0.1524
-</td>
-<td style="text-align:right;">
-0.7924413
-</td>
-<td style="text-align:right;">
-428.87721
-</td>
-<td style="text-align:right;">
--5.6852579
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-3H80.3813
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-25.146
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
-0.3556
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-496.62400
-</td>
-<td style="text-align:right;">
-13.5493580
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4315
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-30.988
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.29717
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-check DBH on OG
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.3657422
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-754.18341
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--4.9860016
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4315
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-30.734
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-741.87042
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--2.4625983
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C3
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C3.4501
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-28.956
-</td>
-<td style="text-align:right;">
-25.29717
-</td>
-<td style="text-align:right;">
-20
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-0.3048
-</td>
-<td style="text-align:right;">
-0.3657422
-</td>
-<td style="text-align:right;">
-658.51704
-</td>
-<td style="text-align:right;">
-13.4986872
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C3
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C3.4501
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-28.448
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.1016
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-635.61386
-</td>
-<td style="text-align:right;">
--4.5806356
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L80.1944
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.876
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.46845
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
+25
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-check DBH
+frass
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 1
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
+1.1176
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-0.4266992
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-447.72673
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--3.8509768
+81.15427
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L80
+<td style="text-align:left;">
+3L80.3380
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L80.1944
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 18
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.400
+<td style="text-align:right;">
+42.672
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
+<td style="text-align:right;">
+29.86894
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 FALSE
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 NA
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.3048
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 NA
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-506.70748
+<td style="text-align:left;">
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11.7961501
+<td style="text-align:right;">
+1.3208
+</td>
+<td style="text-align:right;">
+81.68125
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
-C1
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80.3728
 </td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C1.4172
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 13
 </td>
-<td style="text-align:right;">
-23.368
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+39.116
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 24.38281
 </td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
-<td style="text-align:left;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
-<td style="text-align:right;">
-0.2032
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.4732
 </td>
-<td style="text-align:right;">
-0.3047851
-</td>
-<td style="text-align:right;">
-428.87721
-</td>
-<td style="text-align:right;">
-7.2965877
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+81.99540
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C1.4172
-</td>
-<td style="text-align:left;">
-PSMEM
+4L80.1932
 </td>
 <td style="text-align:left;">
 18
 </td>
 <td style="text-align:right;">
-22.860
+59.690
 </td>
 <td style="text-align:right;">
-23.46845
+32.61201
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:right;">
+0.9144
+</td>
+<td style="text-align:right;">
+82.45144
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4H40.3957
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+46.228
 </td>
 <td style="text-align:right;">
 NA
@@ -2240,92 +1404,157 @@ NA
 <td style="text-align:left;">
 FALSE
 </td>
+<td style="text-align:right;">
+NA
+</td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
+4
+</td>
+<td style="text-align:right;">
+1.2192
+</td>
+<td style="text-align:right;">
+82.69466
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H40.3200
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.482
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1,4
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2192
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+83.18110
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H80.3159
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+50.292
+</td>
+<td style="text-align:right;">
+26.82109
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+old bear damage
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.1176
+</td>
+<td style="text-align:right;">
+83.38378
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80.3745
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+47.498
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31.69765
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 1
 </td>
-<td style="text-align:right;">
--0.1016
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2700
 </td>
-<td style="text-align:right;">
--0.1828711
-</td>
-<td style="text-align:right;">
-410.43306
-</td>
-<td style="text-align:right;">
--3.6888304
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+88.42046
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80
+<td style="text-align:left;">
+3H40.1859
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
+<td style="text-align:left;">
+18
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80.1980
+<td style="text-align:right;">
+38.100
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
+<td style="text-align:right;">
+21.00000
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-21.336
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.46845
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 FALSE
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-light frass
+<td style="text-align:right;">
+25
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
+NA
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.2540
+<td style="text-align:left;">
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.2438281
+<td style="text-align:right;">
+1.6764
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-357.53280
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-8.2593319
+<td style="text-align:right;">
+89.29199
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80.1980
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
+1L40.3679
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-20.828
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-26.21152
+49.784
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 NA
@@ -2333,836 +1562,531 @@ NA
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+22
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2192
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+89.50481
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3149
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+53.848
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.51631
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
+1.1176
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-0.5486132
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-340.71011
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--3.3645377
+89.62642
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-C2
+C1.4209
 </td>
 <td style="text-align:left;">
-C
+18
+</td>
+<td style="text-align:right;">
+61.722
+</td>
+<td style="text-align:right;">
+27.73545
 </td>
 <td style="text-align:left;">
-C2.4338
+FALSE
+</td>
+<td style="text-align:right;">
+NA
 </td>
 <td style="text-align:left;">
-PSMEM
+NA
+</td>
+<td style="text-align:left;">
+1,4,6
+</td>
+<td style="text-align:right;">
+0.9652
+</td>
+<td style="text-align:right;">
+89.92031
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3081
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+54.356
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.56416
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1176
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+90.51822
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.3212
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+50.800
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2192
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+91.45057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3L40.3231
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+33.782
+</td>
+<td style="text-align:right;">
+19.20146
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+2.0320
+</td>
+<td style="text-align:right;">
+91.61271
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3247
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+55.118
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.86894
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+frass
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1176
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+91.85593
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40.3070
 </td>
 <td style="text-align:left;">
 13
 </td>
 <td style="text-align:right;">
-41.402
+43.688
 </td>
 <td style="text-align:right;">
-28.04023
+27.73545
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+bear damage healed over
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.4732
+</td>
+<td style="text-align:right;">
+92.57546
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3036
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40.640
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.16367
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4,7
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.6256
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+93.39632
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.1860
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+48.514
+</td>
+<td style="text-align:right;">
+24.68760
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.3208
+</td>
+<td style="text-align:right;">
+93.80169
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.4053
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+46.990
+</td>
+<td style="text-align:right;">
+25.29717
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.3716
+</td>
+<td style="text-align:right;">
+93.85236
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3060
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+50.292
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.99238
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2700
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+93.99424
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.1848
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+44.958
+</td>
+<td style="text-align:right;">
+30.47851
+</td>
+<td style="text-align:left;">
+FALSE
 </td>
 <td style="text-align:right;">
 35
 </td>
 <td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-check DBH
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
--0.0609570
-</td>
-<td style="text-align:right;">
-1346.27110
-</td>
-<td style="text-align:right;">
--3.3138669
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4338
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-45.720
-</td>
-<td style="text-align:right;">
-28.95459
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
-0.8636
-</td>
-<td style="text-align:right;">
-0.1828711
-</td>
-<td style="text-align:right;">
-1641.73223
-</td>
-<td style="text-align:right;">
-59.0922262
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4289
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20.828
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-22.24931
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1219141
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-340.71011
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-3.2834645
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4289
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20.320
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-324.29279
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--3.2834645
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C3
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C3.4480
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-20.828
-</td>
-<td style="text-align:right;">
-20.11582
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-0.0508
-</td>
-<td style="text-align:right;">
-0.1828711
-</td>
-<td style="text-align:right;">
-340.71011
-</td>
-<td style="text-align:right;">
-1.6518664
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C3
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C3.4480
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-20.320
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.1016
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-324.29279
-</td>
-<td style="text-align:right;">
--3.2834645
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80.3332
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-18.034
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-20.72539
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1524
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1828711
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-255.43124
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-4.2259404
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L80.3332
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-17.526
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-241.24343
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--2.8375619
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C4
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C4.4618
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-17.272
-</td>
-<td style="text-align:right;">
-21.63974
-</td>
-<td style="text-align:right;">
-5
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
-0.0508
-</td>
-<td style="text-align:right;">
-0.0000000
-</td>
-<td style="text-align:right;">
-234.30154
-</td>
-<td style="text-align:right;">
-1.3681102
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C4
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C4.4618
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-16.764
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-dead or barely alive…
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
--0.1016
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-220.72178
-</td>
-<td style="text-align:right;">
--2.7159521
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1.4129
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-16.002
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-21.33496
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1524
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.6095703
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-201.11220
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-3.7395012
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1.4129
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15.494
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.77324
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.4876562
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-188.54585
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--2.5132691
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1L80
-</td>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-1L80.3440
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-15.494
-</td>
-<td style="text-align:right;">
-13.71533
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-5
-</td>
-<td style="text-align:right;">
-0.0508
-</td>
-<td style="text-align:right;">
--0.4266992
-</td>
-<td style="text-align:right;">
-188.54585
-</td>
-<td style="text-align:right;">
-1.2262321
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1L80
-</td>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-1L80.3440
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-14.986
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-5,34
-</td>
-<td style="text-align:right;">
--0.1016
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-176.38487
-</td>
-<td style="text-align:right;">
--2.4321959
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C4
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C4.4704
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15.494
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-19.20146
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-in OG stump
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000000
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-188.54585
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.2262321
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C4
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C4.4704
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-14.986
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-176.38487
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--2.4321959
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-4H80.3979
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-29.972
-</td>
-<td style="text-align:right;">
-21.63974
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
 1
 </td>
 <td style="text-align:right;">
-0.3048
+1.4732
 </td>
 <td style="text-align:right;">
-0.0000000
-</td>
-<td style="text-align:right;">
-705.53949
-</td>
-<td style="text-align:right;">
-13.9851264
+95.51436
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-4H80
+4L80.1932
 </td>
 <td style="text-align:left;">
-H80
+13
+</td>
+<td style="text-align:right;">
+55.118
+</td>
+<td style="text-align:right;">
+29.56416
 </td>
 <td style="text-align:left;">
-4H80.3979
+FALSE
+</td>
+<td style="text-align:right;">
+25
 </td>
 <td style="text-align:left;">
-PSMEM
+frass; small wound at base
+</td>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:right;">
+1.1684
+</td>
+<td style="text-align:right;">
+95.79812
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L80.3464
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+53.086
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.73545
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2192
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+95.82852
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L80.3393
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+51.562
+</td>
+<td style="text-align:right;">
+28.34502
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.2700
+</td>
+<td style="text-align:right;">
+96.52777
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3068
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.990
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+28.64980
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.4224
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+97.04462
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40.3257
 </td>
 <td style="text-align:left;">
 18
 </td>
 <td style="text-align:right;">
-29.718
-</td>
-<td style="text-align:right;">
-NA
+46.990
 </td>
 <td style="text-align:right;">
 NA
@@ -3170,2282 +2094,384 @@ NA
 <td style="text-align:left;">
 FALSE
 </td>
+<td style="text-align:right;">
+30
+</td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
-1
 </td>
 <td style="text-align:right;">
--0.0508
+1.4224
 </td>
 <td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-693.63187
-</td>
-<td style="text-align:right;">
--2.3815252
+97.04462
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-1H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1H80.3595
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
+2H80.3130
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-14.986
+58.674
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-17.37275
+28.34502
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+old bear damage
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1684
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+102.32451
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L40.3644
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+50.800
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:left;">
+4,23
+</td>
+<td style="text-align:right;">
+1.4224
+</td>
+<td style="text-align:right;">
+105.55730
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H40.1875
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+55.626
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30.17373
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.3208
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+108.55701
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L80.3393
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+58.166
+</td>
+<td style="text-align:right;">
+31.08808
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.3208
+</td>
+<td style="text-align:right;">
+113.82677
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3081
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+48.768
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.51631
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.6764
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+117.38385
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.1890
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+45.466
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.8288
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+117.47506
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3060
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+57.404
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.4224
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+120.31262
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3247
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+61.722
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.3208
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+121.20443
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40.3087
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+47.498
+</td>
+<td style="text-align:right;">
+25.29717
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.8796
+</td>
+<td style="text-align:right;">
+126.36271
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3130
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+65.278
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.86894
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.3208
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+128.58209
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3086
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+64.770
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.60195
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 20
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
+frass
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1524
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000000
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-176.38487
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-3.4962816
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1H80.3595
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-14.478
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-17.06797
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0609570
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-164.62926
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--2.3511227
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4327
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-28.956
-</td>
-<td style="text-align:right;">
-21.33496
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-0.1016
-</td>
-<td style="text-align:right;">
-0.1219141
-</td>
-<td style="text-align:right;">
-658.51704
-</td>
-<td style="text-align:right;">
-4.5806356
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4327
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-28.702
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-647.01478
-</td>
-<td style="text-align:right;">
--2.3004520
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80.4043
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-27.686
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-24.68760
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.2032
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-602.01916
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-8.6748320
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L80.4043
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-27.432
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-28.04023
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.6705273
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-591.02360
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--2.1991105
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4306
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-26.670
-</td>
-<td style="text-align:right;">
-22.55410
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1,4
-</td>
-<td style="text-align:right;">
-0.1016
-</td>
-<td style="text-align:right;">
-0.1828711
-</td>
-<td style="text-align:right;">
-558.64500
-</td>
-<td style="text-align:right;">
-4.2158062
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4306
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-26.416
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1,4
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-548.05481
-</td>
-<td style="text-align:right;">
--2.1180373
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.4105
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.654
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-26.00000
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.2540
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.3234380
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-516.89230
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-9.9821373
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.4105
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.400
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-28.04023
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.4080463
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-506.70748
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--2.0369641
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4290
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-25.146
-</td>
-<td style="text-align:right;">
-23.16367
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-DBH shrank
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
--0.1219141
-</td>
-<td style="text-align:right;">
-496.62400
-</td>
-<td style="text-align:right;">
--2.0166958
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4290
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-26.162
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-beetle-pitch?
-</td>
-<td style="text-align:left;">
-22
-</td>
-<td style="text-align:right;">
-0.2032
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-537.56596
-</td>
-<td style="text-align:right;">
-8.1883929
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4571
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.876
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10.97226
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.1828711
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-447.72673
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4571
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.622
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-438.25130
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.8950860
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-2H80.3134
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-22.606
-</td>
-<td style="text-align:right;">
-24.38281
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1,4
-</td>
-<td style="text-align:right;">
-0.0508
-</td>
-<td style="text-align:right;">
-0.8533984
-</td>
-<td style="text-align:right;">
-401.36299
-</td>
-<td style="text-align:right;">
-1.7937445
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-2H80.3134
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-22.352
-</td>
-<td style="text-align:right;">
-21.33496
-</td>
-<td style="text-align:right;">
-5
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-fork top, sweep
-</td>
-<td style="text-align:left;">
-1,4
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
--0.6095703
-</td>
-<td style="text-align:right;">
-392.39427
-</td>
-<td style="text-align:right;">
--1.7937445
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L80.1951
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-22.098
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-22.24931
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.2438281
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-383.52689
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-3.4861475
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L80.1951
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-21.844
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-374.76085
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.7532079
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C1.4152
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-21.336
-</td>
-<td style="text-align:right;">
-21.03017
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-0.0000
-</td>
-<td style="text-align:right;">
-0.3047851
-</td>
-<td style="text-align:right;">
-357.53280
-</td>
-<td style="text-align:right;">
-0.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C1.4152
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-21.082
-</td>
-<td style="text-align:right;">
-22.24931
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
-0.2438281
-</td>
-<td style="text-align:right;">
-349.07078
-</td>
-<td style="text-align:right;">
--1.6924030
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H80.4121
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-19.558
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-16.15361
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1524
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-300.42686
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-4.5907698
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H80.4121
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-19.304
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-292.67424
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.5505249
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-4H80.4118
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-19.304
-</td>
-<td style="text-align:right;">
-15.84883
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-0.0508
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-292.67424
-</td>
-<td style="text-align:right;">
-1.5302566
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-4H80.4118
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-19.050
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-285.02296
-</td>
-<td style="text-align:right;">
--1.5302566
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H80.3986
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-18.288
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-18.89668
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1828711
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-262.67716
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2.8780985
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H80.3986
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-18.034
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-255.43124
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.4491834
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-2H80.3186
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-18.034
-</td>
-<td style="text-align:right;">
-20.42060
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1,4
-</td>
-<td style="text-align:right;">
-0.0508
-</td>
-<td style="text-align:right;">
-0.3047851
-</td>
-<td style="text-align:right;">
-255.43124
-</td>
-<td style="text-align:right;">
-1.4289151
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2H80
-</td>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-2H80.3186
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-17.780
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1,4
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-248.28666
-</td>
-<td style="text-align:right;">
--1.4289151
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1.4167
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-18.034
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-22.24931
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,5
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.7924413
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-255.43124
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.4289151
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1.4167
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-17.780
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-22.85888
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,5
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1219141
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-248.28666
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.4289151
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4237
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-17.780
-</td>
-<td style="text-align:right;">
-21.03017
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
--0.1828711
-</td>
-<td style="text-align:right;">
-248.28666
-</td>
-<td style="text-align:right;">
--1.4289151
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4246
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-17.780
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-22.24931
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1524
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.3047851
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-248.28666
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-4.1651355
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C2.4246
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-17.526
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-Sparse Crown
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-241.24343
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.4086468
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C3
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C3.4458
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-17.272
-</td>
-<td style="text-align:right;">
-21.63974
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
 4
 </td>
-<td style="text-align:right;">
-0.0000
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.4224
 </td>
-<td style="text-align:right;">
--0.1828711
-</td>
-<td style="text-align:right;">
-234.30154
-</td>
-<td style="text-align:right;">
-0.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C3
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C3.4458
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-17.018
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-Frass
-</td>
-<td style="text-align:left;">
-4,22
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-227.46099
-</td>
-<td style="text-align:right;">
--1.3681102
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+136.77048
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-C1
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C1.4229
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-16.764
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-23.16367
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.7314843
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-220.72178
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.3478419
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4350
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-16.510
-</td>
-<td style="text-align:right;">
-20.42060
-</td>
-<td style="text-align:right;">
-5
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-check DBH; use 6.5” for og
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
--0.1219141
-</td>
-<td style="text-align:right;">
-214.08391
-</td>
-<td style="text-align:right;">
--1.3275736
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.3113
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-16.256
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-18.59189
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,8
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.3047851
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-207.54738
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.3113
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
+2H40.3086
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-16.002
+71.882
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-17.37275
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
+28.64980
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,8
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.2438281
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-201.11220
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.2870370
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4293
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-15.494
-</td>
-<td style="text-align:right;">
-21.33496
-</td>
-<td style="text-align:right;">
-10
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
-0.1219141
-</td>
-<td style="text-align:right;">
-188.54585
-</td>
-<td style="text-align:right;">
--1.2465004
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4472
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15.494
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-18.89668
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1524
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.3657422
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-188.54585
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-3.6178914
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4472
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-PSMEM
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15.240
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-21.33496
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.4876562
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-182.41469
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.2262321
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4265
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-14.732
-</td>
-<td style="text-align:right;">
-14.93447
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
-0.0000000
-</td>
-<td style="text-align:right;">
-170.45640
-</td>
-<td style="text-align:right;">
--1.1856955
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C2
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C2.4265
-</td>
-<td style="text-align:left;">
-SESE3
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-14.732
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-7
-</td>
-<td style="text-align:right;">
-0.0000
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-170.45640
-</td>
-<td style="text-align:right;">
-0.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1H80.3602
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-14.478
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15.23926
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,5,7
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1016
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.4266992
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-164.62926
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-2.2700495
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1H80.3602
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-14.224
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-21.03017
-</td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,5,7
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1581835
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-158.90347
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.1451589
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C1.4214
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-14.478
-</td>
-<td style="text-align:right;">
-21.63974
-</td>
-<td style="text-align:right;">
-15
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-0.1016
-</td>
-<td style="text-align:right;">
-0.4876562
-</td>
-<td style="text-align:right;">
-164.62926
-</td>
-<td style="text-align:right;">
-2.2700495
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C1.4214
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-14.224
-</td>
-<td style="text-align:right;">
-20.72539
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
--0.1828711
-</td>
-<td style="text-align:right;">
-158.90347
-</td>
-<td style="text-align:right;">
--1.1451589
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.3148
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-13.208
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-14.93447
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
@@ -5454,442 +2480,498 @@ NA
 4
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0508
+1.4224
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0609570
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-137.01370
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.0438174
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.3148
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-12.954
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-17.98232
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-5
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.6095703
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-131.79462
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--1.0438174
+152.66083
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-C4
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C4.4698
-</td>
-<td style="text-align:left;">
-PSMEM
+4H80.4019
 </td>
 <td style="text-align:left;">
 13
 </td>
 <td style="text-align:right;">
-11.938
+62.230
 </td>
 <td style="text-align:right;">
-18.59189
-</td>
-<td style="text-align:right;">
-10
+27.73545
 </td>
 <td style="text-align:left;">
 FALSE
 </td>
+<td style="text-align:right;">
+40
+</td>
 <td style="text-align:left;">
-check old DBH
+NA
 </td>
 <td style="text-align:left;">
-4
 </td>
 <td style="text-align:right;">
--0.0508
+1.7780
 </td>
 <td style="text-align:right;">
--0.0609570
-</td>
-<td style="text-align:right;">
-111.93168
-</td>
-<td style="text-align:right;">
--0.9627442
+161.38633
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-C4
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C4.4698
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-11.938
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
-0.0000
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:right;">
-111.93168
-</td>
-<td style="text-align:right;">
-0.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3H80.3849
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11.176
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11.58183
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000000
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-98.09857
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H80
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3H80.3849
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10.922
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4,33
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-93.69021
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.8816710
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C1.4138
-</td>
-<td style="text-align:left;">
-PSMEM
+4H80.4019
 </td>
 <td style="text-align:left;">
 13
 </td>
 <td style="text-align:right;">
-11.176
+71.120
 </td>
 <td style="text-align:right;">
-17.37275
-</td>
-<td style="text-align:right;">
-10
+27.73545
 </td>
 <td style="text-align:left;">
 FALSE
 </td>
+<td style="text-align:right;">
+40
+</td>
 <td style="text-align:left;">
 NA
 </td>
 <td style="text-align:left;">
 </td>
 <td style="text-align:right;">
-0.1016
+1.7780
 </td>
 <td style="text-align:right;">
-0.3047851
-</td>
-<td style="text-align:right;">
-98.09857
-</td>
-<td style="text-align:right;">
-1.7430737
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1
-</td>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-C1.4138
-</td>
-<td style="text-align:left;">
-PSMEM
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-10.922
-</td>
-<td style="text-align:right;">
-19.81103
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
--0.0508
-</td>
-<td style="text-align:right;">
-0.4876562
-</td>
-<td style="text-align:right;">
-93.69021
-</td>
-<td style="text-align:right;">
--0.8816710
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4576
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10.668
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11.27705
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-17
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.1828711
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-89.38320
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.8411344
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4576
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-SESE3
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-10.414
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-13.71533
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-TRUE
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-17
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.0508
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-0.4876562
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-85.17753
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--0.8411344
+161.38633
 </td>
 </tr>
 </tbody>
 </table>
+<pre class="r"><code># dot plot of outliers
+test_d %&gt;%
+  ggplot(aes(x = d_inc, y = fct_reorder(tree_id, d_inc))) +
+    geom_line(aes(group = tree_id), alpha = .3) +
+    geom_point(aes(color = year), alpha = .5) +
+    scale_y_discrete(breaks = NULL, expand = expansion(add = 10)) +
+    scale_color_manual(values = palette()) +
+    guides(color = guide_legend(override.aes = list(shape = c(19, 19)))) +
+    labs(
+      title = &quot;Bear damaged trees excluded&quot;,
+      x = &quot;diameter increment (cm)&quot;,
+      y = &quot;tree id (sorted by diameter increment)&quot;
+    )</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+</div>
+<div id="crown-ratio" class="section level2">
+<h2>Crown ratio</h2>
+<p>Crown ratio would be an important variable to include in a diameter increment model. Unfortunately, CR is missing for many trees—more than for heights:</p>
+<pre class="r"><code>test_d %&gt;%
+  group_by(year) %&gt;%
+  summarize(
+    &quot;missing height&quot; = sum(is.na(ht)),
+    &quot;missing cr&quot; = sum(is.na(cr))
+  ) %&gt;%
+  color_groups()</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:right;">
+missing height
+</th>
+<th style="text-align:right;">
+missing cr
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+455
+</td>
+<td style="text-align:right;">
+674
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="plotting-data" class="section level2">
+<h2>Plotting data</h2>
+<p>First I’ll look at distributions of the response:</p>
+<pre class="r"><code>hist(test_d$ba_inc, main = &quot;Basal area increment&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<pre class="r"><code>hist(log(test_d$ba_inc + 18), main = &quot;Log of basal area increment + constant&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-6-2.png" width="672" /></p>
+<pre class="r"><code>with(test_d, plot(dbh, ba_inc))</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-6-3.png" width="672" /></p>
+</div>
+</div>
+<div id="exploring-models" class="section level1">
+<h1>Exploring models</h1>
+<div id="basic-model-form" class="section level2">
+<h2>Basic model form</h2>
+<p>Basal area increment is expected to vary by dbh. I’ll plot these by treatments, and or by year to assess relationship. In exploring the relationship between ba_inc and dbh I tried the following model forms:</p>
+<pre><code>model a: scaled_ba_inc = exp((dbh) * treatment * spp), gamma distribution
+model b: scaled_ba_inc = exp((dbh) * treatment * spp), gaussian distribution
+model c: log(ba_inc) = dbh * treatment * spp 
+model d: ba_inc = (log(dbh) + dbh) * treatment * spp</code></pre>
+<p>The scaling value was computed as <code>abs(min(ba_inc)) + 1</code></p>
+<pre class="r"><code>scale_val &lt;- with(test_d, abs(min(ba_inc)) + 1)
+
+m6a &lt;- glm(
+  I(ba_inc + scale_val) ~ dbh * treatment * spp,
+  family = Gamma(link = &quot;log&quot;),
+  data = test_d
+)
+
+m6b &lt;- glm(
+  I(ba_inc + scale_val) ~ dbh * treatment * spp,
+  family = gaussian(link = &quot;log&quot;),
+  data = test_d
+)
+
+m6c &lt;- lm(log(ba_inc + scale_val) ~ dbh * treatment * spp, data = test_d)
+
+m6d &lt;- lm(ba_inc ~ log(dbh) + dbh * treatment * spp, data = test_d)
+
+test_d %&gt;%
+  ungroup() %&gt;%
+  mutate(
+    as_tibble(predict(m6a, se.fit = TRUE)[1:2]),
+    upr = exp(fit + 2 * se.fit),
+    lwr = exp(fit - 2 * se.fit)
+    ) %&gt;%
+  ggplot(aes(y = ba_inc, x = dbh, color = spp)) +
+    geom_point(alpha = 0.3) +
+    geom_line(aes(y = predict(m6a, type = &quot;response&quot;) - scale_val), size = 1) +
+    geom_ribbon(
+      aes(ymin = lwr - scale_val, ymax = upr - scale_val, group = spp),
+      alpha = 0.2,
+      color = NA
+    ) +
+    facet_wrap(vars(treatment)) +
+    scale_color_manual(values = palette()) +
+    labs(title = &quot;gamma GLM with log link&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-1.png" width="960" /></p>
+<pre class="r"><code>test_d %&gt;%
+  ggplot(aes(x = dbh, y = ba_inc + scale_val, color = spp)) +
+    geom_point(alpha = .2) +
+    facet_wrap(vars(treatment)) +
+    geom_smooth(
+      method = &quot;glm&quot;,
+      formula = y ~ x,
+      method.args = list(family = gaussian(link = &quot;log&quot;))
+    ) +
+    scale_color_manual(values = palette()) +
+    labs(title = &quot;Gaussian glm wih log link&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-2.png" width="960" /></p>
+<pre class="r"><code>test_d %&gt;%
+  ggplot(aes(x = dbh, y = log(ba_inc + scale_val), color = spp)) +
+    geom_point(alpha = .2) +
+    facet_wrap(vars(treatment)) +
+    geom_smooth(method = &quot;lm&quot;, formula = y ~ x) +
+    scale_color_manual(values = palette()) +
+    labs(title = &quot;Linear model, log-transformed&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-3.png" width="960" /></p>
+<pre class="r"><code>test_d %&gt;%
+  ggplot(aes(x = dbh, y = ba_inc, color = spp)) +
+    geom_point(aes(), alpha = .2) +
+    geom_smooth(method = &quot;lm&quot;, formula = y ~ log(x) + x) +
+    facet_wrap(vars(treatment)) +
+    scale_color_manual(values = palette()[5:6]) +
+    labs(title = &quot;linear model: y ~ log(x) + x&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-4.png" width="960" /></p>
+<p>I don’t think that the model with transformed response is comparable but the other three I think are. The gamma glm with log link has the lowest AIC. I will use it moving forward.</p>
+<pre class="r"><code>AIC(m6a, m6b, m6c, m6d)</code></pre>
+<pre><code>##     df        AIC
+## m6a 21 13276.3472
+## m6b 21 14113.3250
+## m6c 21   166.3493
+## m6d 22 14008.1041</code></pre>
+</div>
+<div id="modeling-with-subsets" class="section level2">
+<h2>Modeling with subsets</h2>
+<p>Next I’ll split the data by species and year and determine the best categorical predictor ie, treatment, treatment intensity, treatment status, or sdi and treatment status. Im using <code>plot</code> as a random effect.</p>
+<p>For Douglas-fir and redwood, treatment density appears to be the best predictor in both years. For redwood, inclusion of interaction with dbh has a lower AIC. For Douglas-fir,</p>
+<p>This suggests that I could combine years.</p>
+<pre class="r"><code>d_split1 &lt;- split(test_d, ~ year + spp)
+
+form_list1 &lt;- list(
+  I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_method + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_status + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treatment + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_method + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_status + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_status + sdi_plot + (1 | plot)
+)
+
+aic_out1 &lt;- map(d_split1, ~ get_aic(form_list1, data = .x, method = &quot;glm&quot;)[1:5, ])
+
+aic_out1</code></pre>
+<pre><code>## $`13.PSMEM`
+## # A tibble: 5 x 4
+##   row   formula                                                       aicc  rmse
+##   &lt;chr&gt; &lt;chr&gt;                                                        &lt;dbl&gt; &lt;dbl&gt;
+## 1 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)     5619. 0.24 
+## 2 1     I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot)         5621. 0.24 
+## 3 7     I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot)     5622. 0.24 
+## 4 5     I(ba_inc + scale_val) ~ dbh * treatment + (1 | plot)         5622. 0.239
+## 5 9     I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 ~ 5625. 0.24 
+## 
+## $`18.PSMEM`
+## # A tibble: 5 x 4
+##   row   formula                                                       aicc  rmse
+##   &lt;chr&gt; &lt;chr&gt;                                                        &lt;dbl&gt; &lt;dbl&gt;
+## 1 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)     4806. 0.228
+## 2 7     I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot)     4807. 0.228
+## 3 1     I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot)         4809. 0.228
+## 4 5     I(ba_inc + scale_val) ~ dbh * treatment + (1 | plot)         4814. 0.228
+## 5 9     I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 ~ 4814. 0.228
+## 
+## $`13.SESE3`
+## # A tibble: 5 x 4
+##   row   formula                                                       aicc  rmse
+##   &lt;chr&gt; &lt;chr&gt;                                                        &lt;dbl&gt; &lt;dbl&gt;
+## 1 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)     1516. 0.197
+## 2 7     I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot)     1516. 0.195
+## 3 10    I(ba_inc + scale_val) ~ dbh * treat_status + sdi_plot + (1 ~ 1519. 0.196
+## 4 9     I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 ~ 1519. 0.197
+## 5 1     I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot)         1520. 0.197
+## 
+## $`18.SESE3`
+## # A tibble: 5 x 4
+##   row   formula                                                       aicc  rmse
+##   &lt;chr&gt; &lt;chr&gt;                                                        &lt;dbl&gt; &lt;dbl&gt;
+## 1 7     I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot)     1277  0.231
+## 2 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)     1281. 0.237
+## 3 5     I(ba_inc + scale_val) ~ dbh * treatment + (1 | plot)         1284  0.23 
+## 4 1     I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot)         1284. 0.237
+## 5 9     I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 ~ 1284. 0.238</code></pre>
+<p>Here I’ll split just by species and determine if interactions with year are important. For psme, including interaction between year and dbh alone is slightly better including more interactions with dbh, the difference is marginal, but the model is simpler.</p>
+<pre class="r"><code>d_split2 &lt;- split(test_d, ~spp)
+
+form_list2 &lt;- list(
+  I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_method + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_status + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_method + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_status + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_method + year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_density + year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_status + year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treatment + year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_method + year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_density + year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_status + year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treatment * year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_method * year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_density * year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_status * year + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_status * sdi_plot + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_density + year + year:dbh + (1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_density + year + year:treat_density +(1 | plot),
+  I(ba_inc + scale_val) ~ dbh * treat_density + year + year:treat_density + year:dbh +(1 | plot)
+
+)
+
+aic_out2 &lt;- map(d_split2, ~ get_aic(form_list2, data = .x, method = &quot;glm&quot;))</code></pre>
+</div>
+<div id="exploring-marginal-means-of-the-most-useful-model" class="section level2">
+<h2>Exploring marginal means of the most useful model</h2>
+<p>Based on the above, inclusion of interactions when considering a model with treatment and year, do not have lower AIC. I’ll use:</p>
+<p><code>ba_inc + scale_val ~ dbh + treatment + year + (1 | plot)</code></p>
+<pre class="r"><code>m7a &lt;- glmer(
+  I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot),
+  family = Gamma(link = &quot;log&quot;),
+  data = d_split2$SESE3
+)
+m7b &lt;- glmer(
+  I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot),
+  family = Gamma(link = &quot;log&quot;),
+  data = d_split2$PSMEM
+)
+summary(m7a)</code></pre>
+<pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace
+##   Approximation) [glmerMod]
+##  Family: Gamma  ( log )
+## Formula: I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot)
+##    Data: d_split2$SESE3
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##   2794.4   2830.3  -1388.2   2776.4      387 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -2.4283 -0.6445 -0.0348  0.5879  3.4764 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  plot     (Intercept) 0.002295 0.0479  
+##  Residual             0.046106 0.2147  
+## Number of obs: 396, groups:  plot, 19
+## 
+## Fixed effects:
+##                Estimate Std. Error t value Pr(&gt;|z|)    
+## (Intercept)   2.3789694  0.0547639  43.440  &lt; 2e-16 ***
+## dbh           0.0422859  0.0009315  45.395  &lt; 2e-16 ***
+## treatmentH40  0.3675333  0.0725865   5.063 4.12e-07 ***
+## treatmentH80  0.1183122  0.0682074   1.735   0.0828 .  
+## treatmentL40  0.3708646  0.0846859   4.379 1.19e-05 ***
+## treatmentL80  0.1387989  0.0680106   2.041   0.0413 *  
+## year18       -0.0492905  0.0218709  -2.254   0.0242 *  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr) dbh    trtH40 trtH80 trtL40 trtL80
+## dbh         -0.446                                   
+## treatmntH40 -0.566 -0.040                            
+## treatmntH80 -0.630  0.033  0.464                     
+## treatmntL40 -0.469 -0.052  0.368  0.389              
+## treatmntL80 -0.626  0.023  0.465  0.494  0.390       
+## year18      -0.167 -0.051  0.022  0.008  0.039  0.003
+## optimizer (Nelder_Mead) convergence code: 0 (OK)
+## Model failed to converge with max|grad| = 0.0129648 (tol = 0.002, component 1)
+## Model is nearly unidentifiable: very large eigenvalue
+##  - Rescale variables?</code></pre>
+<pre class="r"><code>summary(m7b)</code></pre>
+<pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace
+##   Approximation) [glmerMod]
+##  Family: Gamma  ( log )
+## Formula: I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot)
+##    Data: d_split2$PSMEM
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##  10415.2  10463.1  -5198.6  10397.2     1491 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -4.3618 -0.5843 -0.0116  0.6046  4.9597 
+## 
+## Random effects:
+##  Groups   Name        Variance  Std.Dev.
+##  plot     (Intercept) 0.0005674 0.02382 
+##  Residual             0.0480466 0.21920 
+## Number of obs: 1500, groups:  plot, 20
+## 
+## Fixed effects:
+##                Estimate Std. Error t value Pr(&gt;|z|)    
+## (Intercept)   2.2261312  0.0322770  68.970  &lt; 2e-16 ***
+## dbh           0.0449026  0.0008178  54.907  &lt; 2e-16 ***
+## treatmentH40  0.2308561  0.0392660   5.879 4.12e-09 ***
+## treatmentH80  0.0997597  0.0354672   2.813  0.00491 ** 
+## treatmentL40  0.2449064  0.0386394   6.338 2.32e-10 ***
+## treatmentL80  0.0552009  0.0353842   1.560  0.11875    
+## year18       -0.0922977  0.0124134  -7.435 1.04e-13 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr) dbh    trtH40 trtH80 trtL40 trtL80
+## dbh         -0.612                                   
+## treatmntH40 -0.400 -0.145                            
+## treatmntH80 -0.513 -0.050  0.459                     
+## treatmntL40 -0.341 -0.255  0.450  0.469              
+## treatmntL80 -0.512 -0.052  0.459  0.501  0.471       
+## year18      -0.027 -0.213  0.013 -0.001  0.036 -0.005
+## optimizer (Nelder_Mead) convergence code: 0 (OK)
+## Model failed to converge with max|grad| = 0.0396209 (tol = 0.002, component 1)
+## Model is nearly unidentifiable: very large eigenvalue
+##  - Rescale variables?</code></pre>
+<p>Here are pairwise comparisons for SESE, followed by PSME. low intensity is no different than control</p>
+<pre class="r"><code>emmeans(m7a, pairwise ~ treatment)</code></pre>
+<pre><code>## $emmeans
+##  treatment emmean     SE  df asymp.LCL asymp.UCL
+##  C           3.47 0.0479 Inf      3.37      3.56
+##  H40         3.84 0.0544 Inf      3.73      3.94
+##  H80         3.59 0.0486 Inf      3.49      3.68
+##  L40         3.84 0.0705 Inf      3.70      3.98
+##  L80         3.61 0.0483 Inf      3.51      3.70
+## 
+## Results are averaged over the levels of: year 
+## Results are given on the log(mu + 17.62) (not the response) scale. 
+## Confidence level used: 0.95 
+## 
+## $contrasts
+##  contrast  estimate     SE  df z.ratio p.value
+##  C - H40   -0.36753 0.0726 Inf  -5.063  &lt;.0001
+##  C - H80   -0.11831 0.0682 Inf  -1.735  0.4126
+##  C - L40   -0.37086 0.0847 Inf  -4.379  0.0001
+##  C - L80   -0.13880 0.0680 Inf  -2.041  0.2465
+##  H40 - H80  0.24922 0.0730 Inf   3.414  0.0058
+##  H40 - L40 -0.00333 0.0890 Inf  -0.037  1.0000
+##  H40 - L80  0.22873 0.0728 Inf   3.142  0.0145
+##  H80 - L40 -0.25255 0.0856 Inf  -2.949  0.0265
+##  H80 - L80 -0.02049 0.0685 Inf  -0.299  0.9983
+##  L40 - L80  0.23207 0.0855 Inf   2.715  0.0517
+## 
+## Results are averaged over the levels of: year 
+## Results are given on the log (not the response) scale. 
+## P value adjustment: tukey method for comparing a family of 5 estimates</code></pre>
+<pre class="r"><code>emmeans(m7b, pairwise ~ treatment)</code></pre>
+<pre><code>## $emmeans
+##  treatment emmean     SE  df asymp.LCL asymp.UCL
+##  C           3.43 0.0251 Inf      3.38      3.48
+##  H40         3.66 0.0301 Inf      3.60      3.72
+##  H80         3.53 0.0251 Inf      3.48      3.58
+##  L40         3.67 0.0290 Inf      3.62      3.73
+##  L80         3.48 0.0250 Inf      3.44      3.53
+## 
+## Results are averaged over the levels of: year 
+## Results are given on the log(mu + 17.62) (not the response) scale. 
+## Confidence level used: 0.95 
+## 
+## $contrasts
+##  contrast  estimate     SE  df z.ratio p.value
+##  C - H40    -0.2309 0.0393 Inf  -5.879  &lt;.0001
+##  C - H80    -0.0998 0.0355 Inf  -2.813  0.0394
+##  C - L40    -0.2449 0.0386 Inf  -6.338  &lt;.0001
+##  C - L80    -0.0552 0.0354 Inf  -1.560  0.5232
+##  H40 - H80   0.1311 0.0390 Inf   3.361  0.0070
+##  H40 - L40  -0.0141 0.0408 Inf  -0.344  0.9970
+##  H40 - L80   0.1757 0.0390 Inf   4.506  0.0001
+##  H80 - L40  -0.1451 0.0383 Inf  -3.793  0.0014
+##  H80 - L80   0.0446 0.0354 Inf   1.259  0.7163
+##  L40 - L80   0.1897 0.0382 Inf   4.969  &lt;.0001
+## 
+## Results are averaged over the levels of: year 
+## Results are given on the log (not the response) scale. 
+## P value adjustment: tukey method for comparing a family of 5 estimates</code></pre>
+<p>Here is the trend from one period to the other. Its a little strange how consistent it is for each treatment. Climate effects?</p>
+<pre class="r"><code>emmip(m7a, treatment ~ year)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code>emmip(m7b, treatment ~ year)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
 </div>
 </div>
 
