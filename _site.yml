@@ -1,7 +1,7 @@
 name: "A-972 10-year Study"
 output_dir: docs
 include: 
-exclude: 
+exclude: ["original", "reference", "working", "*.txt", "*.old"]
 navbar:
   title: "A-972 10-year Study"
   left:

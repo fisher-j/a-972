@@ -8,15 +8,19 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = TRUE)
 
 ```{r}
 library(lme4)
+library(emmeans)
+library(nlme)
+library(MuMIn)
+library(emmeans)
+library(ggpubr)
 palette("Tableau 10")
-
 ```
 
-## Introduction
+# Introduction
 
 I need to predict missing heights in 2018 in order to complete other steps of the analysis and provide better summary data. To accomplish this, I will model height increment as a function of the continuous predictor, dbh, as well as a combination of nested groupings: year, treatment, plot, and species. Additionally, height increment response is of interest in it's own right. While height growth in trees is less responsive to conditions then diameter, it would be important to see whether there is a difference detected between treatments.
 
-## Defining trees of interest
+# Defining trees of interest
 
 First, I'll define the dataset of interest as only years 2013 and 2018 observations of healthy, non-leaning trees. I'll also define three other alternative treatment groupings for consideration: thinned/unthinned, H/L/C (thinning type), and 40/80/C (thinning intensity).
 
@@ -24,7 +28,7 @@ First, I'll define the dataset of interest as only years 2013 and 2018 observati
 test_d <- d_l %>%
   # only use unbroken live sese or psme from 2018
   filter(
-    spp %in% c("SESE3", "PSMEM"),
+    spp %in% c("SESE3", "PSMEM", "PISI", "ALRU2"),
     year %in% c("18", "13"),
     status == 1,
     !get_cond(2, 3, 5),
@@ -39,7 +43,7 @@ test_d <- d_l %>%
   select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc, plot, x, y)
 ```
 
-## Assessment of linear relationship between dbh and height increment
+# Assessment of linear relationship between dbh and height increment
 
 We are pretty sure that height growth is correlated with diameter, in that larger trees are capable of more height growth than smaller ones. We also think that this relationship is probably not linear. I will take a look at log and square root transformations of dbh for linear prediction of height growth.
 
@@ -65,13 +69,13 @@ test_d %>%
 
 It doesn't look like it matters a whole lot with this noisy data. I'm going to use log transformation.
 
-## Global Model
+# Global Model
 
 The next step is going to specify our likely global model. In general, we want to answer questions about how a given treatment affected growth for each species. There may have also been different responses between years. This will be a mixed model and I want to control for the random effect of plot and tree_id. The global model will include `log(dbh)` as well as the categoricals: `treatment`, `species`, `year`, and all their interactions. Resulting in the fixed effects:
 
 `ht_inc ~ log(dbh) * treatment * spp * year`
 
-## Optimal random effects specification
+# Optimal random effects specification
 
 We will determine the optimal random effects structure using the global fixed effects structure. I will select the best of the following random effects structures:
 
@@ -82,8 +86,6 @@ We will determine the optimal random effects structure using the global fixed ef
 ```
 
 ```{r}
-library(nlme)
-library(MuMIn)
 
 f0 <- formula(ht_inc ~ log(dbh) * treatment * spp * year)
 m0 <- gls(f0, data = test_d, method = "REML")
@@ -96,7 +98,7 @@ AICc(m0, m1, m2, m3)
 
 The optimal random effects structure, judged by AIC (and using fixed effects coefficients determined by REML), includes the random intercept only for `plot`. We will assume this random effects structure in all further models.
 
-## Choosing a sub-model for fixed effects
+# Choosing a sub-model for fixed effects
 
 The next step is to define a list of potential sub-models for fixed effects to determine the optimal structure. These will be determined for Douglas-fir and redwood separately so I'll start by splitting the two datasets.
 
@@ -106,6 +108,7 @@ psme_d <- subset(test_d, spp == "PSMEM")
 
 fl <- list(
   ht_inc ~ log(dbh) + (1 | plot),
+  ht_inc ~ log(dbh) + year + (1 | plot),
   ht_inc ~ log(dbh) + treatment + (1 | plot),
   ht_inc ~ log(dbh) + treatment + year + (1 | plot),
   ht_inc ~ log(dbh) * treatment + year + (1 | plot),
@@ -143,14 +146,21 @@ get_aic(fl, data = psme_d) %>%
 get_aic(fl, data = sese_d) %>%
   kbl(caption = "AICS for set of redwood submodels") %>%
   kable_styling(full_width = FALSE)
+
+fl2 <- c(fl, ht_inc ~ spp * log(dbh) + (1 | plot))
+fl3 <- lapply(fl, function(x) update(x, ~ . * spp) %>% update(~ . - (1 | plot:spp)))
+get_aic(fl3, data = test_d) %>%
+  kbl(caption = "AICS for all species ht models") %>%
+  kable_styling(full_width = FALSE)
 ```
 
-Based on this, I will select model five for Douglas-fir because it is substantially better than the next best model. For redwood, I select model 21 because it has the lowest AIC. I have doubts about whether this model captures any more valuable information than model 1, with `log(dbh)` only, but I'll go with it for now. 
+# Best model
+
+While these models are interesting, their is reason to believe that our height measurements are not precise enough to capture the small height differences between treatments (around 3 feet). For this reason, we will default to a simple height increment model with DBH as the only predictor.
+
+I'll test whether it makes sense to include spe
 
 ```{r}
-sese <- lmer(fl[[21]], data = sese_d, REML = TRUE)
-psme <- lmer(fl[[5]], data = psme_d, REML = TRUE)
-
 # augment data with fitted, residual cooks distance and leverage
 augment1 <- function(dat, mod) {
   dat %>% mutate(
@@ -160,6 +170,157 @@ augment1 <- function(dat, mod) {
     lev = hatvalues(mod)
   )
 }
+```
+
+```{r}
+ht_inc_mod <- lmer(ht_inc ~ log(dbh) * spp + (1 | plot), data = test_d)
+
+ht_inc_d <- augment1(test_d, ht_inc_mod)
+
+summary(ht_inc_mod)
+```
+
+## Best model estimated means
+
+```{r}
+
+emmip(ht_inc_mod, spp ~ dbh, at = list(dbh = seq(10, 60, 2))) +
+  scale_color_manual(values = palette())
+emmeans(ht_inc_mod, pairwise ~ spp)
+```
+
+## Best model validation
+
+### Residual vs fitted
+
+I also plot residual vs the predictor
+
+```{r}
+par(mfrow = c(1, 2))
+plot(
+  resid ~ fitted,
+  data = ht_inc_d,
+  pch = 16,
+  xlab = "fitted values",
+  ylab = "Scaled residuals",
+  main = "Residual vs fitted",
+  col = 2
+)
+abline(0,0)
+plot(
+  resid ~ log(dbh),
+  data = ht_inc_d,
+  xlab = "log(dbh)",
+  ylab = "Scaled residuals",
+  main = "Residual vs log(dbh)",
+  col = 2,
+  pch = 16
+)
+abline(0,0)
+
+with(
+  model.frame(ht_inc_mod),
+  boxplot(
+    resid(ht_inc_mod, type = "pearson") ~ spp,
+    xlab = "by spp",
+    ylab = "Residuals",
+    main = "Distribution of residuals by spp"
+  )
+)
+
+```
+
+### Homogeneity of random group residuals
+
+I can check that random group residuals are homogenous
+
+```{r}
+plot(
+  ht_inc_mod,
+  resid(., scaled=TRUE) ~ fitted(.)| plot,
+  abline = 0,
+  pch = 16,
+  xlab = "Fitted values",
+  ylab = "Standardised residuals"
+)
+```
+
+
+### Normality of residuals
+
+Checking for normality of residuals. The tails are perhaps a bit fat, I'm not sure if this requires attention or not.
+
+```{r, fig.height=7, fig.width=10}
+qqnorm(resid(ht_inc_mod, type = "pearson"), pch=16, col = 1,  main = "QQplot for pearosn residuals")
+qqline(resid(ht_inc_mod, type = "pearson"))
+```
+
+### Leverage and Cooks distance
+
+Cooks outliers, defined as > 3 x mean(cooks distance) are colored in red. None of these "outliers" seem like they would disproportionately affect regression. 
+
+```{r, fig.width=10, fig.height=8}
+#Plot leverage against standardised residuals
+plot(
+  resid ~ lev,
+  data = ht_inc_d,
+  las = 1,
+  ylab = "Standardised residuals",
+  xlab = "Leverage",
+  col = palette.colors(palette = "tableau10", alpha = .5)[1],
+  main = "Leverage vs residuals",
+  pch = 16
+)
+points(resid ~ lev, data = filter(ht_inc_d, cooks > 3 * mean(cooks)), pch = 16, col =3)
+```
+
+### Random effects distribution
+
+The distribution of random effects (plots) should be roughly normal. Here our distribution is skewed, [from what I've read], this should not be a problem for estimates or their std's.
+
+[from what I've read]: (https://stats.stackexchange.com/a/366500)
+
+```{r}
+hist(as.vector(unlist(ranef(ht_inc_mod)$plot)), col = 1)
+```
+
+# Update data with model predictions
+
+## Missing heights other species
+
+There are five species that are missing heights. There is not enough data to predict heights of hemlock, so it is left out of the model, redwood, Douglas-fir, alder and spruce were all included in the model. I'm also going to predict missing heights for leaning trees. Leaning trees were not included in fitting the model.
+
+I can only predict heights for trees in year 13 and 18, and only if they have a height in the previous period. Furthermore, there may be issues with predicting heights for broken trees, if their previous height is for their pre-broken state. **First, I'll just predict heights for status 1, unbroken trees**
+
+```{r}
+
+```
+
+
+```{r}
+broken_trees <- d_l %>%
+  filter(
+    status == 1 & get_cond(2, 3) | status == 31,
+    is.na(ht),
+    spp %in% c("ALRU2", "PISI", "SESE3", "PSMEM"),
+    year %in% c("13", "18")
+  )
+d_l %>%
+  group_by(tree_id) %>%
+  filter(tree_id %in% broken_trees$tree_id, year %in% c("08", "13", "18"), get_cond(2,3) == lag(get_cond(2,3)))
+```
+
+
+
+# Old Model Selection
+
+## Selection
+Based on this, I will select model five for Douglas-fir because it is substantially better than the next best model. For redwood, I select model 21 because it has the lowest AIC. I have doubts about whether this model captures any more valuable information than model 1, with `log(dbh)` only, but I'll go with it for now. 
+
+```{r}
+sese <- lmer(fl[[21]], data = sese_d, REML = TRUE)
+psme <- lmer(fl[[5]], data = psme_d, REML = TRUE)
+
 
 sese_d <- augment1(sese_d, sese)
 psme_d <- augment1(psme_d, psme)
@@ -173,7 +334,6 @@ In both cases, I'm separating results of comparisons by year, because interactio
 First, the model for sese was fit with interactions between treatment, year, and dbh. I could test at multiple dbh's if we were interested in a certain range of sizes because the model includes interaction with dbh.
 
 ```{r}
-library(emmeans)
 sese_em <- emmeans(sese, ~ dbh * treatment4 * year)
 sese_em
 pairs(sese_em, by = "year")
@@ -242,8 +402,6 @@ bind_rows(psme_d, sese_d) %>%
 Here I predict heights for a range of values while holding the random effect of `plot` at its mean according to our selected models. The model for PSME does not include interactions between dbh and treatment or year, so slopes are parallel. The model for sese does include interactions with dbh and slopes change dramatically (flip-flop) between years. It seems likely to me that we are either modeling noise, or systematic differences between different crews doing height measurements.
 
 ```{r, fig.width=9, fig.height=9}
-library(ggpubr)
-library(patchwork)
 
 plot_emmeans_models <- function(by_year){
   if (by_year == TRUE) {
@@ -306,6 +464,7 @@ ggplot(test_d, aes(x = dbh, y = ht_inc)) +
 
 ## Validation of selected models
 
+### Residual vs fitted
 Next I will perform some model validation. I'll start by looking at residuals vs fitted and residual vs continuous predictor (log(dbh)) and for the Douglas-fir model, the residuals for each combination of the categorical predictors: `treatment` and `year`.
 
 ```{r, fig.width=10, fig.height=7}
@@ -343,7 +502,7 @@ abline(0,0)
 
 plot(
   resid ~ log(dbh),
-  data = sese_d,
+  data = psme_d,
   xlab = "log(dbh)",
   ylab = "Scaled residuals",
   main = "Residual vs log(dbh) for PSME",
@@ -365,7 +524,7 @@ with(
 )
 ```
 
-## Homogeneity of random group residuals
+### Homogeneity of random group residuals
 
 I can check that random group residuals are homogenous
 
@@ -380,7 +539,7 @@ plot(
 )
 ```
 
-## Normality of residuals
+### Normality of residuals
 
 Checking for normality of residuals. The tails are perhaps a bit fat for PSME. I'm not sure if this requires attention or not.
 
@@ -392,7 +551,7 @@ qqnorm(resid(sese), pch=16, col = 2, main = "QQplot for SESE")
 qqline(resid(sese))
 ```
 
-## Leverage and Cooks distance
+### Leverage and Cooks distance
 
 Cooks outliers, defined as > 3 x mean(cooks distance) are colored in red. None of these "outliers" seem like they would disproportionately affect regression. 
 
@@ -423,7 +582,7 @@ plot(
 points(resid ~ lev, data = filter(sese_d, cooks > 3 * mean(cooks)), pch = 16, col =3)
 ```
 
-## Random effects distribution
+### Random effects distribution
 
 The distribution of random effects (plots) should be roughly normal. Obviously, this is not the case for SESE, I'm not sure of what the implications for this are.
 
@@ -432,7 +591,7 @@ hist(as.vector(unlist(ranef(psme)$plot)), col = 1)
 hist(as.vector(unlist(ranef(sese)$plot)), col = 2)
 ```
 
-## Spatial autocorrelation
+### Spatial autocorrelation
 
 Semivariograms for our two selected models, the first set indicates average semivariance within plots. The second set indicates semivariance across all trees. It seems like correlation increases with distance within plots for PSME, this is usually the opposite but may make sense in that at the plot level, larger trees may be farther from each other. For SESE, the reverse is true. This also may be artefacts of noisy data. Either way, it appears that their is not a 
 
@@ -467,7 +626,7 @@ plot(vs, col = 2, pch = 16, main = "semivariance across study for sese")
 lines(fitted(loess(vs$v ~ vs$u)) ~ vs$u, col = "darkblue")
 ```
 
-## Temporal autocorrelation
+### Temporal autocorrelation
 
 We are looking at data for 2013 and 2018, year was included in the model for psme but not for sese. I'll look at an autocorrelation plot 
 

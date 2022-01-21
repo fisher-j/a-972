@@ -306,7 +306,7 @@ form_list2 <- list(
 )
 
 aic_out2 <- map(d_split2, ~ get_aic(form_list2, data = .x, method = "glm"))
-
+aic_out2
 ```
 
 ## Exploring marginal means of the most useful model
@@ -315,14 +315,16 @@ Based on the above, inclusion of interactions when considering a model with trea
 
 `ba_inc + scale_val ~ dbh + treatment + year + (1 | plot)`
 
+NOTE: Do we really care about year (first 5-year period or second), while it is true that there could be an different treatment effect for each year and even that this effect could vary by treatment (interaction), it seems as though the question we are trying to answer is dealing with long-term consequences. For instance, if we could report that a treatment had a strong effect, but only for 5 years and this effect is not persistent, than is it relevant to us? In writing this I realize that if a treatment is only "significant" in the second period, that could be important because it might suggest that there will be further long-term effects, whereas if a treatment is only important in the first period, then it may not really be that important after all.
+
 ```{r}
 m7a <- glmer(
-  I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot),
+  I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
   family = Gamma(link = "log"),
   data = d_split2$SESE3
 )
 m7b <- glmer(
-  I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot),
+  I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
   family = Gamma(link = "log"),
   data = d_split2$PSMEM
 )
@@ -330,16 +332,37 @@ summary(m7a)
 summary(m7b)
 ```
 
-Here are pairwise comparisons for SESE, followed by PSME. low intensity is no different than control
+Here are pairwise comparisons for SESE, followed by PSME. low intensity is no different than control and high thinning is no different than low thinning.
 
 ```{r}
-emmeans(m7a, pairwise ~ treatment)
-emmeans(m7b, pairwise ~ treatment)
+
+a_mean <- emmeans(m7a, ~ treatment + year)
+
+# learning about back-transforming mean and SE
+# it seems like using the "response" scale is working after all
+emmeans(m7a, ~ treatment + year) %>% 
+  as_tibble() %>%
+  mutate(
+    response = exp(emmean) - scale_val,
+    se_response = exp(SE) - scale_val
+  )
+emmeans(m7a, ~ treatment + year, type = "response")
+
+b_mean <- emmeans(m7b, ~ treatment + year)
+pairs(a_mean)
+contrast(a_mean)
+
 ```
 
-Here is the trend from one period to the other. Its a little strange how consistent it is for each treatment. Climate effects?
+Here is the trend from one period to the other. Its a little strange how consistent it is for each treatment. Climate effects? Or Is 
 
 ```{r}
+
 emmip(m7a, treatment ~ year)
 emmip(m7b, treatment ~ year)
+
+
+emmeans(m7a, pairwise ~ treatment)
+emmeans(m7b, pairwise ~ treatment)
+
 ```
