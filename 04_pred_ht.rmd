@@ -22,13 +22,12 @@ I need to predict missing heights in 2018 in order to complete other steps of th
 
 # Defining trees of interest
 
-First, I'll define the dataset of interest as only years 2013 and 2018 observations of healthy, non-leaning trees. I'll also define three other alternative treatment groupings for consideration: thinned/unthinned, H/L/C (thinning type), and 40/80/C (thinning intensity).
+First, I'll define the dataset of interest as only years 2013 and 2018 observations of healthy, non-leaning, unbroken SESE or PSME trees. I'll also define three other alternative treatment groupings for consideration: thinned/unthinned, H/L/C (thinning type), and 40/80/C (thinning intensity).
 
 ```{r}
 test_d <- d_l %>%
-  # only use unbroken live sese or psme from 2018
   filter(
-    spp %in% c("SESE3", "PSMEM", "PISI", "ALRU2"),
+    spp %in% c("SESE3", "PSMEM"),
     year %in% c("18", "13"),
     status == 1,
     !get_cond(2, 3, 5),
@@ -65,13 +64,15 @@ test_d %>%
       name = "",
       breaks = c("PSMEM", "SESE3", "linear", "sqrt", "log"),
     )
+
+rm(m0, m1, m2)
 ```
 
 It doesn't look like it matters a whole lot with this noisy data. I'm going to use log transformation.
 
 # Global Model
 
-The next step is going to specify our likely global model. In general, we want to answer questions about how a given treatment affected growth for each species. There may have also been different responses between years. This will be a mixed model and I want to control for the random effect of plot and tree_id. The global model will include `log(dbh)` as well as the categoricals: `treatment`, `species`, `year`, and all their interactions. Resulting in the fixed effects:
+The next step is going to specify our likely global model. In general, we want to answer questions about how a given treatment affected growth for each species. There may have also been different responses between years. This will be a mixed model and I want to control for the random effect of plot and tree_id. The global model will include `log(dbh)` as well as the categories: `treatment`, `species`, `year`, and all their interactions. Resulting in the fixed effects:
 
 `ht_inc ~ log(dbh) * treatment * spp * year`
 
@@ -79,14 +80,13 @@ The next step is going to specify our likely global model. In general, we want t
 
 We will determine the optimal random effects structure using the global fixed effects structure. I will select the best of the following random effects structures:
 
-```
-(1 | plot)
-(1 | plot) + (1 | tree_id)
-(log(dbh) | plot) + (1 | tree_id)
-```
+    (1 | plot)
+    (1 | plot) + (1 | tree_id)
+    (log(dbh) | plot) + (1 | tree_id)
 
-```{r}
+I'll do this using AICc and Restricted Maximum Likelihood Estimation (REML), which I believe is the preferred method when comparing random effects structure, whereas ML is necessary when comparing different fixed effects.
 
+```{r ranef-spec}
 f0 <- formula(ht_inc ~ log(dbh) * treatment * spp * year)
 m0 <- gls(f0, data = test_d, method = "REML")
 m1 <- lmer(update(f0, ~ . + (1 | plot)), REML = TRUE, data = test_d)
@@ -96,7 +96,7 @@ m3 <- update(m2, ~ . + (0 + log(dbh) | plot))
 AICc(m0, m1, m2, m3)
 ```
 
-The optimal random effects structure, judged by AIC (and using fixed effects coefficients determined by REML), includes the random intercept only for `plot`. We will assume this random effects structure in all further models.
+The optimal random effects structure, includes the random intercept only for `plot`. I will assume this random effects structure in all further height models.
 
 # Choosing a sub-model for fixed effects
 
@@ -131,9 +131,10 @@ fl <- list(
   ht_inc ~ log(dbh) * treatment4 * year + (1 | plot)
 )
 
-# tibble(models = sapply(fl, deparse)) %>%
-#   kbl(caption = "List of submodels to test for each species") %>%
-#   kable_styling(full_width = FALSE)
+tibble(models = sapply(fl, deparse)) %>%
+  rowid_to_column() %>%
+  kbl(caption = "List of submodels to test for each species") %>%
+  kable_styling(full_width = FALSE)
 ```
 
 I use AICc to assess the fit of each of the submodels with coefficients estimated with ML in order to compare among various fixed effects.
@@ -154,11 +155,11 @@ get_aic(fl3, data = test_d) %>%
   kable_styling(full_width = FALSE)
 ```
 
-# Best model
+# Best model (scrapping above)
 
-While these models are interesting, their is reason to believe that our height measurements are not precise enough to capture the small height differences between treatments (around 3 feet). For this reason, we will default to a simple height increment model with DBH as the only predictor.
+While these models are interesting, there is reason to believe that our height measurements are not precise enough to capture the small height differences between treatments (around 3 feet). For this reason, we will default to a simple height increment model with DBH as the only predictor.
 
-I'll test whether it makes sense to include spe
+I'll test whether it makes sense to include species
 
 ```{r}
 # augment data with fitted, residual cooks distance and leverage
@@ -260,7 +261,7 @@ qqline(resid(ht_inc_mod, type = "pearson"))
 Cooks outliers, defined as > 3 x mean(cooks distance) are colored in red. None of these "outliers" seem like they would disproportionately affect regression. 
 
 ```{r, fig.width=10, fig.height=8}
-#Plot leverage against standardised residuals
+# Plot leverage against standardised residuals
 plot(
   resid ~ lev,
   data = ht_inc_d,
@@ -331,7 +332,7 @@ psme_d <- augment1(psme_d, psme)
 
 In both cases, I'm separating results of comparisons by year, because interaction with year was included in the model. If we decide to hold year at its mean effect, then comparisons will likely be different.
 
-First, the model for sese was fit with interactions between treatment, year, and dbh. I could test at multiple dbh's if we were interested in a certain range of sizes because the model includes interaction with dbh.
+First, the model for SESE was fit with interactions between treatment, year, and dbh. I could test at multiple dbh's if we were interested in a certain range of sizes because the model includes interaction with dbh.
 
 ```{r}
 sese_em <- emmeans(sese, ~ dbh * treatment4 * year)
@@ -339,7 +340,7 @@ sese_em
 pairs(sese_em, by = "year")
 ```
 
-Next, psme was fit with factors (`treatment * year`) we can do pairwise comparisons, or, alternatively, treatment vs control comparisons. Pairwise comparison does not have enough power to reveal any significant differences, but comparing just to control provides more power and shows some treatments are different than control.
+Next, PSME was fit with factors (`treatment * year`) we can do pairwise comparisons, or, alternatively, treatment vs control comparisons. Pairwise comparison does not have enough power to reveal any significant differences, but comparing just to control provides more power and shows some treatments are different than control.
 
 ```{r}
 psme_em <- emmeans(psme, ~ treatment * year)
@@ -399,7 +400,7 @@ bind_rows(psme_d, sese_d) %>%
 
 ## Predictions
 
-Here I predict heights for a range of values while holding the random effect of `plot` at its mean according to our selected models. The model for PSME does not include interactions between dbh and treatment or year, so slopes are parallel. The model for sese does include interactions with dbh and slopes change dramatically (flip-flop) between years. It seems likely to me that we are either modeling noise, or systematic differences between different crews doing height measurements.
+Here I predict heights for a range of values while holding the random effect of `plot` at its mean according to our selected models. The model for PSME does not include interactions between dbh and treatment or year, so slopes are parallel. The model for SESE does include interactions with dbh and slopes change dramatically (flip-flop) between years. It seems likely to me that we are either modeling noise, or systematic differences between different crews doing height measurements.
 
 ```{r, fig.width=9, fig.height=9}
 
@@ -557,7 +558,7 @@ Cooks outliers, defined as > 3 x mean(cooks distance) are colored in red. None o
 
 ```{r, fig.width=10, fig.height=8}
 par(mfrow = c(2, 1))
-#Plot leverage against standardised residuals
+# Plot leverage against standardised residuals
 plot(
   resid ~ lev,
   data = psme_d,
@@ -604,9 +605,8 @@ plot(Variogram(psme1, form = ~ x + y | plot))
 
 
 ```{r, fig.height=7, fig.width=10}
-library(geoR)
 par(mfrow = c(2, 1))
-vp <- variog(
+vp <- geoR::variog(
   coords = cbind(psme_d$x, psme_d$y),
   data = resid(psme, type = "pearson"),
   option="bin",
@@ -616,7 +616,7 @@ plot(vp, col = 1, pch = 16, main = "semivariance across study for psme")
 lines(fitted(loess(vp$v ~ vp$u)) ~ vp$u, col = "darkblue")
 
 
-vs <-  variog(
+vs <-  geoR::variog(
   coords = cbind(sese_d$x, sese_d$y),
   data = resid(sese, type = "pearson"),
   option="bin",
@@ -636,7 +636,7 @@ acf(resid(psme, type = "pearson"), lag.max = 4, col = 1)
 acf(resid(sese, type = "pearson"), lag.max = 4, col = 2)
 ```
 
-I can also look for correlation between the residuals of observations using a correlation test. Observations of the same tree among psme and sese are both negatively correlated.
+I can also look for correlation between the residuals of observations using a correlation test. Observations of the same tree among PSME and SESE are both negatively correlated.
 
 ```{r}
 obs_pairs_corr <- function(d) {

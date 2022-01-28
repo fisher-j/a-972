@@ -8,7 +8,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
 
 # Summary measures
 
-I'm making the assumption now that all trees recorded as cut were alive in the initial conditions. For all of the following I use trees with status 1, 2, 3, 15, 16. Fifteen and 16 are cut trees, but in the long data format, they only occur on entries where year = "init" so they do not affected other periods. Status 1, 2 and 3 represent second-growth, advanced regen, and old-growth, respectively.
+I'm making the assumption now that all trees recorded as cut were alive in the initial conditions. For all of the following I use trees with status 1, 2, 3, 15, 16. Fifteen and 16 are cut trees, but in the long data format, they only occur on entries where year = "init" so they do not affect other periods. Status 1, 2 and 3 represent second-growth, advanced regen, and old-growth, respectively.
 
 Generally, the `summarise()` command in each section defines the output of a given measure. The `mutate()` command is also used for calculating new columns. Calculations are done by grouping levels (generally by treatment, by year).
 
@@ -46,7 +46,7 @@ measures$density <- function(data, species) {
 
 ## Mortality
 
-New mortality here is ascribed to observations of the current period which were alive in the previous period and are not alive in the current period and reported in tph. Currently, this is undefined for the first period ("init") and is zero for "08" (because "init" and "08" are really only one observation). The values for 2013 and 2018 record the new mortality in the previous period, ie: 08-13 and 13-18, respectively.
+New mortality here is ascribed to observations of the current period which were alive in the previous period and are not alive in the current period and reported in tph. Currently, this is undefined for the first period ("init") and is zero for "08" (because "init" and "08" are really only one observation). The values for 2013 and 2018 record the new mortality in the previous period, i.e.: 08-13 and 13-18, respectively.
 
 ```{r}
 measures$mort <- function(data, species) {

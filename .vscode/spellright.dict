@@ -2,3 +2,7 @@ dbh
 init
 Dbh
 bib.json
+submodels
+Semivariograms
+semivariance
+unthinned

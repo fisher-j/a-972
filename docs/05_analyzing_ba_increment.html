@@ -11,7 +11,7 @@
 
 
 
-<title>Modeling height growth and predicting missing heights</title>
+<title>Modeling BA increment</title>
 
 <script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -288,7 +288,7 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Modeling height growth and predicting missing heights</h1>
+<h1 class="title toc-ignore">Modeling BA increment</h1>
 
 </div>
 
@@ -2804,19 +2804,52 @@ form_list2 &lt;- list(
 
 )
 
-aic_out2 &lt;- map(d_split2, ~ get_aic(form_list2, data = .x, method = &quot;glm&quot;))</code></pre>
+aic_out2 &lt;- map(d_split2, ~ get_aic(form_list2, data = .x, method = &quot;glm&quot;))
+aic_out2</code></pre>
+<pre><code>## $PSMEM
+## # A tibble: 24 x 4
+##    row   formula                                                      aicc  rmse
+##    &lt;chr&gt; &lt;chr&gt;                                                       &lt;dbl&gt; &lt;dbl&gt;
+##  1 10    I(ba_inc + scale_val) ~ dbh + treat_density + year + (1 |~ 10413. 0.235
+##  2 14    I(ba_inc + scale_val) ~ dbh * treat_density + year + (1 |~ 10414. 0.235
+##  3 23    I(ba_inc + scale_val) ~ dbh * treat_density + year + year~ 10415. 0.234
+##  4 8     I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plo~ 10415. 0.235
+##  5 22    I(ba_inc + scale_val) ~ dbh * treat_density + year + year~ 10416. 0.235
+##  6 12    I(ba_inc + scale_val) ~ dbh * treatment + year + (1 | plo~ 10416. 0.234
+##  7 24    I(ba_inc + scale_val) ~ dbh * treat_density + year + year~ 10416. 0.234
+##  8 18    I(ba_inc + scale_val) ~ dbh * treat_density * year + (1 |~ 10420. 0.234
+##  9 11    I(ba_inc + scale_val) ~ dbh + treat_status + year + (1 | ~ 10425. 0.235
+## 10 15    I(ba_inc + scale_val) ~ dbh * treat_status + year + (1 | ~ 10427. 0.235
+## # ... with 14 more rows
+## 
+## $SESE3
+## # A tibble: 24 x 4
+##    row   formula                                                      aicc  rmse
+##    &lt;chr&gt; &lt;chr&gt;                                                       &lt;dbl&gt; &lt;dbl&gt;
+##  1 14    I(ba_inc + scale_val) ~ dbh * treat_density + year + (1 | ~ 2787. 0.214
+##  2 23    I(ba_inc + scale_val) ~ dbh * treat_density + year + year:~ 2787. 0.213
+##  3 24    I(ba_inc + scale_val) ~ dbh * treat_density + year + year:~ 2788. 0.213
+##  4 18    I(ba_inc + scale_val) ~ dbh * treat_density * year + (1 | ~ 2788. 0.212
+##  5 22    I(ba_inc + scale_val) ~ dbh * treat_density + year + year:~ 2788. 0.214
+##  6 10    I(ba_inc + scale_val) ~ dbh + treat_density + year + (1 | ~ 2791. 0.216
+##  7 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)    2794. 0.217
+##  8 6     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)    2794. 0.217
+##  9 12    I(ba_inc + scale_val) ~ dbh * treatment + year + (1 | plot) 2795. 0.214
+## 10 8     I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot) 2795. 0.216
+## # ... with 14 more rows</code></pre>
 </div>
 <div id="exploring-marginal-means-of-the-most-useful-model" class="section level2">
 <h2>Exploring marginal means of the most useful model</h2>
 <p>Based on the above, inclusion of interactions when considering a model with treatment and year, do not have lower AIC. I’ll use:</p>
 <p><code>ba_inc + scale_val ~ dbh + treatment + year + (1 | plot)</code></p>
+<p>NOTE: Do we really care about year (first 5-year period or second), while it is true that there could be an different treatment effect for each year and even that this effect could vary by treatment (interaction), it seems as though the question we are trying to answer is dealing with long-term consequences. For instance, if we could report that a treatment had a strong effect, but only for 5 years and this effect is not persistent, than is it relevant to us? In writing this I realize that if a treatment is only “significant” in the second period, that could be important because it might suggest that there will be further long-term effects, whereas if a treatment is only important in the first period, then it may not really be that important after all.</p>
 <pre class="r"><code>m7a &lt;- glmer(
-  I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot),
+  I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
   family = Gamma(link = &quot;log&quot;),
   data = d_split2$SESE3
 )
 m7b &lt;- glmer(
-  I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot),
+  I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
   family = Gamma(link = &quot;log&quot;),
   data = d_split2$PSMEM
 )
@@ -2824,7 +2857,8 @@ summary(m7a)</code></pre>
 <pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace
 ##   Approximation) [glmerMod]
 ##  Family: Gamma  ( log )
-## Formula: I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot)
+## Formula: I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 |  
+##     plot)
 ##    Data: d_split2$SESE3
 ## 
 ##      AIC      BIC   logLik deviance df.resid 
@@ -2832,43 +2866,40 @@ summary(m7a)</code></pre>
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -2.4283 -0.6445 -0.0348  0.5879  3.4764 
+## -2.4283 -0.6445 -0.0347  0.5879  3.4765 
 ## 
 ## Random effects:
 ##  Groups   Name        Variance Std.Dev.
-##  plot     (Intercept) 0.002295 0.0479  
-##  Residual             0.046106 0.2147  
+##  plot     (Intercept) 0.002295 0.04791 
+##  Residual             0.046105 0.21472 
 ## Number of obs: 396, groups:  plot, 19
 ## 
 ## Fixed effects:
-##                Estimate Std. Error t value Pr(&gt;|z|)    
-## (Intercept)   2.3789694  0.0547639  43.440  &lt; 2e-16 ***
-## dbh           0.0422859  0.0009315  45.395  &lt; 2e-16 ***
-## treatmentH40  0.3675333  0.0725865   5.063 4.12e-07 ***
-## treatmentH80  0.1183122  0.0682074   1.735   0.0828 .  
-## treatmentL40  0.3708646  0.0846859   4.379 1.19e-05 ***
-## treatmentL80  0.1387989  0.0680106   2.041   0.0413 *  
-## year18       -0.0492905  0.0218709  -2.254   0.0242 *  
+##              Estimate Std. Error t value Pr(&gt;|z|)    
+## (Intercept)   3.49306    0.04901  71.274  &lt; 2e-16 ***
+## scale(dbh)    0.55040    0.01212  45.394  &lt; 2e-16 ***
+## treatmentH40  0.36755    0.07259   5.063 4.12e-07 ***
+## treatmentH80  0.11835    0.06821   1.735   0.0827 .  
+## treatmentL40  0.37092    0.08469   4.380 1.19e-05 ***
+## treatmentL80  0.13885    0.06802   2.041   0.0412 *  
+## year18       -0.04929    0.02187  -2.253   0.0242 *  
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Correlation of Fixed Effects:
-##             (Intr) dbh    trtH40 trtH80 trtL40 trtL80
-## dbh         -0.446                                   
-## treatmntH40 -0.566 -0.040                            
-## treatmntH80 -0.630  0.033  0.464                     
-## treatmntL40 -0.469 -0.052  0.368  0.389              
-## treatmntL80 -0.626  0.023  0.465  0.494  0.390       
-## year18      -0.167 -0.051  0.022  0.008  0.039  0.003
-## optimizer (Nelder_Mead) convergence code: 0 (OK)
-## Model failed to converge with max|grad| = 0.0129648 (tol = 0.002, component 1)
-## Model is nearly unidentifiable: very large eigenvalue
-##  - Rescale variables?</code></pre>
+##             (Intr) scl(d) trtH40 trtH80 trtL40 trtL80
+## scale(dbh)   0.002                                   
+## treatmntH40 -0.652 -0.040                            
+## treatmntH80 -0.688  0.033  0.464                     
+## treatmntL40 -0.550 -0.052  0.368  0.389              
+## treatmntL80 -0.688  0.023  0.466  0.494  0.390       
+## year18      -0.212 -0.051  0.022  0.008  0.039  0.003</code></pre>
 <pre class="r"><code>summary(m7b)</code></pre>
 <pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace
 ##   Approximation) [glmerMod]
 ##  Family: Gamma  ( log )
-## Formula: I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot)
+## Formula: I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 |  
+##     plot)
 ##    Data: d_split2$PSMEM
 ## 
 ##      AIC      BIC   logLik deviance df.resid 
@@ -2876,39 +2907,144 @@ summary(m7a)</code></pre>
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -4.3618 -0.5843 -0.0116  0.6046  4.9597 
+## -4.3618 -0.5843 -0.0116  0.6046  4.9598 
 ## 
 ## Random effects:
 ##  Groups   Name        Variance  Std.Dev.
-##  plot     (Intercept) 0.0005674 0.02382 
-##  Residual             0.0480466 0.21920 
+##  plot     (Intercept) 0.0005675 0.02382 
+##  Residual             0.0480469 0.21920 
 ## Number of obs: 1500, groups:  plot, 20
 ## 
 ## Fixed effects:
-##                Estimate Std. Error t value Pr(&gt;|z|)    
-## (Intercept)   2.2261312  0.0322770  68.970  &lt; 2e-16 ***
-## dbh           0.0449026  0.0008178  54.907  &lt; 2e-16 ***
-## treatmentH40  0.2308561  0.0392660   5.879 4.12e-09 ***
-## treatmentH80  0.0997597  0.0354672   2.813  0.00491 ** 
-## treatmentL40  0.2449064  0.0386394   6.338 2.32e-10 ***
-## treatmentL80  0.0552009  0.0353842   1.560  0.11875    
-## year18       -0.0922977  0.0124134  -7.435 1.04e-13 ***
+##               Estimate Std. Error t value Pr(&gt;|z|)    
+## (Intercept)   3.475141   0.025705 135.192  &lt; 2e-16 ***
+## scale(dbh)    0.391080   0.007124  54.898  &lt; 2e-16 ***
+## treatmentH40  0.230847   0.039268   5.879 4.13e-09 ***
+## treatmentH80  0.099744   0.035469   2.812  0.00492 ** 
+## treatmentL40  0.244897   0.038641   6.338 2.33e-10 ***
+## treatmentL80  0.055182   0.035386   1.559  0.11889    
+## year18       -0.092302   0.012414  -7.436 1.04e-13 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Correlation of Fixed Effects:
-##             (Intr) dbh    trtH40 trtH80 trtL40 trtL80
-## dbh         -0.612                                   
-## treatmntH40 -0.400 -0.145                            
-## treatmntH80 -0.513 -0.050  0.459                     
-## treatmntL40 -0.341 -0.255  0.450  0.469              
-## treatmntL80 -0.512 -0.052  0.459  0.501  0.471       
-## year18      -0.027 -0.213  0.013 -0.001  0.036 -0.005
-## optimizer (Nelder_Mead) convergence code: 0 (OK)
-## Model failed to converge with max|grad| = 0.0396209 (tol = 0.002, component 1)
-## Model is nearly unidentifiable: very large eigenvalue
-##  - Rescale variables?</code></pre>
-<p>Here are pairwise comparisons for SESE, followed by PSME. low intensity is no different than control</p>
+##             (Intr) scl(d) trtH40 trtH80 trtL40 trtL80
+## scale(dbh)   0.117                                   
+## treatmntH40 -0.631 -0.145                            
+## treatmntH80 -0.688 -0.050  0.459                     
+## treatmntL40 -0.654 -0.255  0.450  0.469              
+## treatmntL80 -0.689 -0.053  0.459  0.501  0.471       
+## year18      -0.223 -0.213  0.013 -0.001  0.036 -0.005</code></pre>
+<p>Here are pairwise comparisons for SESE, followed by PSME. low intensity is no different than control and high thinning is no different than low thinning.</p>
+<pre class="r"><code>a_mean &lt;- emmeans(m7a, ~ treatment + year)
+
+# learning about back-transforming mean and SE
+# it seems like using the &quot;response&quot; scale is working after all
+emmeans(m7a, ~ treatment + year) %&gt;% 
+  as_tibble() %&gt;%
+  mutate(
+    response = exp(emmean) - scale_val,
+    se_response = exp(SE) - scale_val
+  )</code></pre>
+<pre><code>## # A tibble: 10 x 9
+##    treatment year  emmean     SE    df asymp.LCL asymp.UCL response se_response
+##    &lt;fct&gt;     &lt;fct&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;
+##  1 C         13      3.49 0.0490   Inf      3.40      3.59     15.3       -16.6
+##  2 H40       13      3.86 0.0550   Inf      3.75      3.97     29.9       -16.6
+##  3 H80       13      3.61 0.0496   Inf      3.51      3.71     19.4       -16.6
+##  4 L40       13      3.86 0.0707   Inf      3.73      4.00     30.0       -16.5
+##  5 L80       13      3.63 0.0494   Inf      3.54      3.73     20.2       -16.6
+##  6 C         18      3.44 0.0493   Inf      3.35      3.54     13.7       -16.6
+##  7 H40       18      3.81 0.0559   Inf      3.70      3.92     27.6       -16.6
+##  8 H80       18      3.56 0.0501   Inf      3.46      3.66     17.6       -16.6
+##  9 L40       18      3.81 0.0719   Inf      3.67      3.96     27.7       -16.5
+## 10 L80       18      3.58 0.0497   Inf      3.49      3.68     18.3       -16.6</code></pre>
+<pre class="r"><code>emmeans(m7a, ~ treatment + year, type = &quot;response&quot;)</code></pre>
+<pre><code>##  treatment year response   SE  df asymp.LCL asymp.UCL
+##  C         13       15.3 1.61 Inf      12.1      18.4
+##  H40       13       29.9 2.61 Inf      24.8      35.0
+##  H80       13       19.4 1.83 Inf      15.8      23.0
+##  L40       13       30.0 3.37 Inf      23.4      36.6
+##  L80       13       20.2 1.87 Inf      16.5      23.8
+##  C         18       13.7 1.54 Inf      10.7      16.7
+##  H40       18       27.6 2.53 Inf      22.6      32.5
+##  H80       18       17.6 1.76 Inf      14.2      21.1
+##  L40       18       27.7 3.26 Inf      21.3      34.1
+##  L80       18       18.3 1.79 Inf      14.8      21.9
+## 
+## Confidence level used: 0.95 
+## Intervals are back-transformed from the identity scale</code></pre>
+<pre class="r"><code>b_mean &lt;- emmeans(m7b, ~ treatment + year)
+pairs(a_mean)</code></pre>
+<pre><code>##  contrast        estimate     SE  df z.ratio p.value
+##  C 13 - H40 13   -0.36755 0.0726 Inf  -5.063  &lt;.0001
+##  C 13 - H80 13   -0.11835 0.0682 Inf  -1.735  0.7756
+##  C 13 - L40 13   -0.37092 0.0847 Inf  -4.380  0.0005
+##  C 13 - L80 13   -0.13885 0.0680 Inf  -2.041  0.5694
+##  C 13 - C 18      0.04929 0.0219 Inf   2.253  0.4199
+##  C 13 - H40 18   -0.31827 0.0763 Inf  -4.172  0.0012
+##  C 13 - H80 18   -0.06906 0.0718 Inf  -0.962  0.9943
+##  C 13 - L40 18   -0.32163 0.0883 Inf  -3.643  0.0101
+##  C 13 - L80 18   -0.08956 0.0715 Inf  -1.252  0.9637
+##  H40 13 - H80 13  0.24920 0.0730 Inf   3.414  0.0226
+##  H40 13 - L40 13 -0.00336 0.0890 Inf  -0.038  1.0000
+##  H40 13 - L80 13  0.22870 0.0728 Inf   3.142  0.0534
+##  H40 13 - C 18    0.41684 0.0753 Inf   5.532  &lt;.0001
+##  H40 13 - H40 18  0.04929 0.0219 Inf   2.253  0.4199
+##  H40 13 - H80 18  0.29849 0.0759 Inf   3.933  0.0034
+##  H40 13 - L40 18  0.04592 0.0920 Inf   0.499  1.0000
+##  H40 13 - L80 18  0.27799 0.0756 Inf   3.677  0.0089
+##  H80 13 - L40 13 -0.25257 0.0856 Inf  -2.949  0.0925
+##  H80 13 - L80 13 -0.02050 0.0685 Inf  -0.299  1.0000
+##  H80 13 - C 18    0.16764 0.0715 Inf   2.346  0.3591
+##  H80 13 - H40 18 -0.19992 0.0765 Inf  -2.613  0.2112
+##  H80 13 - H80 18  0.04929 0.0219 Inf   2.253  0.4199
+##  H80 13 - L40 18 -0.20328 0.0891 Inf  -2.282  0.4006
+##  H80 13 - L80 18  0.02879 0.0718 Inf   0.401  1.0000
+##  L40 13 - L80 13  0.23207 0.0855 Inf   2.715  0.1673
+##  L40 13 - C 18    0.42020 0.0866 Inf   4.851  0.0001
+##  L40 13 - H40 18  0.05265 0.0912 Inf   0.577  0.9999
+##  L40 13 - H80 18  0.30185 0.0877 Inf   3.442  0.0205
+##  L40 13 - L40 18  0.04929 0.0219 Inf   2.253  0.4199
+##  L40 13 - L80 18  0.28135 0.0874 Inf   3.218  0.0424
+##  L80 13 - C 18    0.18814 0.0714 Inf   2.636  0.2010
+##  L80 13 - H40 18 -0.17942 0.0764 Inf  -2.348  0.3579
+##  L80 13 - H80 18  0.06979 0.0720 Inf   0.969  0.9939
+##  L80 13 - L40 18 -0.18278 0.0890 Inf  -2.054  0.5605
+##  L80 13 - L80 18  0.04929 0.0219 Inf   2.253  0.4199
+##  C 18 - H40 18   -0.36755 0.0726 Inf  -5.063  &lt;.0001
+##  C 18 - H80 18   -0.11835 0.0682 Inf  -1.735  0.7756
+##  C 18 - L40 18   -0.37092 0.0847 Inf  -4.380  0.0005
+##  C 18 - L80 18   -0.13885 0.0680 Inf  -2.041  0.5694
+##  H40 18 - H80 18  0.24920 0.0730 Inf   3.414  0.0226
+##  H40 18 - L40 18 -0.00336 0.0890 Inf  -0.038  1.0000
+##  H40 18 - L80 18  0.22870 0.0728 Inf   3.142  0.0534
+##  H80 18 - L40 18 -0.25257 0.0856 Inf  -2.949  0.0925
+##  H80 18 - L80 18 -0.02050 0.0685 Inf  -0.299  1.0000
+##  L40 18 - L80 18  0.23207 0.0855 Inf   2.715  0.1673
+## 
+## Results are given on the log (not the response) scale. 
+## P value adjustment: tukey method for comparing a family of 10 estimates</code></pre>
+<pre class="r"><code>contrast(a_mean)</code></pre>
+<pre><code>##  contrast      estimate     SE  df z.ratio p.value
+##  C 13 effect    -0.1745 0.0459 Inf  -3.803  0.0005
+##  H40 13 effect   0.1931 0.0499 Inf   3.870  0.0005
+##  H80 13 effect  -0.0561 0.0464 Inf  -1.211  0.2511
+##  L40 13 effect   0.1964 0.0603 Inf   3.258  0.0028
+##  L80 13 effect  -0.0356 0.0463 Inf  -0.770  0.4411
+##  C 18 effect    -0.2238 0.0453 Inf  -4.937  &lt;.0001
+##  H40 18 effect   0.1438 0.0501 Inf   2.870  0.0082
+##  H80 18 effect  -0.1054 0.0461 Inf  -2.287  0.0317
+##  L40 18 effect   0.1471 0.0611 Inf   2.409  0.0266
+##  L80 18 effect  -0.0849 0.0458 Inf  -1.854  0.0798
+## 
+## Results are given on the log (not the response) scale. 
+## P value adjustment: fdr method for 10 tests</code></pre>
+<p>Here is the trend from one period to the other. Its a little strange how consistent it is for each treatment. Climate effects? Or Is</p>
+<pre class="r"><code>emmip(m7a, treatment ~ year)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code>emmip(m7b, treatment ~ year)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
 <pre class="r"><code>emmeans(m7a, pairwise ~ treatment)</code></pre>
 <pre><code>## $emmeans
 ##  treatment emmean     SE  df asymp.LCL asymp.UCL
@@ -2924,15 +3060,15 @@ summary(m7a)</code></pre>
 ## 
 ## $contrasts
 ##  contrast  estimate     SE  df z.ratio p.value
-##  C - H40   -0.36753 0.0726 Inf  -5.063  &lt;.0001
-##  C - H80   -0.11831 0.0682 Inf  -1.735  0.4126
-##  C - L40   -0.37086 0.0847 Inf  -4.379  0.0001
-##  C - L80   -0.13880 0.0680 Inf  -2.041  0.2465
-##  H40 - H80  0.24922 0.0730 Inf   3.414  0.0058
-##  H40 - L40 -0.00333 0.0890 Inf  -0.037  1.0000
-##  H40 - L80  0.22873 0.0728 Inf   3.142  0.0145
-##  H80 - L40 -0.25255 0.0856 Inf  -2.949  0.0265
-##  H80 - L80 -0.02049 0.0685 Inf  -0.299  0.9983
+##  C - H40   -0.36755 0.0726 Inf  -5.063  &lt;.0001
+##  C - H80   -0.11835 0.0682 Inf  -1.735  0.4124
+##  C - L40   -0.37092 0.0847 Inf  -4.380  0.0001
+##  C - L80   -0.13885 0.0680 Inf  -2.041  0.2462
+##  H40 - H80  0.24920 0.0730 Inf   3.414  0.0058
+##  H40 - L40 -0.00336 0.0890 Inf  -0.038  1.0000
+##  H40 - L80  0.22870 0.0728 Inf   3.142  0.0145
+##  H80 - L40 -0.25257 0.0856 Inf  -2.949  0.0265
+##  H80 - L80 -0.02050 0.0685 Inf  -0.299  0.9983
 ##  L40 - L80  0.23207 0.0855 Inf   2.715  0.0517
 ## 
 ## Results are averaged over the levels of: year 
@@ -2953,25 +3089,20 @@ summary(m7a)</code></pre>
 ## 
 ## $contrasts
 ##  contrast  estimate     SE  df z.ratio p.value
-##  C - H40    -0.2309 0.0393 Inf  -5.879  &lt;.0001
-##  C - H80    -0.0998 0.0355 Inf  -2.813  0.0394
+##  C - H40    -0.2308 0.0393 Inf  -5.879  &lt;.0001
+##  C - H80    -0.0997 0.0355 Inf  -2.812  0.0395
 ##  C - L40    -0.2449 0.0386 Inf  -6.338  &lt;.0001
-##  C - L80    -0.0552 0.0354 Inf  -1.560  0.5232
+##  C - L80    -0.0552 0.0354 Inf  -1.559  0.5236
 ##  H40 - H80   0.1311 0.0390 Inf   3.361  0.0070
-##  H40 - L40  -0.0141 0.0408 Inf  -0.344  0.9970
-##  H40 - L80   0.1757 0.0390 Inf   4.506  0.0001
-##  H80 - L40  -0.1451 0.0383 Inf  -3.793  0.0014
+##  H40 - L40  -0.0140 0.0408 Inf  -0.344  0.9970
+##  H40 - L80   0.1757 0.0390 Inf   4.507  0.0001
+##  H80 - L40  -0.1452 0.0383 Inf  -3.793  0.0014
 ##  H80 - L80   0.0446 0.0354 Inf   1.259  0.7163
 ##  L40 - L80   0.1897 0.0382 Inf   4.969  &lt;.0001
 ## 
 ## Results are averaged over the levels of: year 
 ## Results are given on the log (not the response) scale. 
 ## P value adjustment: tukey method for comparing a family of 5 estimates</code></pre>
-<p>Here is the trend from one period to the other. Its a little strange how consistent it is for each treatment. Climate effects?</p>
-<pre class="r"><code>emmip(m7a, treatment ~ year)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
-<pre class="r"><code>emmip(m7b, treatment ~ year)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
 </div>
 </div>
 
