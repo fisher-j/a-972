@@ -165,17 +165,90 @@ measures$ba <- function(data, species) {
     filter(spp %in% species, live | status %in% c(15, 16)) %>%
     group_by(treatment, year, plot) %>%
     summarise(
+      # I'm calculating BA (m^2/ha) by plot
       ba_plot = sum(dbh^2 * pi / 40000, na.rm = TRUE) * 12.5,
-      n_ba = n()
+      n_ba = n(),
+      .groups = "drop_last"
     ) %>%
     summarize(
+      # And averagging over plots within a treatment
       val_ba = mean(ba_plot),
       n_ba = sum(n_ba),
-      sd_ba = sd(ba_plot)
+      sd_ba = sd(ba_plot),
+      .groups = "drop_last"
+    )
+}
+```
+# Compare to Teraoka (2016)
+
+I want to create another function for calculating basal area. This should return basal area in m^2^/ha:
+
+1. by species
+2. for all species
+3. for a subset of species
+4. it should include all live + harvested trees
+
+It turns out that this function is almost identical to my previous one, except that it allows to calculate by species.
+
+```{r}
+library(tidyverse)
+
+get_ba <- function(data, by_species = FALSE, species_subset = NULL) {
+  if(is.null(species_subset)) species_subset <- unique(data$spp)
+  if(by_species) {
+    grp_vars <- rlang::exprs(treatment, spp, year, plot)
+  } else {
+    grp_vars <- rlang::exprs(treatment, year, plot)
+  }
+  data %>%
+    filter(spp %in% species_subset, live | status %in% c(15, 16)) %>%
+    group_by(!!!grp_vars) %>%
+    summarise(
+      # I'm calculating BA (m^2/ha) by plot
+      ba_plot = sum(dbh^2 * pi / 40000, na.rm = TRUE) * 12.5,
+      n_ba = n(),
+      .groups = "drop_last"
+    ) %>%
+    summarize(
+      # And averagging over plots within a treatment
+      val_ba = mean(ba_plot),
+      n_ba = sum(n_ba),
+      sd_ba = sd(ba_plot),
+      .groups = "drop_last"
     )
 }
 ```
 
+Here I'll plot BA by species and year, similar to Teraoka (2016)
+
+```{r}
+teraoka_colors <- c("#04315c", "#EB4332", "#86E981", "#557AF0", "#B3AFAE")
+get_ba(d_l, by_species = TRUE) %>%
+  filter(year %in% c("08", "13")) %>%
+  mutate(
+    treatment = factor(treatment, levels = c("C", "H40", "L40", "H80", "L80")),
+    spp = factor(spp, levels = c("TSHE", "SESE3", "PSMEM", "PISI", "ALRU2"))
+  ) %>%
+  ggplot(aes(x = treatment, y = val_ba)) +
+    geom_col(aes(fill = spp)) +
+    facet_wrap(vars(year)) +
+    labs(x = "Treatment", fill = "Species", y = "BA (m^2 / ha)") +
+    scale_fill_manual(values = teraoka_colors)
+```
+
+It looks pretty similar, but there are discrepancies. Next I'll print out the percent changes in basal area, again similar to Teraoka et al. (2016), but for both 5-year growth periods.
+
+I define a percent change function which takes output from one of my metric functions (expecting the variable "val_[variable_name]")
+
+```{r}
+pct_change <- function(data, var) {
+  mutate(data, pct_change = ({{var}} - lag({{var}})) / lag({{var}})) %>%
+  select(-starts_with(c("n", "sd")))
+}
+
+get_ba(d_l) %>%
+  pct_change(val_ba)
+```
 
 ## SDI
 
