@@ -357,21 +357,37 @@ get_measures(species = "PSMEM") %>%
 
 ```{r, fig.height = 2, fig.width = 9.5, echo = FALSE, message=FALSE, warning = FALSE}
 fix_year <- function(year) {
-  case_when(year == "init" ~2008,
-            year == "08" ~2008.2,
+  case_when(year == "init" ~2007.5,
+            year == "08" ~2008,
             year == "13" ~2013,
             year == "18" ~2018)
 }
 
-plot_data <- bind_rows(
+fig_data <- bind_rows(
   tibble(spp = "SESE3", get_measures(species = "SESE3")),
   tibble(spp = "PSMEM", get_measures(species = "PSMEM"))
 )
 
-make_plot <- function(measure, data = plot_data) {
+fig_labels <- as_labeller(
+  c(
+    density = "Stems%.%ha^-1",
+    mort = "New~mortality~(tph)",
+    dbh = "Mean~DBH~(cm)",
+    dom_dbh = "Dominant~dbh~(cm)",
+    ht = "Height~(m)",
+    dom_ht = "Tallest~trees~(m)",
+    ba = "BA~(m^2*ha^-1)",
+    sdi = "SDI"
+  ),
+  label_parsed
+)
+# choose which stand summary variables to include
+fig_include_vars <- c("density", "dbh", "dom_dbh", "ba", "sdi", "ht")
+
+make_fig <- function(data = fig_data) {
   yr_breaks <- c(2008, 2013, 2018)
   data %>%
-    filter(measure == !!measure) %>%
+    filter(measure %in% fig_include_vars, year != "init") %>%
     mutate(year = fix_year(year)) %>%
     ggplot(aes(year, val, color = spp)) +
       geom_line(position = position_dodge(width = .5)) +
@@ -381,14 +397,25 @@ make_plot <- function(measure, data = plot_data) {
         width = .75,
         position = position_dodge(.5)
       ) +
-      facet_wrap(~ treatment, ncol = 5) +
+      facet_grid(
+        vars(measure),
+        vars(treatment),
+        scales = "free_y",
+        switch = "y",
+        labeller = labeller(measure = fig_labels)
+      ) +
+      theme_bw() +
+      theme(
+        panel.spacing.x = unit(1, "lines"),
+        strip.background.y = element_blank(),
+        strip.placement = "outside"
+      ) +
       scale_x_continuous(breaks = yr_breaks) +
-      theme(panel.spacing.x = unit(1, "lines")) +
-      scale_color_manual(values = c(SESE3 = "#F8766D", PSMEM = "#00BFC4")) +
-      labs(y = measure)
+      scale_y_continuous(breaks = scales::breaks_extended(4, w = c(.2, .2, .2, .4))) +
+      scale_color_manual(values = c(SESE3 = palette()[2], PSMEM = palette()[1])) +
+      labs(y = NULL, x = "Year")
 }
 
-for (var in names(measures)) {
-  print(make_plot(var))
-}
+make_fig()
+
 ```
