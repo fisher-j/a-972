@@ -86,7 +86,7 @@ circular2xy <- function(distance, bearing, center.x = 0, center.y = 0) {
   delta.y <- distance * cos(bearing.rad)
   tree.x <- center.x + delta.x
   tree.y <- center.y + delta.y
-  return(data.frame(x=tree.x,y=tree.y))
+  return(data.frame(x = tree.x, y = tree.y))
 }
 
 # get equations for models
@@ -112,7 +112,6 @@ npc <- function(dat, x) {
 
 # These are the functions for calculating the SCI metric
 # for structural heterogeity
-
 cross_product <- function(a, b) {
   if(length(a)!=3 || length(b)!=3){
         stop("Cross product is only defined for 3D vectors.")
@@ -133,7 +132,7 @@ tri_area <- function(tri, points) {
 
 sci_metric <- function(x, y, z) {
   points <- as.matrix(cbind(x, y, z))
-  deln_obj <- delaunayn(points[, 1:2], output.options = "Fa")
+  deln_obj <- geometry::delaunayn(points[, 1:2], output.options = "Fa")
   area3d <- sum(tri_area(deln_obj$tri, points))
   area2d <- sum(deln_obj$areas)
   area3d / area2d

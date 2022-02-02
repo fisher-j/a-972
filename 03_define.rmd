@@ -67,19 +67,32 @@ d_l <- d_l %>%
 
 ## Structural diversity SCI
 
+After some experimentation, I determined that ingrowth does have an effect on SCI, especially for the more intense thinnings, supposedly because they let in more light and encourage more understory initiation. 
+
+I also confirmed that the SCI function works the same regardless of whether coordinates are plot coordinates or UTM coordinates.
+
 ```{r}
-library(geometry)
 # calculate within plot coordinates, plot center = origin
 # this does not work with missing values currently.
-# d_l %>%
-#   group_by(plot, year) %>%
-#   mutate(
-#     circular2xy(h_dist, azi),
-#     sci_ht = sci_metric(x, y, ht),
-#     sci_d = sci_metric(x, y, dbh)
-#   ) %>%
-#   arrange(plot, year)
-# temp <- d_l %>% filter(plot == "1H40", year == "18") %>% select(h_dist, azi, ht, dbh)
+calc_sci <- function(data, metric) {
+  data %>%
+    group_by(treatment, year, plot) %>%
+    mutate(
+      "sci_{{metric}}" := sci_metric(x, y, {{metric}}),
+    )
+}
+
+ci <- function(x) {
+  LB <- mean(x) - sd(x) / sqrt(length(x) - 1)
+  UB <- mean(x) + sd(x) / sqrt(length(x) - 1)
+  data.frame(LB = LB, UB = UB)
+}
+summary_sci <- function(data) {
+  data %>%
+  calc_sci(dbh) %>%
+  summarise(across(starts_with("sci"), first)) %>%
+  summarise(across(starts_with("sci"), list(mean, ci)))
+}
 ```
 
 ## Standardize crown ratio

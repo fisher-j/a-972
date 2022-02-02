@@ -238,9 +238,18 @@ d_l <- d_l %>%
 
 ## Ingrowth
 
-Ingrowth is important for metrics such as structural diversity, understory diversity and others, but might skew metrics relating to the growth of dominant trees of interest. Here I remove ingrowth from the main dataset.
+Ingrowth is important for metrics such as structural diversity, understory diversity and others, but might skew metrics relating to the growth of dominant trees of interest. Here I remove ingrowth from the main dataset. Also, one ingrowth tree is missing locations. I'll put it in some random place in the plot.
 
 ```{r}
+no_loc <- is.na(d_l$h_dist) | is.na(d_l$azi)
+no_loc <- unique(d_l[no_loc, ]$tree_id)
+
+set.seed(888)
+d_l[d_l$tree_id %in% no_loc, c("h_dist", "azi")] <- tibble(
+  h_dist = runif(length(no_loc), 0, 16),
+  azi = runif(length(no_loc), 0, 359)
+)
+
 ingrowth <- d_l %>%
   group_by(tree_id) %>%
   filter(min(year) > "08") %>%

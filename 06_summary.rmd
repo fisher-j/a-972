@@ -408,7 +408,8 @@ make_fig <- function(data = fig_data) {
       theme(
         panel.spacing.x = unit(1, "lines"),
         strip.background.y = element_blank(),
-        strip.placement = "outside"
+        strip.placement = "outside",
+        legend.position = "bottom"
       ) +
       scale_x_continuous(breaks = yr_breaks) +
       scale_y_continuous(breaks = scales::breaks_extended(4, w = c(.2, .2, .2, .4))) +
