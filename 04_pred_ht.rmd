@@ -25,13 +25,22 @@ I need to predict missing heights in 2018 in order to complete other steps of th
 First, I'll define the dataset of interest as only years 2013 and 2018 observations of healthy, non-leaning, unbroken SESE or PSME trees. I'll also define three other alternative treatment groupings for consideration: thinned/unthinned, H/L/C (thinning type), and 40/80/C (thinning intensity).
 
 ```{r}
-test_d <- d_l %>%
+# I'm testing out wheter I should predict height increment based on first or second 
+# period dbh measurement. First period seems like a logical choice, but second period
+# may capture more information about the tree.
+# i've edited these to try to produce two parallel datasets, I hope I can put them back when I am done
+# I've removed all trees that have broken or dead tops at any observation
+# in order to ensure the same increment values (response values) are used
+# in each dataset
+
+test_d2 <- d_l %>%
+  group_by(tree_id) %>%
   filter(
     spp %in% c("SESE3", "PSMEM"),
-    year %in% c("18", "13"),
-    status == 1,
-    !get_cond(2, 3, 5),
-    !is.na(ht_inc) & !is.na(dbh)
+    year %in% c("13", "18"),
+    all(live),
+    !any(get_cond(2, 3, 5)),
+    !is.na(ht_inc2) & !is.na(dbh)
   ) %>%
   mutate(
     treatment2 = str_extract(treatment, "C|H|L"),
@@ -39,7 +48,44 @@ test_d <- d_l %>%
     treatment4 = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
     year = factor(year, levels = c("13", "18"), ordered = FALSE)
   ) %>%
-  select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc, plot, x, y)
+  select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc2, plot, x, y)
+
+test_d1 <- d_l %>%
+  group_by(tree_id) %>%
+  filter(
+    spp %in% c("SESE3", "PSMEM"),
+    year %in% c("08", "13"),
+    all(live),
+    !any(get_cond(2, 3, 5)),
+    !is.na(ht_inc1) & !is.na(dbh),
+  ) %>%
+  ungroup() %>%
+  mutate(
+    treatment2 = str_extract(treatment, "C|H|L"),
+    treatment3 = str_extract(treatment, "C|40|80"),
+    treatment4 = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
+    year = factor(year, levels = c("08", "13"), ordered = FALSE)
+  ) %>%
+  select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc1, plot, x, y)
+
+test_d12 <- d_l %>%
+  group_by(tree_id) %>%
+  filter(
+    spp %in% c("SESE3", "PSMEM"),
+    year %in% c("13"),
+    all(live),
+    !any(get_cond(2, 3, 5)),
+    !is.na(ht_inc1) & !is.na(dbh),
+  ) %>%
+  ungroup() %>%
+  mutate(
+    treatment2 = str_extract(treatment, "C|H|L"),
+    treatment3 = str_extract(treatment, "C|40|80"),
+    treatment4 = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
+    year = factor(year, levels = c("13"), ordered = FALSE)
+  ) %>%
+  select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc1, plot, x, y)
+
 ```
 
 # Assessment of linear relationship between dbh and height increment
@@ -47,7 +93,7 @@ test_d <- d_l %>%
 We are pretty sure that height growth is correlated with diameter, in that larger trees are capable of more height growth than smaller ones. We also think that this relationship is probably not linear. I will take a look at log and square root transformations of dbh for linear prediction of height growth.
 
 ```{r, fig.height=7, fig.width=10}
-m0 <- lm(ht_inc ~ dbh * treatment * spp, data = test_d)
+m0 <- lm(ht_inc1 ~ dbh * treatment * spp, data = test_d1)
 m1 <- update(m0, ~ sqrt(dbh) * treatment * spp)
 m2 <- update(m0, ~ log(dbh) * treatment * spp)
 
@@ -174,19 +220,47 @@ augment1 <- function(dat, mod) {
 ```
 
 ```{r}
-ht_inc_mod <- lmer(ht_inc ~ log(dbh) * spp + (1 | plot), data = test_d)
+ht_inc_mod1 <- lmer(ht_inc1 ~ log(dbh) * spp + (1 | plot), data = test_d1)
+ht_inc_mod2 <- lmer(ht_inc2 ~ log(dbh) * spp + (1 | plot), data = test_d2)
+ht_inc_mod12 <- lmer(ht_inc1 ~ log(dbh) * spp + (1 | plot), data = test_d12)
+
+AICc(ht_inc_mod1, ht_inc_mod2)
 
 ht_inc_d <- augment1(test_d, ht_inc_mod)
 
-summary(ht_inc_mod)
+summary(ht_inc_mod1)
+summary(ht_inc_mod2)
+summary(ht_inc_mod12)
 ```
 
 ## Best model estimated means
 
 ```{r}
+p <- list()
+one <- emmip(ht_inc_mod1, spp ~ dbh, plotit = FALSE, CIs = TRUE, at = list(dbh = seq(10, 60, 2)))
+two <- emmip(ht_inc_mod2, spp ~ dbh, plotit = FALSE, CIs = TRUE, at = list(dbh = seq(10, 60, 2)))
+three <- emmip(ht_inc_mod12, spp ~ dbh, plotit = FALSE, CIs = TRUE, at = list(dbh = seq(10, 60, 2)))
 
-emmip(ht_inc_mod, spp ~ dbh, at = list(dbh = seq(10, 60, 2))) +
-  scale_color_manual(values = palette())
+facet_labs <- c("beginning dbh for 08-13 and 13-18", "ending dbh for 08-13 and 13-18", "beginning dbh for 13-18 only")
+
+pall <- bind_rows(one, two, three, .id = "mod")
+pall$mod <- factor(
+  pall$mod,
+  labels = c(
+    "begining dbh for 08-13 and 13-18",
+    "ending dbh for 08-13 and 13-18",
+    "begining dbh for 13-18 only"
+    )
+  )
+  
+
+pall %>% ggplot(aes(dbh, yvar, color = spp)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = spp), alpha = .2) +
+  facet_wrap(~mod) + 
+  scale_color_manual(values = palette(), aesthetics = c("color", "fill")) +
+  labs(y = "Predicted ht increment")
+
 emmeans(ht_inc_mod, pairwise ~ spp)
 ```
 
@@ -285,15 +359,22 @@ The distribution of random effects (plots) should be roughly normal. Here our di
 hist(as.vector(unlist(ranef(ht_inc_mod)$plot)), col = 1)
 ```
 
-# Update data with model predictions
+# Update data with model predictions **HERE**
 
-## Missing heights other species
-
-There are five species that are missing heights. There is not enough data to predict heights of hemlock, so it is left out of the model, redwood, Douglas-fir, alder and spruce were all included in the model. I'm also going to predict missing heights for leaning trees. Leaning trees were not included in fitting the model.
-
-I can only predict heights for trees in year 13 and 18, and only if they have a height in the previous period. Furthermore, there may be issues with predicting heights for broken trees, if their previous height is for their pre-broken state. **First, I'll just predict heights for status 1, unbroken trees**
+I will start by predicting heights for Douglas-fir and Redwood only. I can only predict heights for trees in year 13 and 18, and only if they have a height in the previous period. I can predict heights for trees whose crown status did not change from one measurement to the next. I will be assuming that a broken tree resumes height growth at a "normal" rate.
 
 ```{r}
+
+d_l %>%
+  select(3,4, 7:17) %>%
+  group_by(tree_id) %>%
+  filter(
+    live,
+    get_cond(2, 3, 5) == lag(get_cond(2, 3, 5)),
+    year %in% c("13"),
+    spp %in% c("SESE3", "PSMEM"),
+    is.na(ht)
+  )
 
 ```
 
