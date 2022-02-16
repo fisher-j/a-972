@@ -24,39 +24,36 @@ I need to predict missing heights in 2018 in order to complete other steps of th
 
 First, I'll define the dataset of interest as only years 2013 and 2018 observations of healthy, non-leaning, unbroken SESE or PSME trees. I'll also define three other alternative treatment groupings for consideration: thinned/unthinned, H/L/C (thinning type), and 40/80/C (thinning intensity).
 
+I will predict height increment based on the beginning of period dbh. Predicting based on the end of period dbh resulted in a lower AIC, but I am defaulting to typical practice. 
+
+I'm also using height increment from both 2008 - 2013 and 2013 to 2018.
+
 ```{r}
-# I'm testing out wheter I should predict height increment based on first or second 
-# period dbh measurement. First period seems like a logical choice, but second period
-# may capture more information about the tree.
-# i've edited these to try to produce two parallel datasets, I hope I can put them back when I am done
-# I've removed all trees that have broken or dead tops at any observation
-# in order to ensure the same increment values (response values) are used
-# in each dataset
 
-test_d2 <- d_l %>%
-  group_by(tree_id) %>%
-  filter(
-    spp %in% c("SESE3", "PSMEM"),
-    year %in% c("13", "18"),
-    all(live),
-    !any(get_cond(2, 3, 5)),
-    !is.na(ht_inc2) & !is.na(dbh)
-  ) %>%
-  mutate(
-    treatment2 = str_extract(treatment, "C|H|L"),
-    treatment3 = str_extract(treatment, "C|40|80"),
-    treatment4 = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
-    year = factor(year, levels = c("13", "18"), ordered = FALSE)
-  ) %>%
-  select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc2, plot, x, y)
+# test_d2 <- d_l %>%
+#   group_by(tree_id) %>%
+#   filter(
+#     spp %in% c("SESE3", "PSMEM"),
+#     year %in% c("13", "18"),
+#     live,
+#     !get_cond(2, 3, 5),
+#     !is.na(ht_inc2) & !is.na(dbh)
+#   ) %>%
+#   mutate(
+#     treatment2 = str_extract(treatment, "C|H|L"),
+#     treatment3 = str_extract(treatment, "C|40|80"),
+#     treatment4 = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
+#     year = factor(year, levels = c("13", "18"), ordered = FALSE)
+#   ) %>%
+#   select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc2, plot, x, y)
 
-test_d1 <- d_l %>%
+test_d <- d_l %>%
   group_by(tree_id) %>%
   filter(
     spp %in% c("SESE3", "PSMEM"),
     year %in% c("08", "13"),
-    all(live),
-    !any(get_cond(2, 3, 5)),
+    lead(live),
+    !lead(get_cond(2, 3, 5)),
     !is.na(ht_inc1) & !is.na(dbh),
   ) %>%
   ungroup() %>%
@@ -68,23 +65,23 @@ test_d1 <- d_l %>%
   ) %>%
   select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc1, plot, x, y)
 
-test_d12 <- d_l %>%
-  group_by(tree_id) %>%
-  filter(
-    spp %in% c("SESE3", "PSMEM"),
-    year %in% c("13"),
-    all(live),
-    !any(get_cond(2, 3, 5)),
-    !is.na(ht_inc1) & !is.na(dbh),
-  ) %>%
-  ungroup() %>%
-  mutate(
-    treatment2 = str_extract(treatment, "C|H|L"),
-    treatment3 = str_extract(treatment, "C|40|80"),
-    treatment4 = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
-    year = factor(year, levels = c("13"), ordered = FALSE)
-  ) %>%
-  select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc1, plot, x, y)
+# test_d12 <- d_l %>%
+#   group_by(tree_id) %>%
+#   filter(
+#     spp %in% c("SESE3", "PSMEM"),
+#     year %in% c("13"),
+#     lead(live),
+#     !lead(get_cond(2, 3, 5)),
+#     !is.na(ht_inc1) & !is.na(dbh),
+#   ) %>%
+#   ungroup() %>%
+#   mutate(
+#     treatment2 = str_extract(treatment, "C|H|L"),
+#     treatment3 = str_extract(treatment, "C|40|80"),
+#     treatment4 = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
+#     year = factor(year, levels = c("13"), ordered = FALSE)
+#   ) %>%
+#   select(starts_with("treatment"), spp, year, tree_id, dbh, ht_inc1, plot, x, y)
 
 ```
 
@@ -99,7 +96,7 @@ m2 <- update(m0, ~ log(dbh) * treatment * spp)
 
 
 test_d %>%
-  ggplot(aes(x = dbh, y = ht_inc, color = spp)) +
+  ggplot(aes(x = dbh, y = ht_inc1, color = spp)) +
     geom_point(aes(color = spp), alpha = .5) +
     facet_wrap(vars(treatment)) +
     geom_line(aes(y = predict(m0), linetype = "linear"), size = 1) +
@@ -120,7 +117,7 @@ It doesn't look like it matters a whole lot with this noisy data. I'm going to u
 
 The next step is going to specify our likely global model. In general, we want to answer questions about how a given treatment affected growth for each species. There may have also been different responses between years. This will be a mixed model and I want to control for the random effect of plot and tree_id. The global model will include `log(dbh)` as well as the categories: `treatment`, `species`, `year`, and all their interactions. Resulting in the fixed effects:
 
-`ht_inc ~ log(dbh) * treatment * spp * year`
+`ht_inc1 ~ log(dbh) * treatment * spp * year`
 
 # Optimal random effects specification
 
@@ -133,7 +130,7 @@ We will determine the optimal random effects structure using the global fixed ef
 I'll do this using AICc and Restricted Maximum Likelihood Estimation (REML), which I believe is the preferred method when comparing random effects structure, whereas ML is necessary when comparing different fixed effects.
 
 ```{r ranef-spec}
-f0 <- formula(ht_inc ~ log(dbh) * treatment * spp * year)
+f0 <- formula(ht_inc1 ~ log(dbh) * treatment * spp * year)
 m0 <- gls(f0, data = test_d, method = "REML")
 m1 <- lmer(update(f0, ~ . + (1 | plot)), REML = TRUE, data = test_d)
 m2 <- update(m1, ~ . + (1 | tree_id))
@@ -146,66 +143,109 @@ The optimal random effects structure, includes the random intercept only for `pl
 
 # Choosing a sub-model for fixed effects
 
-The next step is to define a list of potential sub-models for fixed effects to determine the optimal structure. These will be determined for Douglas-fir and redwood separately so I'll start by splitting the two datasets.
+The next step is to define a list of potential sub-models for fixed effects to determine the optimal structure. 
 
 ```{r}
-sese_d <- subset(test_d, spp == "SESE3")
-psme_d <- subset(test_d, spp == "PSMEM")
 
 fl <- list(
-  ht_inc ~ log(dbh) + (1 | plot),
-  ht_inc ~ log(dbh) + year + (1 | plot),
-  ht_inc ~ log(dbh) + treatment + (1 | plot),
-  ht_inc ~ log(dbh) + treatment + year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment + year + (1 | plot),
-  ht_inc ~ log(dbh) + treatment * year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment * year + (1 | plot),
-  ht_inc ~ log(dbh) + treatment2 + (1 | plot),
-  ht_inc ~ log(dbh) + treatment2 + year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment2 + year + (1 | plot),
-  ht_inc ~ log(dbh) + treatment2 * year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment2 * year + (1 | plot),
-  ht_inc ~ log(dbh) + treatment3 + (1 | plot),
-  ht_inc ~ log(dbh) + treatment3 + year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment3 + year + (1 | plot),
-  ht_inc ~ log(dbh) + treatment3 * year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment3 * year + (1 | plot),
-  ht_inc ~ log(dbh) + treatment4 + (1 | plot),
-  ht_inc ~ log(dbh) + treatment4 + year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment4 + year + (1 | plot),
-  ht_inc ~ log(dbh) + treatment4 * year + (1 | plot),
-  ht_inc ~ log(dbh) * treatment4 * year + (1 | plot)
+  ht_inc1 ~ log(dbh) + (1 | plot),
+  ht_inc1 ~ log(dbh) + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * spp + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * spp + treatment + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment * spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * spp * treatment * year + (1 | plot),
+  ht_inc1 ~ log(dbh) + spp * year + treatment + (1 | plot),
+  ht_inc1 ~ log(dbh) + spp + treatment * year + (1 | plot),
+  ht_inc1 ~ log(dbh) * treatment * year + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment + year + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment2 + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment2 + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * spp + treatment2 + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment2 * spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * spp * treatment2 * year + (1 | plot),
+  ht_inc1 ~ log(dbh) + spp * year + treatment2 + (1 | plot),
+  ht_inc1 ~ log(dbh) + spp + treatment2 * year + (1 | plot),
+  ht_inc1 ~ log(dbh) * treatment2 * year + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment2 + year + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment3 + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment3 + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * spp + treatment3 + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment3 * spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * spp * treatment3 * year + (1 | plot),
+  ht_inc1 ~ log(dbh) + spp * year + treatment3 + (1 | plot),
+  ht_inc1 ~ log(dbh) + spp + treatment3 * year + (1 | plot),
+  ht_inc1 ~ log(dbh) * treatment3 * year + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment3 + year + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment4 + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment4 + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * spp + treatment4 + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment4 * spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * spp * treatment4 * year + (1 | plot),
+  ht_inc1 ~ log(dbh) + spp * year + treatment4 + (1 | plot),
+  ht_inc1 ~ log(dbh) + spp + treatment4 * year + (1 | plot),
+  ht_inc1 ~ log(dbh) * treatment4 * year + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) + treatment4 + year + spp + (1 | plot)
 )
 
-tibble(models = sapply(fl, deparse)) %>%
-  rowid_to_column() %>%
-  kbl(caption = "List of submodels to test for each species") %>%
-  kable_styling(full_width = FALSE)
 ```
 
-I use AICc to assess the fit of each of the submodels with coefficients estimated with ML in order to compare among various fixed effects.
+I use AICc to assess the fit of each of the models with coefficients estimated with ML in order to compare among various fixed effects.
 
 ```{r}
-get_aic(fl, data = psme_d) %>%
-  kbl(caption = "AICS for set of Douglas-fir submodels") %>%
+
+get_aic(fl, data = test_d) %>%
+  kbl(caption = "AICS for ht increment models") %>%
   kable_styling(full_width = FALSE)
 
-get_aic(fl, data = sese_d) %>%
-  kbl(caption = "AICS for set of redwood submodels") %>%
-  kable_styling(full_width = FALSE)
+lmod <- function(fl) {
+  lmer(fl, data = test_d, REML = FALSE)
+}
 
-fl2 <- c(fl, ht_inc ~ spp * log(dbh) + (1 | plot))
-fl3 <- lapply(fl, function(x) update(x, ~ . * spp) %>% update(~ . - (1 | plot:spp)))
-get_aic(fl3, data = test_d) %>%
-  kbl(caption = "AICS for all species ht models") %>%
-  kable_styling(full_width = FALSE)
+summary(lmod(fl[[11]]))
+summary(lmod(fl[[5]]))
 ```
 
 # Best model (scrapping above)
 
-While these models are interesting, there is reason to believe that our height measurements are not precise enough to capture the small height differences between treatments (around 3 feet). For this reason, we will default to a simple height increment model with DBH as the only predictor.
+While these models are interesting, there is reason to believe that our height measurements are not precise enough to capture the small height differences between treatments (around 3 feet). For this reason, I will default to a simple additive model that includes spp and treatment.
 
-I'll test whether it makes sense to include species
+```{r}
+ht_inc_mod1 <- lmod(fl[[5]])
+
+AICc(ht_inc_mod1)
+summary(ht_inc_mod1)
+AICc(ht_inc_mod10)
+
+ht_inc_d <- augment1(test_d, ht_inc_mod1)
+
+summary(ht_inc_mod1)
+
+```
+
+## Best model estimated means
+
+```{r}
+
+emmip(
+  lmod(fl[[5]]),
+  spp ~ dbh | treatment,
+  CIs = TRUE,
+  plotit = FALSE,
+  at = list(dbh = seq(10, 60, 2))
+) %>% 
+  ggplot(aes(dbh, yvar, color = spp)) +
+    geom_line() +
+    facet_wrap(~ treatment ) +
+    geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = spp), alpha = .2) +
+    scale_color_manual(values = palette(), aesthetics = c("color", "fill")) +
+    labs(y = "Predicted ht increment")
+
+emmeans(ht_inc_mod1, pairwise ~ spp, by = c("treatment"))
+```
+
+## Best model validation
 
 ```{r}
 # augment data with fitted, residual cooks distance and leverage
@@ -218,53 +258,6 @@ augment1 <- function(dat, mod) {
   )
 }
 ```
-
-```{r}
-ht_inc_mod1 <- lmer(ht_inc1 ~ log(dbh) * spp + (1 | plot), data = test_d1)
-ht_inc_mod2 <- lmer(ht_inc2 ~ log(dbh) * spp + (1 | plot), data = test_d2)
-ht_inc_mod12 <- lmer(ht_inc1 ~ log(dbh) * spp + (1 | plot), data = test_d12)
-
-AICc(ht_inc_mod1, ht_inc_mod2)
-
-ht_inc_d <- augment1(test_d, ht_inc_mod)
-
-summary(ht_inc_mod1)
-summary(ht_inc_mod2)
-summary(ht_inc_mod12)
-```
-
-## Best model estimated means
-
-```{r}
-p <- list()
-one <- emmip(ht_inc_mod1, spp ~ dbh, plotit = FALSE, CIs = TRUE, at = list(dbh = seq(10, 60, 2)))
-two <- emmip(ht_inc_mod2, spp ~ dbh, plotit = FALSE, CIs = TRUE, at = list(dbh = seq(10, 60, 2)))
-three <- emmip(ht_inc_mod12, spp ~ dbh, plotit = FALSE, CIs = TRUE, at = list(dbh = seq(10, 60, 2)))
-
-facet_labs <- c("beginning dbh for 08-13 and 13-18", "ending dbh for 08-13 and 13-18", "beginning dbh for 13-18 only")
-
-pall <- bind_rows(one, two, three, .id = "mod")
-pall$mod <- factor(
-  pall$mod,
-  labels = c(
-    "begining dbh for 08-13 and 13-18",
-    "ending dbh for 08-13 and 13-18",
-    "begining dbh for 13-18 only"
-    )
-  )
-  
-
-pall %>% ggplot(aes(dbh, yvar, color = spp)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = spp), alpha = .2) +
-  facet_wrap(~mod) + 
-  scale_color_manual(values = palette(), aesthetics = c("color", "fill")) +
-  labs(y = "Predicted ht increment")
-
-emmeans(ht_inc_mod, pairwise ~ spp)
-```
-
-## Best model validation
 
 ### Residual vs fitted
 
@@ -294,9 +287,9 @@ plot(
 abline(0,0)
 
 with(
-  model.frame(ht_inc_mod),
+  model.frame(ht_inc_mod1),
   boxplot(
-    resid(ht_inc_mod, type = "pearson") ~ spp,
+    resid(ht_inc_mod1, type = "pearson") ~ spp,
     xlab = "by spp",
     ylab = "Residuals",
     main = "Distribution of residuals by spp"
@@ -311,7 +304,7 @@ I can check that random group residuals are homogenous
 
 ```{r}
 plot(
-  ht_inc_mod,
+  ht_inc_mod1,
   resid(., scaled=TRUE) ~ fitted(.)| plot,
   abline = 0,
   pch = 16,
@@ -326,8 +319,8 @@ plot(
 Checking for normality of residuals. The tails are perhaps a bit fat, I'm not sure if this requires attention or not.
 
 ```{r, fig.height=7, fig.width=10}
-qqnorm(resid(ht_inc_mod, type = "pearson"), pch=16, col = 1,  main = "QQplot for pearosn residuals")
-qqline(resid(ht_inc_mod, type = "pearson"))
+qqnorm(resid(ht_inc_mod1, type = "pearson"), pch=16, col = 1,  main = "QQplot for pearosn residuals")
+qqline(resid(ht_inc_mod1, type = "pearson"))
 ```
 
 ### Leverage and Cooks distance
@@ -356,7 +349,7 @@ The distribution of random effects (plots) should be roughly normal. Here our di
 [from what I've read]: (https://stats.stackexchange.com/a/366500)
 
 ```{r}
-hist(as.vector(unlist(ranef(ht_inc_mod)$plot)), col = 1)
+hist(as.vector(unlist(ranef(ht_inc_mod1)$plot)), col = 1)
 ```
 
 # Update data with model predictions **HERE**
@@ -458,7 +451,7 @@ Here I look at means of predictions and observed values by treatment and year. P
 
 ```{r, fig.width=10.5, fig.height=5.5}
 bind_rows(psme_d, sese_d) %>%
-  ggplot(aes(y = ht_inc, x = year, color = treatment, group = treatment)) +
+  ggplot(aes(y = ht_inc1, x = year, color = treatment, group = treatment)) +
     stat_summary(
       fun = mean,
       geom = "line",
@@ -533,7 +526,7 @@ Here I plot the differences between each plot, these are averaged over both year
 
 ```{r, fig.height=6, fig.width=9}
 palette("tableau10")
-ggplot(test_d, aes(x = dbh, y = ht_inc)) +
+ggplot(test_d, aes(x = dbh, y = ht_inc1)) +
   geom_smooth(
     aes(linetype = spp, color = str_extract(plot, "\\d")),
     method = "lm",
@@ -678,8 +671,8 @@ hist(as.vector(unlist(ranef(sese)$plot)), col = 2)
 Semivariograms for our two selected models, the first set indicates average semivariance within plots. The second set indicates semivariance across all trees. It seems like correlation increases with distance within plots for PSME, this is usually the opposite but may make sense in that at the plot level, larger trees may be farther from each other. For SESE, the reverse is true. This also may be artefacts of noisy data. Either way, it appears that their is not a 
 
 ```{r}
-sese1 <- lme(ht_inc ~ log(dbh), random = ~ 1 | plot, data = sese_d)
-psme1 <- lme(ht_inc ~ log(dbh) + treatment * year, random = ~ 1 | plot, data = psme_d)
+sese1 <- lme(ht_inc1 ~ log(dbh), random = ~ 1 | plot, data = sese_d)
+psme1 <- lme(ht_inc1 ~ log(dbh) + treatment * year, random = ~ 1 | plot, data = psme_d)
 plot(Variogram(sese1, form = ~ x + y | plot))
 plot(Variogram(psme1, form = ~ x + y | plot))
 ```
