@@ -356,33 +356,26 @@ hist(as.vector(unlist(ranef(ht_inc_mod1)$plot)), col = 1)
 
 I will start by predicting heights for Douglas-fir and Redwood only. I can only predict heights for trees in year 13 and 18, and only if they have a height in the previous period. I can predict heights for trees whose crown status did not change from one measurement to the next. I will be assuming that a broken tree resumes height growth at a "normal" rate.
 
+I'll predict heights for all trees and then filter this to include only observations of live trees that didn't break, or get a dead top (or start leaning) from one observation to the next.
+
 ```{r}
 
 d_l %>%
-  select(3,4, 7:17) %>%
+  filter(spp %in% c("SESE3", "PSMEM")) %>%
+  mutate(
+    pred_ht_inc = predict(ht_inc_mod1, newdata = .),
+    pred_ht = lag(ht) + lag(pred_ht_inc) * 5,
+    cond_chk = get_cond(2, 3, 5, 30, 31, 32, str = TRUE)
+  ) %>%
   group_by(tree_id) %>%
-  filter(
-    live,
-    get_cond(2, 3, 5) == lag(get_cond(2, 3, 5)),
-    year %in% c("13"),
-    spp %in% c("SESE3", "PSMEM"),
-    is.na(ht)
-  )
+  mutate(
+    ht_p = case_when(
+      cond_chk == lag(cond_chk) & live & is.na(ht) ~ pred_ht,
+      TRUE ~ ht
+    )
+  ) %>%
+  filter(year %in% c("08", "13", "18"))
 
-```
-
-
-```{r}
-broken_trees <- d_l %>%
-  filter(
-    status == 1 & get_cond(2, 3) | status == 31,
-    is.na(ht),
-    spp %in% c("ALRU2", "PISI", "SESE3", "PSMEM"),
-    year %in% c("13", "18")
-  )
-d_l %>%
-  group_by(tree_id) %>%
-  filter(tree_id %in% broken_trees$tree_id, year %in% c("08", "13", "18"), get_cond(2,3) == lag(get_cond(2,3)))
 ```
 
 
