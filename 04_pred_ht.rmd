@@ -352,7 +352,7 @@ The distribution of random effects (plots) should be roughly normal. Here our di
 hist(as.vector(unlist(ranef(ht_inc_mod1)$plot)), col = 1)
 ```
 
-# Update data with model predictions **HERE**
+# Update data with predicted heights 
 
 I will start by predicting heights for Douglas-fir and Redwood only. I can only predict heights for trees in year 13 and 18, and only if they have a height in the previous period. I can predict heights for trees whose crown status did not change from one measurement to the next. I will be assuming that a broken tree resumes height growth at a "normal" rate.
 
@@ -360,25 +360,31 @@ I'll predict heights for all trees and then filter this to include only observat
 
 ```{r}
 
-d_l %>%
+new_heights <- d_l %>%
   filter(spp %in% c("SESE3", "PSMEM")) %>%
-  mutate(
-    pred_ht_inc = predict(ht_inc_mod1, newdata = .),
-    pred_ht = lag(ht) + lag(pred_ht_inc) * 5,
-    cond_chk = get_cond(2, 3, 5, 30, 31, 32, str = TRUE)
-  ) %>%
+  mutate(pred_ht_inc = predict(ht_inc_mod1, newdata = .)) %>%
   group_by(tree_id) %>%
   mutate(
+    pred_ht = lag(ht) + lag(pred_ht_inc) * 5,
+    cond_chk = get_cond(2, 3, 5, 30, 31, 32, str = TRUE),
     ht_p = case_when(
       cond_chk == lag(cond_chk) & live & is.na(ht) ~ pred_ht,
       TRUE ~ ht
     )
   ) %>%
-  filter(year %in% c("08", "13", "18"))
+  select(tree_id, year, ht_p) %>%
+  ungroup()
 
 ```
 
+Now I'll update the data with height predictions for selected trees and fill in available heights for other species that were not predicted.
 
+```{r}
+
+d_l <- left_join(d_l, new_heights, by = c("tree_id", "year")) %>%
+  mutate(ht_p = if_else(spp %in% c("SESE3", "PSMEM"), ht_p, ht))
+
+```
 
 # Old Model Selection
 
