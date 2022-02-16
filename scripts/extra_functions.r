@@ -48,10 +48,16 @@ plot_ht <- function(data, mag = 1.5) {
 }
 
 # function to filter condition values with OR logic
-get_cond <- function(...) {
+
+get_cond <- function(..., str = FALSE) {
   vals <- unlist(list(...))
   cond <- evalq(cond, parent.frame())
-  map_lgl(str_split(cond, ","), ~ any(as.numeric(.x) %in% vals))
+  cond <- str_split(cond, ",")
+  if (str == TRUE) {
+    map_chr(cond, ~ toString(.x[.x %in% vals]))
+  } else {
+    map_lgl(cond, ~ any(as.numeric(.x) %in% vals))
+  }
 }
 
 #' Calculate XY coordinates based on distance and bearing
