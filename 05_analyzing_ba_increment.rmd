@@ -18,73 +18,75 @@ Basal area increment is a key feature for analysis. Dbh data is available for al
 
 # Define trees of interest
 
-For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements. I am excluding bear damaged trees.
+For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements. I am excluding bear damaged trees. Increment for a period will be assigned to the beginning of period observation. This means I will want to exclude observations in which a tree is damaged by bear or wind in this or a subsequent observation, that is, we are assuming this model is valid for trees that are not and will not be broken or damaged. 
+
+I'm also filtering out observations that don't have crown ratio, this loses 1 redwood in the L40 treatment, dropping observations from 10 to 9, as well as losing 10 redwood in H80, but this is less of a problem. If CR proves not useful, I will remove this constraint.
 
 ```{r}
+
 test_d <- d_l %>%
   # calculate SDI for each plot (additive method)
   group_by(plot) %>%
   mutate(sdi_plot = sum(12.5 * (dbh / 25.4)^1.605, na.rm = TRUE)) %>%
-  ungroup() %>%
+  group_by(tree_id) %>%
   # only use unbroken live sese or psme from 2018
   filter(
     spp %in% c("SESE3", "PSMEM"),
-    year %in% c("18", "13"),
-    status == 1,
-    !get_cond(2, 3),
-    !is.na(dbh)
+    year %in% c("08", "13"),
+    live & lead(live),
+    !get_cond(2, 3) & lead(!get_cond(2, 3)),
+    !is.na(dbh),
+    !bear & lead(!bear),
+    !is.na(cr)
   ) %>%
   mutate(
     treat_method = str_extract(treatment, "C|H|L"),
     treat_density = str_extract(treatment, "C|40|80"),
     treat_status = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
-    year = factor(year, levels = c("13", "18"), ordered = FALSE)
+    year = factor(year, levels = c("08", "13"), ordered = FALSE)
   ) %>%
-  mutate(year = factor(year, ordered = FALSE)) %>%
-  select(-c(h_dist, azi, status, rot, cc, x, y, live))
+  select(-c(h_dist, azi, status, rot, cc, x, y, live)) %>%
+  ungroup()
 
-# Remove bear damaged trees
-test_d_bear <- test_d
-test_d <- test_d[test_d$bear == FALSE, ]
-
-# Alter one outlier record by using data from previous year
-big_tree <- "4H80.4019"
-replacement_data <- filter(test_d, tree_id == big_tree, year == "13") %>%
-  mutate(
-    dbh = dbh + d_inc * 5,
-    d_inc = d_inc,
-    ba = ba + ba_inc * 5,
-    ba_inc = ba_inc
-  )
-bad_rec <- with(test_d, which(tree_id == big_tree & year == "18"))
-test_d[bad_rec, names(replacement_data)] <- replacement_data
+# # Alter one outlier record in year 2013 by using data from previous year
+# big_tree <- "4H80.4019"
+# replacement_data <- filter(test_d, tree_id == big_tree, year == "13") %>%
+#   transmute(
+#     dbh = dbh + d_inc2 * 5,
+#     d_inc1 = d_inc2,
+#     ba = ba,
+#     ba_inc1 = ba_inc2,
+#   )
+# bad_rec <- with(test_d, which(tree_id == big_tree & year == "13"))
+# test_d[bad_rec, names(replacement_data)] <- replacement_data
 
 display_vars <- function(x) {
-  select(x, c(tree_id, year, dbh, ht, bear, cr, notes, cond, d_inc, ba_inc))
+  select(x, c(tree_id, year, dbh, ht_p, bear, cr, notes, cond, d_inc1, ba_inc1))
 }
 ```
 
-Number of redwoods and Douglas fir trees in each plot and each treatment. Not including bear damaged trees.
+Number of redwoods and Douglas fir trees in each plot and each treatment. I have a little problem with sample size when it comes to redwood. Some plots have zero or one observation. It seems like bears took a tole on the 
 
 ```{r}
+
 test_d %>%
   group_by(plot) %>%
-  filter(year == "18") %>%
   mutate(n_sese = sum(spp == "SESE3")) %>%
-  ggplot(aes(fct_reorder(plot, n_sese))) +
+  ggplot(aes(fct_reorder(plot, n_sese, .desc = TRUE))) +
     geom_bar(aes(fill = spp)) +
     geom_text(
       aes(label = after_stat(count), group = spp),
       stat = "count",
       position = position_stack(vjust = .5)
     ) +
+    facet_wrap(~year) +
+    coord_flip() +
     scale_fill_manual(values = palette())
 
 test_d %>%
   group_by(treatment) %>%
-  filter(year == "18") %>%
   mutate(n_sese = sum(spp == "SESE3")) %>%
-  ggplot(aes(fct_reorder(treatment, n_sese))) +
+  ggplot(aes(fct_reorder(treatment, n_sese, .desc = TRUE))) +
     geom_bar(aes(fill = spp)) +
     geom_text(
       aes(label = after_stat(count),
@@ -92,7 +94,10 @@ test_d %>%
       stat = "count",
       position = position_stack(vjust = .5)
     ) +
+    facet_wrap(~year) +
+    coord_flip() +
     scale_fill_manual(values = palette())
+
 ```
 
 # Data exploration
@@ -101,29 +106,27 @@ test_d %>%
 
 Here I'm looking for any outliers in basal area increment, or extreme changes. There are definitely basal area outliers some of the most extreme can be explained by having bear damage, but on average, bear-damaged trees have diameter increments almost double those of non-bear-damaged. It is unclear whether this is due to loose bark, or the fact that these trees tend to be faster growing. This question might need further investigation. Following Dagley et. al 2018, I will remove bear damaged trees from analysis. Another option could be including bear damage as a covariate.
 
-
 ```{r}
 
 # outliers defined as 1.5 times above or below IQR
 test_d %>%
   filter(
-    out(ba_inc)
+    out(ba_inc1)
   ) %>%
   group_by(tree_id) %>%
-  arrange(ba_inc) %>%
+  arrange(ba_inc1) %>%
   display_vars %>%
   color_groups()
 
 # dot plot of outliers
 test_d %>%
-  ggplot(aes(x = d_inc, y = fct_reorder(tree_id, d_inc))) +
+  ggplot(aes(x = d_inc1, y = fct_reorder(tree_id, d_inc1))) +
     geom_line(aes(group = tree_id), alpha = .3) +
     geom_point(aes(color = year), alpha = .5) +
     scale_y_discrete(breaks = NULL, expand = expansion(add = 10)) +
     scale_color_manual(values = palette()) +
     guides(color = guide_legend(override.aes = list(shape = c(19, 19)))) +
     labs(
-      title = "Bear damaged trees excluded",
       x = "diameter increment (cm)",
       y = "tree id (sorted by diameter increment)"
     )
@@ -138,10 +141,15 @@ Crown ratio would be an important variable to include in a diameter increment mo
 test_d %>%
   group_by(year) %>%
   summarize(
-    "missing height" = sum(is.na(ht)),
+    "missing height" = sum(is.na(ht_p)),
     "missing cr" = sum(is.na(cr))
   ) %>%
   color_groups()
+
+test_d %>%
+  ggplot(aes(x = cr, fill = spp)) +
+    geom_bar() +
+    facet_wrap(~ year)
 ```
 
 ## Plotting data
@@ -149,44 +157,61 @@ test_d %>%
 First I'll look at distributions of the response:
 
 ```{r}
-hist(test_d$ba_inc, main = "Basal area increment")
-hist(log(test_d$ba_inc + 18), main = "Log of basal area increment + constant")
-with(test_d, plot(dbh, ba_inc))
+hist(test_d$ba_inc1, main = "Basal area increment")
+hist(log(test_d$ba_inc1 + 18), main = "Log of basal area increment + constant")
+with(test_d, plot(dbh, ba_inc1))
 ```
 
 
 # Exploring models
 
+Is year significant for basal area increment? T-Test?
+
+```{r}
+test_d %>%
+  group_by(treatment) %>%
+  select(year, ba_inc1) %>%
+  summarize(as.data.frame(t.test(ba_inc1 ~ year)[c("estimate", "parameter", "p.value")]))
+
+test_d %>%
+  select(treatment, year, tree_id, ba_inc1) %>%
+  pivot_wider(names_from = year, names_prefix = "ba_inc1_", values_from = ba_inc1) %>%
+  group_by(treatment) %>%
+  summarize(as.data.frame(t.test(ba_inc1_13, ba_inc1_18)[c("estimate", "parameter", "p.value")]))
+```
+
 ## Basic model form
 
-Basal area increment is expected to vary by dbh. I'll plot these by treatments, and or by year to assess relationship. In exploring the relationship between ba_inc and dbh I tried the following model forms:
+Basal area increment is expected to vary by dbh. I'll plot these by treatments, and or by year to assess relationship. In exploring the relationship between ba_inc1 and dbh I tried the following model forms:
 
 ```
-model a: scaled_ba_inc = exp((dbh) * treatment * spp), gamma distribution
-model b: scaled_ba_inc = exp((dbh) * treatment * spp), gaussian distribution
-model c: log(ba_inc) = dbh * treatment * spp 
-model d: ba_inc = (log(dbh) + dbh) * treatment * spp
+model a: scaled_ba_inc1 = exp((dbh) * treatment * spp), gamma distribution
+model b: scaled_ba_inc1 = exp((dbh) * treatment * spp), gaussian distribution
+model c: log(ba_inc1) = dbh * treatment * spp 
+model d: ba_inc1 = (log(dbh) + dbh) * treatment * spp
 ```
-The scaling value was computed as `abs(min(ba_inc)) + 1`
+The scaling value was computed as `abs(min(ba_inc1)) + 1`
+
+**I could also try using a reciprocal link**
 
 ```{r, fig.height=7, fig.width=10}
-scale_val <- with(test_d, abs(min(ba_inc)) + 1)
+scale_val <- with(test_d, abs(min(ba_inc1)) + 1)
 
 m6a <- glm(
-  I(ba_inc + scale_val) ~ dbh * treatment * spp,
+  I(ba_inc1 + scale_val) ~ dbh * treatment * spp,
   family = Gamma(link = "log"),
   data = test_d
 )
 
 m6b <- glm(
-  I(ba_inc + scale_val) ~ dbh * treatment * spp,
+  I(ba_inc1 + scale_val) ~ dbh * treatment * spp,
   family = gaussian(link = "log"),
   data = test_d
 )
 
-m6c <- lm(log(ba_inc + scale_val) ~ dbh * treatment * spp, data = test_d)
+m6c <- lm(log(ba_inc1 + scale_val) ~ dbh * treatment * spp, data = test_d)
 
-m6d <- lm(ba_inc ~ log(dbh) + dbh * treatment * spp, data = test_d)
+m6d <- lm(ba_inc1 ~ log(dbh) + dbh * treatment * spp, data = test_d)
 
 test_d %>%
   ungroup() %>%
@@ -195,7 +220,7 @@ test_d %>%
     upr = exp(fit + 2 * se.fit),
     lwr = exp(fit - 2 * se.fit)
     ) %>%
-  ggplot(aes(y = ba_inc, x = dbh, color = spp)) +
+  ggplot(aes(y = ba_inc1, x = dbh, color = spp)) +
     geom_point(alpha = 0.3) +
     geom_line(aes(y = predict(m6a, type = "response") - scale_val), size = 1) +
     geom_ribbon(
@@ -208,7 +233,7 @@ test_d %>%
     labs(title = "gamma GLM with log link")
 
 test_d %>%
-  ggplot(aes(x = dbh, y = ba_inc + scale_val, color = spp)) +
+  ggplot(aes(x = dbh, y = ba_inc1 + scale_val, color = spp)) +
     geom_point(alpha = .2) +
     facet_wrap(vars(treatment)) +
     geom_smooth(
@@ -220,7 +245,7 @@ test_d %>%
     labs(title = "Gaussian glm wih log link")
 
 test_d %>%
-  ggplot(aes(x = dbh, y = log(ba_inc + scale_val), color = spp)) +
+  ggplot(aes(x = dbh, y = log(ba_inc1 + scale_val), color = spp)) +
     geom_point(alpha = .2) +
     facet_wrap(vars(treatment)) +
     geom_smooth(method = "lm", formula = y ~ x) +
@@ -228,7 +253,7 @@ test_d %>%
     labs(title = "Linear model, log-transformed")
 
 test_d %>%
-  ggplot(aes(x = dbh, y = ba_inc, color = spp)) +
+  ggplot(aes(x = dbh, y = ba_inc1, color = spp)) +
     geom_point(aes(), alpha = .2) +
     geom_smooth(method = "lm", formula = y ~ log(x) + x) +
     facet_wrap(vars(treatment)) +
@@ -255,16 +280,16 @@ This suggests that I could combine years.
 d_split1 <- split(test_d, ~ year + spp)
 
 form_list1 <- list(
-  I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_method + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treatment + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_method + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_status + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_status + sdi_plot + (1 | plot)
+  I(ba_inc1 + scale_val) ~ dbh + treatment + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_method + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_density + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_status + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treatment + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_method + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_density + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_status + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_status + sdi_plot + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_status + sdi_plot + (1 | plot)
 )
 
 aic_out1 <- map(d_split1, ~ get_aic(form_list1, data = .x, method = "glm")[1:5, ])
@@ -278,30 +303,30 @@ Here I'll split just by species and determine if interactions with year are impo
 d_split2 <- split(test_d, ~spp)
 
 form_list2 <- list(
-  I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_method + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_method + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_method + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_density + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treatment + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_method + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_status + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treatment * year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_method * year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density * year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_status * year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status * sdi_plot + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + year + year:dbh + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + year + year:treat_density +(1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + year + year:treat_density + year:dbh +(1 | plot)
+  I(ba_inc1 + scale_val) ~ dbh + treatment + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_method + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_density + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_status + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_method + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_density + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_status + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treatment + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_method + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_density + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_status + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treatment + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_method + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_density + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_status + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treatment * year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_method * year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_density * year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_status * year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_status * sdi_plot + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh + treat_status + sdi_plot + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_density + year + year:dbh + (1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_density + year + year:treat_density +(1 | plot),
+  I(ba_inc1 + scale_val) ~ dbh * treat_density + year + year:treat_density + year:dbh +(1 | plot)
 
 )
 
@@ -313,18 +338,18 @@ aic_out2
 
 Based on the above, inclusion of interactions when considering a model with treatment and year, do not have lower AIC. I'll use:
 
-`ba_inc + scale_val ~ dbh + treatment + year + (1 | plot)`
+`ba_inc1 + scale_val ~ dbh + treatment + year + (1 | plot)`
 
 NOTE: Do we really care about year (first 5-year period or second), while it is true that there could be an different treatment effect for each year and even that this effect could vary by treatment (interaction), it seems as though the question we are trying to answer is dealing with long-term consequences. For instance, if we could report that a treatment had a strong effect, but only for 5 years and this effect is not persistent, than is it relevant to us? In writing this I realize that if a treatment is only "significant" in the second period, that could be important because it might suggest that there will be further long-term effects, whereas if a treatment is only important in the first period, then it may not really be that important after all.
 
 ```{r}
 m7a <- glmer(
-  I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
   family = Gamma(link = "log"),
   data = d_split2$SESE3
 )
 m7b <- glmer(
-  I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
+  I(ba_inc1 + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
   family = Gamma(link = "log"),
   data = d_split2$PSMEM
 )
