@@ -79,11 +79,12 @@ measures$dbh <- function(data, species) {
   if(is.null(species)) species <- unique(data$spp)
   data %>%
     filter(spp %in% species, live | status %in% c(15, 16)) %>%
-    group_by(treatment, year) %>%
+    group_by(treatment, year, plot) %>%
+    summarise(plot_mean = sqrt(mean(dbh^2))) %>%
     summarise(
-      mean = sqrt(mean(dbh^2)),
+      mean = mean(plot_mean),
       n = n(),
-      std = sd(dbh, na.rm = TRUE)
+      std = sd(plot_mean)
     )
 }
 
@@ -113,10 +114,10 @@ For dominant heights, I am using dominant dbh trees *not including broken and de
 ```{r}
 
 # get ids of trees that have heights in 2018
-ht_id_2018 <- filter(d_l, year == "18", !is.na(ht)) %>% pull(tree_id)
+ht_id_2018 <- filter(d_l, year == "18", !is.na(ht_p)) %>% pull(tree_id)
 
 # average height I AM OMMITING MISSING HEIGHT MEASUREMENTS.
-measures$ht <- function(data, species) {
+measures$ht_p <- function(data, species) {
   if(is.null(species)) species <- unique(data$spp)
   data %>%
     filter(
@@ -124,13 +125,14 @@ measures$ht <- function(data, species) {
       live | status %in% c(15, 16),
       !get_cond(c(2, 3)),
       tree_id %in% ht_id_2018,
-      !is.na(ht)
+      !is.na(ht_p)
     ) %>%
-  group_by(treatment, year) %>%
+  group_by(treatment, year, plot) %>%
+  summarise(plot_mean = mean(ht_p)) %>%
   summarise(
-    mean = mean(ht),
+    mean = mean(plot_mean),
     n = n(),
-    std = sd(ht)
+    std = sd(plot_mean)
   )
 }
 
@@ -145,13 +147,13 @@ measures$dom_ht <- function(data, species) {
       tree_id %in% ht_id_2018
     ) %>%
     group_by(plot, year) %>%
-    slice_max(order_by = ht, n = 4, with_ties = FALSE) %>%
+    slice_max(order_by = ht_p, n = 4, with_ties = FALSE) %>%
     filter(spp %in% species) %>%
     group_by(treatment, year) %>%
     summarise(
-      mean = mean(ht, na.rm = TRUE),
-      n = sum(!is.na(ht)),
-      std = sd(ht, na.rm = TRUE)
+      mean = mean(ht_p, na.rm = TRUE),
+      n = sum(!is.na(ht_p)),
+      std = sd(ht_p, na.rm = TRUE)
     )
 }
 
@@ -297,8 +299,8 @@ my_sort <- function(data, items = c("treatment", "measure"), fig = FALSE) {
     if(fig) {
       data <- mutate(data,
         measure = recode_factor(measure,
-          dbh = "Mean~DBH~(cm)",
-          ht = "Height~(m)",
+          dbh = "Mean~QMD~(cm)",
+          ht_p = "Height~(m)",
           density = "Stems%.%ha^-1",
           ba = "BA~(m^2~ha^-1)",
           ba_inc2 = "BAI",
@@ -311,8 +313,8 @@ my_sort <- function(data, items = c("treatment", "measure"), fig = FALSE) {
     } else {
       data <- mutate(data,
         measure = recode_factor(measure,
-          dbh = "dbh (cm)",
-          ht = "Height (m)",
+          dbh = "Mean QMD (cm)",
+          ht_p = "Height (m)",
           density = "Density (stems ha^-1^)",
           ba = "Basal area (m^2^/ha)",
           mort = "New mortality (tph)",
@@ -341,7 +343,7 @@ get_measures <- function(data = d_l, species = NULL) {
 
 # takes a long dataset of summary values
 
-make_summary <- function(data, measures = c("dbh", "ht", "density", "ba")) {
+make_summary <- function(data, measures = c("dbh", "ht_p", "density", "ba")) {
   data %>%
   filter(measure %in% measures) %>%
   my_sort() %>%
@@ -409,7 +411,7 @@ fig_data <- bind_rows(
 
 f
 # choose which stand summary variables to include
-fig_include_vars <- c("density", "dbh", "ba", "ht")
+fig_include_vars <- c("density", "dbh", "ba", "ht_p")
 
 make_fig <- function(data = fig_data) {
   yr_breaks <- c(2008, 2013, 2018)
@@ -444,8 +446,8 @@ make_fig <- function(data = fig_data) {
         legend.box.spacing = element_blank()
       ) +
       scale_x_continuous(breaks = yr_breaks) +
-      scale_y_continuous(breaks = scales::breaks_extended(4, w = c(.2, .2, .3, .3))) +
-      scale_color_manual("spp", values = c(SESE3 = "black", PSMEM = "#acacac")) +
+      # scale_y_continuous(breaks = scales::breaks_extended(4)) +
+      scale_color_manual("spp", values = c(SESE3 = "black", PSMEM = "#969696")) +
       scale_shape_manual("spp", values = c(SESE3 = 16, PSMEM = 17)) +
       scale_linetype_manual("spp", values = c(SESE3 = 2, PSMEM = 1)) +
       labs(y = NULL, x = "Year")
@@ -453,10 +455,23 @@ make_fig <- function(data = fig_data) {
 
 make_fig()
 
-ggsave(filename = "figs/summary_fig.pdf", device = cairo_pdf, width = 18.2, height = 15, units = "cm")
+ggsave(
+  filename = "figs/summary_fig.pdf",
+  device = cairo_pdf,
+  width = 18.2,
+  height = 15,
+  units = "cm"
+)
+
+ggsave(
+  filename = "figs/summary_fig.jpg",
+  width = 18.2,
+  height = 15,
+  units = "cm"
+)
 ```
 
-# Species dominance **WORKING ON THIS FUNCTION**
+# Species dominance
 
 I'm interested in creating a measure of species dominance. I will select the 4 largest trees per plot and then determine what proportion of these are from each species. I will only consider and report on RW and DF. I could augment this by showing the average size of the dominant tree by species.
 
@@ -470,7 +485,7 @@ For this to make sense for heights, we will need to predict heights for missing 
 
 spp_dom_raw <- function(data = d_l, metrics = NULL, years = NULL) {
   if(is.null(years)) years <- c("08", "13", "18")
-  if(is.null(metrics)) metrics <- c("dbh", "ht", "ba_inc2")
+  if(is.null(metrics)) metrics <- c("dbh", "ht_p", "ba_inc2")
   raw <- data %>%
     filter(
       spp %in% c("SESE3", "PSMEM"),
@@ -494,14 +509,16 @@ spp_dom_cnt <- function(...) {
   spp_dom_raw(...) %>%
   count(measure, year, treatment, plot, spp) %>%
   ungroup() %>%
-  complete(nesting(treatment, plot, year), spp, measure, fill = list(n = 0))
+  complete(nesting(treatment, year, plot), spp, measure, fill = list(n = 0))
 }
 
 spp_dom_pct <- function(...) {
   spp_dom_cnt(...) %>%
-    group_by(measure, year, treatment, spp) %>%
+    group_by(measure, treatment, year, spp) %>%
     summarise(n = sum(n)) %>%
-    mutate(freq = n / sum(n))
+    mutate(freq = n / sum(n)) %>%
+    arrange(measure, treatment, spp, year) %>%
+    ungroup()
 }
 
 
@@ -515,7 +532,7 @@ dominance_labels <- as_labeller(
   c(
     ba_inc2 = "BAI",
     dbh = "dbh",
-    ht = "Height"
+    ht_p = "Height"
   ),
   label_parsed
 )
@@ -523,30 +540,31 @@ dominance_labels <- as_labeller(
 make_dominance_fig <- function(data = spp_dom_pct(d_l)) {
   data %>%
     my_sort(items = "treatment") %>%
-    mutate(measure = factor(measure, levels = c("dbh", "ht", "ba_inc2"))) %>%
+    mutate(measure = factor(measure, levels = c("dbh", "ht_p", "ba_inc2"))) %>%
     ggplot(aes(year, freq, fill = spp)) +
       geom_bar(position = "stack", stat = "identity") +
       facet_grid(
         vars(measure),
         vars(treatment),
-        scales = "free_y",
-        switch = "y",
         labeller = labeller(measure = dominance_labels)
       ) +
       theme_bw() +
       theme(
         panel.spacing.x = unit(1.3, "mm"),
-        strip.background.y = element_blank(),
-        strip.placement = "outside",
         legend.position = "bottom",
         legend.title = element_blank(),
         legend.key.size = unit(4, "mm"),
         legend.box.spacing = element_blank(),
-        panel.grid = element_blank()
+        panel.grid = element_blank(),
+        # strip.background.y = element_blank(),
+        strip.placement = "outside"
       ) +
       # scale_x_continuous(breaks = yr_breaks) +
-      scale_y_continuous(breaks = scales::breaks_extended(4, w = c(.2, .2, .3, .3))) +
-      scale_fill_manual("spp", values = c(SESE3 = "black", PSMEM = "#ACACAC")) +
+      scale_y_continuous(breaks = c(0, .5, 1)) +
+      scale_fill_manual("spp",
+       values = c(SESE3 = "black", PSMEM = "#a0a0a0"),
+       labels = c("redwood", "Douglas-fir")
+      ) +
       labs(y = "Proportion of highest ranking trees", x = "Year")
 }
 
@@ -555,6 +573,13 @@ make_dominance_fig()
 ggsave(
   filename = "figs/dominance_fig.pdf",
   device = cairo_pdf,
+  width = 8.84,
+  height = 8,
+  units = "cm"
+)
+
+ggsave(
+  filename = "figs/dominance_fig.jpg",
   width = 8.84,
   height = 8,
   units = "cm"
