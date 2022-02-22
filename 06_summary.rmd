@@ -481,6 +481,8 @@ If I want to do hypothesis testing, I need to have two datasets, one of the raw 
 
 For this to make sense for heights, we will need to predict heights for missing trees because the largest trees are missing heights in many cases.
 
+Although I refer to proportions here, this is of 100 TPH, so multiplying by 100 gives TPH.
+
 ```{r}
 
 spp_dom_raw <- function(data = d_l, metrics = NULL, years = NULL) {
@@ -521,8 +523,8 @@ spp_dom_pct <- function(...) {
     ungroup()
 }
 
-
 ```
+
 
 ## Dominance figure
 
@@ -589,5 +591,54 @@ ggsave(
 Now I need to display the average values for these dominant species, perhaps along with their standard deviations. I think I'll just do this for each treatment in the most recent measurement period.
 
 ```{r}
+
+```
+
+## Species dominance significance test
+
+A Wilcoxon rank-sum test could be used to test if one treatment results in changes that are significantly greater than another treatment. Unfortunately, it seems like none of the treatments that show an average increase in the number of dominant SESE are significant at the alpha = 0.05 level, using a 1-sided test. One-sided permutation tests shows even larger p-values, and these I would expect to be more accurate given the number of zeros in the data. 
+
+To start, I will only test significance for dbh ranked dominance, to see if treatment effect is significant there. first I get a list of differences from 2008 to 2018 for each plot in a treatment, this represents the treatments effect on redwood dominance. Then I compare the treatments to see is ones with a larger average effect, are significantly larger than those with a smaller average effect: 1-sided non-parametric tests. Wilcox rank-sum has lower p-values, than the permutation test. The data has a lot of zeros, and very few data points, none of the one-sided differences are significant. It is too soon to tell if redwood dominance has been affected.
+
+```{r}
+
+# Takes one of my dominance metrics: dbh, ht, ba_inc2
+
+non_para_dom_test <- function(metric) {
+  # only 2013 and 2018 available for basal area increment
+  if(metric == "ba_inc2") years <- c("13", "18") else years <- c("08", "18")
+  
+  # summarize differences between 2018 and 2013 for each treatment
+  # (plot differences)
+  W1 <- spp_dom_cnt(metrics = metric) %>%
+    filter(spp == "SESE3", year %in% years) %>%
+    group_by(plot) %>%
+    mutate(diff = n - lag(n)) %>%
+    drop_na() %>%
+    ungroup() %>%
+    select(treatment, measure, diff)
+    
+  W <- with(W1, split(diff, treatment))
+
+  # Get all combinations of treatments, where average change of treatment 1
+  # is greater than the average for treatment 2
+
+  combos <- W1 %>%
+    group_by(treatment, measure) %>%
+    nest_by() %>%
+    mutate(avg = map_dbl(data, mean)) %>%
+    expand_grid(a = ., b = .) %>%
+    mutate(diff = a$avg - b$avg) %>%
+    arrange(desc(diff)) %>%
+    filter(diff > 0) %>%
+    transmute(treat.a = a$treatment, treat.b = b$treatment)
+
+  apply(combos, 1, function(x) {
+    wilout <- wilcox.test(W[[ x[1] ]], W[[ x[2] ]], alternative = "g")
+    permout <- perm_test(W[[ x[1] ]], W[[ x[2] ]])
+    list(test = paste(x[1], ">", x[2]), Wilcox.P = wilout$p.value, Perm.P = permout)  
+  }) %>%
+    bind_rows()
+}
 
 ```
