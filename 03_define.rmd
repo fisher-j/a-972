@@ -38,17 +38,20 @@ nrow(filter(group_by(d_l, tree_id), any(!live & lead(live))))
 
 ## Define diameter, basal area, and height increment
 
-I looked at increment earlier to try to suss out bad dbh entries. Here I will add annual height, diameter and basal area increments to the long-form dataset.
+Here I will add annual height, diameter and basal area increments to the dataset. Increment will be defined on the observation level, meaning that it must apply to either the first or second measurement. This is significant for modeling, as I will be predicting an increment based on one period's dbh observation. I'll add increment data to both the beginning and ending observations to facilitate modeling based on either observation. *_inc1 will be assigned to the first measurement (refers to subsequent measurement) and *_inc2 will be assigned to the second (refers to previous measurement).
 
 ```{r}
 # Add diameter increment data and update post-harvest data
 d_l <- d_l %>%
   group_by(tree_id) %>%
   mutate(
-    d_inc = (dbh - lag(dbh, order_by = year)) / 5,
-    ht_inc = (ht - lag(ht, order_by = year)) / 5,
     ba = pi * (dbh / 2)^2,
-    ba_inc = (ba - lag(ba, order_by = year)) / 5
+    d_inc2 = (dbh - lag(dbh, order_by = year)) / 5,
+    ht_inc2 = (ht - lag(ht, order_by = year)) / 5,
+    ba_inc2 = (ba - lag(ba, order_by = year)) / 5,
+    d_inc1 = (lead(dbh, order_by = year) - dbh) / 5,
+    ht_inc1 = (lead(ht, order_by = year) - ht) / 5,
+    ba_inc1 = (lead(ba, order_by = year) - ba) / 5
   ) %>%
   ungroup()
 ```
@@ -111,6 +114,19 @@ d_l <- d_l %>%
       TRUE                 ~ cr
     )
   )
+```
+
+## Calculate plot SDI
+
+For "live" trees only
+
+```{r}
+
+d_l <- d_l %>%
+  group_by(plot) %>%
+  mutate(sdi_plot = sum(12.5 * (dbh * live / 25.4)^1.605, na.rm = TRUE)) %>%
+  ungroup()
+
 ```
 
 ## Update post-harvest data
