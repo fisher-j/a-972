@@ -90,7 +90,7 @@ test_d <- d_l %>%
 We are pretty sure that height growth is correlated with diameter, in that larger trees are capable of more height growth than smaller ones. We also think that this relationship is probably not linear. I will take a look at log and square root transformations of dbh for linear prediction of height growth.
 
 ```{r, fig.height=7, fig.width=10}
-m0 <- lm(ht_inc1 ~ dbh * treatment * spp, data = test_d1)
+m0 <- lm(ht_inc1 ~ dbh * treatment * spp, data = test_d)
 m1 <- update(m0, ~ sqrt(dbh) * treatment * spp)
 m2 <- update(m0, ~ log(dbh) * treatment * spp)
 
@@ -179,7 +179,7 @@ fl <- list(
   ht_inc1 ~ log(dbh) * treatment3 * year + spp + (1 | plot),
   ht_inc1 ~ log(dbh) + treatment3 + year + spp + (1 | plot),
   ht_inc1 ~ log(dbh) + treatment4 + (1 | plot),
-  ht_inc1 ~ log(dbh) + treatment4 + spp + (1 | plot),
+  ht_inc1 ~ log(dbh) * treatment4 + spp + (1 | plot),
   ht_inc1 ~ log(dbh) * spp + treatment4 + (1 | plot),
   ht_inc1 ~ log(dbh) + treatment4 * spp + (1 | plot),
   ht_inc1 ~ log(dbh) * spp * treatment4 * year + (1 | plot),
@@ -200,11 +200,10 @@ get_aic(fl, data = test_d) %>%
   kable_styling(full_width = FALSE)
 
 lmod <- function(fl) {
-  lmer(fl, data = test_d, REML = FALSE)
+  lmer(fl, data = test_d, REML = TRUE)
 }
-
-summary(lmod(fl[[11]]))
-summary(lmod(fl[[5]]))
+summary(lm(ht_inc1 ~ log(dbh) + treatment4 * spp, data = test_d))
+summary(lmod(fl[[32]]))
 ```
 
 # Best model (scrapping above)
@@ -212,21 +211,43 @@ summary(lmod(fl[[5]]))
 While these models are interesting, there is reason to believe that our height measurements are not precise enough to capture the small height differences between treatments (around 3 feet). For this reason, I will default to a simple additive model that includes spp and treatment.
 
 ```{r}
-ht_inc_mod1 <- lmod(fl[[5]])
 
-AICc(ht_inc_mod1)
-summary(ht_inc_mod1)
-AICc(ht_inc_mod10)
-
-ht_inc_d <- augment1(test_d, ht_inc_mod1)
+ht_inc_mod1 <- lmod(fl[[32]])
 
 summary(ht_inc_mod1)
 
+
+```
+
+Here is the summary table of the model used for predicting height increments and thus heights
+
+```{r}
+library(broom.mixed)
+library(huxtable)
+tidy(ht_inc_mod1)
+
+huxreg("Height increment" = ht_inc_mod1, error_pos = "right", statistics = c("N" = "nobs"), stars = NULL)
 ```
 
 ## Best model estimated means
 
+switch to model 32 
+
 ```{r}
+# changed model here treatment4
+emmip(
+  lmod(fl[[32]]),
+  spp ~ dbh | treatment4,
+  CIs = TRUE,
+  plotit = FALSE,
+  at = list(dbh = seq(10, 60, 2))
+) %>% 
+  ggplot(aes(dbh, yvar, color = spp)) +
+    geom_line() +
+    facet_wrap(~ treatment4 ) +
+    geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = spp), alpha = .2) +
+    scale_color_manual(values = palette(), aesthetics = c("color", "fill")) +
+    labs(y = "Predicted ht increment")
 
 emmip(
   lmod(fl[[5]]),
@@ -242,13 +263,14 @@ emmip(
     scale_color_manual(values = palette(), aesthetics = c("color", "fill")) +
     labs(y = "Predicted ht increment")
 
-emmeans(ht_inc_mod1, pairwise ~ spp, by = c("treatment"))
+emmeans(ht_inc_mod1, pairwise ~ treatment4, by = c("spp"))
 ```
 
 ## Best model validation
 
 ```{r}
 # augment data with fitted, residual cooks distance and leverage
+
 augment1 <- function(dat, mod) {
   dat %>% mutate(
     fitted = fitted(mod),
@@ -257,6 +279,9 @@ augment1 <- function(dat, mod) {
     lev = hatvalues(mod)
   )
 }
+
+ht_inc_d <- augment1(test_d, ht_inc_mod1)
+
 ```
 
 ### Residual vs fitted
@@ -361,6 +386,7 @@ I'll predict heights for all trees and then filter this to include only observat
 ```{r}
 
 new_heights <- d_l %>%
+  mutate(treatment4 = if_else(str_detect(treatment, "C"), "unthinned", "thinned")) %>%
   filter(spp %in% c("SESE3", "PSMEM")) %>%
   mutate(pred_ht_inc = predict(ht_inc_mod1, newdata = .)) %>%
   group_by(tree_id) %>%
@@ -381,346 +407,10 @@ Now I'll update the data with height predictions for selected trees and fill in 
 
 ```{r}
 
+if ("ht_p" %in% names(d_l)) d_l["ht_p"] <- NULL
+
 d_l <- left_join(d_l, new_heights, by = c("tree_id", "year")) %>%
   mutate(ht_p = if_else(spp %in% c("SESE3", "PSMEM"), ht_p, ht))
 
-```
 
-# Old Model Selection
-
-## Selection
-Based on this, I will select model five for Douglas-fir because it is substantially better than the next best model. For redwood, I select model 21 because it has the lowest AIC. I have doubts about whether this model captures any more valuable information than model 1, with `log(dbh)` only, but I'll go with it for now. 
-
-```{r}
-sese <- lmer(fl[[21]], data = sese_d, REML = TRUE)
-psme <- lmer(fl[[5]], data = psme_d, REML = TRUE)
-
-
-sese_d <- augment1(sese_d, sese)
-psme_d <- augment1(psme_d, psme)
-
-```
-
-## Estimated marginal means
-
-In both cases, I'm separating results of comparisons by year, because interaction with year was included in the model. If we decide to hold year at its mean effect, then comparisons will likely be different.
-
-First, the model for SESE was fit with interactions between treatment, year, and dbh. I could test at multiple dbh's if we were interested in a certain range of sizes because the model includes interaction with dbh.
-
-```{r}
-sese_em <- emmeans(sese, ~ dbh * treatment4 * year)
-sese_em
-pairs(sese_em, by = "year")
-```
-
-Next, PSME was fit with factors (`treatment * year`) we can do pairwise comparisons, or, alternatively, treatment vs control comparisons. Pairwise comparison does not have enough power to reveal any significant differences, but comparing just to control provides more power and shows some treatments are different than control.
-
-```{r}
-psme_em <- emmeans(psme, ~ treatment * year)
-pairs(psme_em, by = "year")
-contrast(psme_em, "trt.vs.ctrl1", by = "year")
-```
-
-A plot of estimated means by treatment and year can reveal patterns in the interactions, the fact that effects change so much between measurement periods is probably due to the noisiness of the data and perhaps also systematic differences between measurement crews. We could ignore `year` to try to identify a signal for `treatment` despite the noise. By ignoring year we would be weighting the 2013 data, because less data was taken in 2018.
-
-```{r, fig.height=4.5, fig.width=6.5}
-emmip(psme_em, treatment ~ year) +
-  scale_color_manual(values = palette()) +
-  scale_x_discrete(expand = expansion(mult = .2))
-
-emmip(sese_em, treatment4 ~ year) +
-  scale_color_manual(values = palette()) +
-  scale_x_discrete(expand = expansion(mult = .2))
-```
-
-The author of `emmeans` is opposed to the use of compact letter displays (significance letters) on estimated means plots and suggests this plot as an alternative:
-
-```{r, fig.width=10.5, fig.height=5.5}
-pwpp(psme_em, by = "year") +
-  scale_color_manual(values = palette())
-  
-pwpp(sese_em, by = "year") +
-  scale_color_manual(values = palette()) +
-  scale_y_discrete(labels = c("unthinned (avg. dbh)", "thinned (av. dbh)")) +
-  scale_x_log10(breaks = waiver(), expand = expansion(mult = .2))
-
-```
-
-Here I look at means of predictions and observed values by treatment and year. Predicted means are at the mean dbh for species/year, whereas observed values are at the mean of all observed height increments, this was mostly for me to understand the difference between least squares means (estimated marginal means) and regular marginal means.
-
-```{r, fig.width=10.5, fig.height=5.5}
-bind_rows(psme_d, sese_d) %>%
-  ggplot(aes(y = ht_inc1, x = year, color = treatment, group = treatment)) +
-    stat_summary(
-      fun = mean,
-      geom = "line",
-      aes(linetype = "observed"),
-      size = 1.25) +
-    stat_summary(
-      data = as_tibble(psme_em),
-      aes(y = emmean, linetype = "predicted"),
-      fun = mean, geom = "line",size = 1
-    ) +
-    facet_wrap(vars(spp)) +
-    scale_color_manual(values = palette()) +
-    scale_linetype_manual(
-      values = c(2, 1),
-      name = "",
-      breaks = c("observed", "predicted")
-    ) +
-    scale_x_discrete(expand = expansion(mult = .2))
-```
-
-## Predictions
-
-Here I predict heights for a range of values while holding the random effect of `plot` at its mean according to our selected models. The model for PSME does not include interactions between dbh and treatment or year, so slopes are parallel. The model for SESE does include interactions with dbh and slopes change dramatically (flip-flop) between years. It seems likely to me that we are either modeling noise, or systematic differences between different crews doing height measurements.
-
-```{r, fig.width=9, fig.height=9}
-
-plot_emmeans_models <- function(by_year){
-  if (by_year == TRUE) {
-    psme_form <- ~ dbh + treatment * year
-    sese_form <- ~ dbh * treatment4 * year
-    facet_vars <- vars(interaction(spp, year, sep = " "))
-  } else {
-    psme_form <- ~ dbh + treatment
-    sese_form <- ~ dbh * treatment4
-    facet_vars <- vars(spp)
-  }
-  bind_rows(
-    emmeans(
-      psme,
-      psme_form,
-      at = list(dbh = seq(10, 60, 2))
-    ) %>%
-    as_tibble() %>%
-    mutate(spp = "PSME"),
-    emmeans(
-      sese,
-      sese_form,
-      at = list(dbh = seq(10, 60, 2))
-      ) %>%
-    as_tibble() %>% 
-    rename(treatment = treatment4) %>%
-    mutate(spp = "SESE")
-  ) %>%
-    ggplot(aes(x = dbh, y = emmean, group = treatment)) +
-      geom_line(aes(color = treatment), size = 1) +
-      scale_color_manual(values = palette()) +
-      labs(x = "dbh (cm)", y = "Height increment (m)") +
-      facet_wrap(facet_vars) +
-      theme_classic2()
-
-}
-plot_emmeans_models(by_year = TRUE)
-```
-
-Here are the model predictions if we hold the effect of year at its mean. This makes the model seem a bit more coherent, but when we don't include the effect of year, there is no difference between treatments for sese, because the difference was mostly to do with the difference between years. This might be a good reason to remove year from the model.
-
-```{r}
-plot_emmeans_models(by_year = FALSE)
-```
-
-Here I plot the differences between each plot, these are averaged over both years and seems to show there is quite a bit of variability in plots.
-
-```{r, fig.height=6, fig.width=9}
-palette("tableau10")
-ggplot(test_d, aes(x = dbh, y = ht_inc1)) +
-  geom_smooth(
-    aes(linetype = spp, color = str_extract(plot, "\\d")),
-    method = "lm",
-    formula = y ~ log(x),
-    se = FALSE
-  ) +
-  facet_wrap(vars(treatment)) +
-  scale_color_manual(values = palette(), name = "plot number")
-```
-
-## Validation of selected models
-
-### Residual vs fitted
-Next I will perform some model validation. I'll start by looking at residuals vs fitted and residual vs continuous predictor (log(dbh)) and for the Douglas-fir model, the residuals for each combination of the categorical predictors: `treatment` and `year`.
-
-```{r, fig.width=10, fig.height=7}
-par(mfrow = c(2, 2))
-plot(
-  resid ~ fitted,
-  data = sese_d,
-  pch = 16,
-  xlab = "fitted values",
-  ylab = "Scaled residuals",
-  main = "Residual vs fitted for SESE",
-  col = 2
-)
-abline(0,0)
-plot(
-  resid ~ fitted,
-  data = psme_d,
-  pch = 16,
-  xlab = "fitted values",
-  ylab = "Scaled residuals",
-  main = "Residual vs fitted for PSME",
-  col = 1
-)
-abline(0,0)
-plot(
-  resid ~ log(dbh),
-  data = sese_d,
-  xlab = "log(dbh)",
-  ylab = "Scaled residuals",
-  main = "Residual vs log(dbh) for SESE",
-  col = 2,
-  pch = 16
-)
-abline(0,0)
-
-plot(
-  resid ~ log(dbh),
-  data = psme_d,
-  xlab = "log(dbh)",
-  ylab = "Scaled residuals",
-  main = "Residual vs log(dbh) for PSME",
-  col = 1,
-  pch = 16
-)
-abline(0,0)
-```
-
-```{r}
-with(
-  model.frame(psme),
-  boxplot(
-    resid(psme, type = "pearson") ~ treatment + year,
-    xlab = "by treatment and year",
-    ylab = "Residuals",
-    main = "Distribution of residuals by treatment and year for PSME"
-  )
-)
-```
-
-### Homogeneity of random group residuals
-
-I can check that random group residuals are homogenous
-
-```{r}
-plot(
-  psme,
-  resid(., scaled=TRUE) ~ fitted(.)| plot,
-  abline = 0,
-  pch = 16,
-  xlab = "Fitted values",
-  ylab = "Standardised residuals"
-)
-```
-
-### Normality of residuals
-
-Checking for normality of residuals. The tails are perhaps a bit fat for PSME. I'm not sure if this requires attention or not.
-
-```{r, fig.height=7, fig.width=10}
-par(mfrow = c(1, 2))
-qqnorm(resid(psme), pch=16, col = 1,  main = "QQplot for PSME")
-qqline(resid(psme))
-qqnorm(resid(sese), pch=16, col = 2, main = "QQplot for SESE")
-qqline(resid(sese))
-```
-
-### Leverage and Cooks distance
-
-Cooks outliers, defined as > 3 x mean(cooks distance) are colored in red. None of these "outliers" seem like they would disproportionately affect regression. 
-
-```{r, fig.width=10, fig.height=8}
-par(mfrow = c(2, 1))
-# Plot leverage against standardised residuals
-plot(
-  resid ~ lev,
-  data = psme_d,
-  las = 1,
-  ylab = "Standardised residuals",
-  xlab = "Leverage",
-  col = palette.colors(palette = "tableau10", alpha = .5)[1],
-  main = "Leverage vs residuals for PSME",
-  pch = 16
-)
-points(resid ~ lev, data = filter(psme_d, cooks > 3 * mean(cooks)), pch = 16, col =3)
-plot(
-  resid ~ lev,
-  data = sese_d,
-  las = 1,
-  ylab = "Standardised residuals",
-  xlab = "Leverage",
-  col = palette.colors(palette = "tableau10", alpha = .5)[2],
-  main = "Leverage vs residuals for SESE",
-  pch = 16
-)
-points(resid ~ lev, data = filter(sese_d, cooks > 3 * mean(cooks)), pch = 16, col =3)
-```
-
-### Random effects distribution
-
-The distribution of random effects (plots) should be roughly normal. Obviously, this is not the case for SESE, I'm not sure of what the implications for this are.
-
-```{r}
-hist(as.vector(unlist(ranef(psme)$plot)), col = 1)
-hist(as.vector(unlist(ranef(sese)$plot)), col = 2)
-```
-
-### Spatial autocorrelation
-
-Semivariograms for our two selected models, the first set indicates average semivariance within plots. The second set indicates semivariance across all trees. It seems like correlation increases with distance within plots for PSME, this is usually the opposite but may make sense in that at the plot level, larger trees may be farther from each other. For SESE, the reverse is true. This also may be artefacts of noisy data. Either way, it appears that their is not a 
-
-```{r}
-sese1 <- lme(ht_inc1 ~ log(dbh), random = ~ 1 | plot, data = sese_d)
-psme1 <- lme(ht_inc1 ~ log(dbh) + treatment * year, random = ~ 1 | plot, data = psme_d)
-plot(Variogram(sese1, form = ~ x + y | plot))
-plot(Variogram(psme1, form = ~ x + y | plot))
-```
-
-
-```{r, fig.height=7, fig.width=10}
-par(mfrow = c(2, 1))
-vp <- geoR::variog(
-  coords = cbind(psme_d$x, psme_d$y),
-  data = resid(psme, type = "pearson"),
-  option="bin",
-  uvec = 50
-)
-plot(vp, col = 1, pch = 16, main = "semivariance across study for psme")
-lines(fitted(loess(vp$v ~ vp$u)) ~ vp$u, col = "darkblue")
-
-
-vs <-  geoR::variog(
-  coords = cbind(sese_d$x, sese_d$y),
-  data = resid(sese, type = "pearson"),
-  option="bin",
-  uvec = 50
-)
-plot(vs, col = 2, pch = 16, main = "semivariance across study for sese")
-lines(fitted(loess(vs$v ~ vs$u)) ~ vs$u, col = "darkblue")
-```
-
-### Temporal autocorrelation
-
-We are looking at data for 2013 and 2018, year was included in the model for psme but not for sese. I'll look at an autocorrelation plot 
-
-```{r, fig.width=10, fig.height=7}
-par(mfrow = c(1, 2))
-acf(resid(psme, type = "pearson"), lag.max = 4, col = 1)
-acf(resid(sese, type = "pearson"), lag.max = 4, col = 2)
-```
-
-I can also look for correlation between the residuals of observations using a correlation test. Observations of the same tree among PSME and SESE are both negatively correlated.
-
-```{r}
-obs_pairs_corr <- function(d) {
-  tp <- d %>% 
-    group_by(tree_id) %>% 
-    filter(!n() < 2) %>%
-    summarize(resid1 = nth(resid, 1), resid2 = nth(resid, 2)) %>%
-    select(resid1, resid2)
-  cor.test(tp$resid2, tp$resid1)
-}
-
-obs_pairs_corr(sese_d)
-obs_pairs_corr(psme_d)
 ```
