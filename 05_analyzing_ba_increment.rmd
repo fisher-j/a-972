@@ -18,7 +18,24 @@ Basal area increment is a key feature for analysis. Dbh data is available for al
 
 # Define trees of interest
 
-For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements. I am excluding bear damaged trees. Increment for a period will be assigned to the beginning of period observation. This means I will want to exclude observations in which a tree is damaged by bear or wind in this or a subsequent observation, that is, we are assuming this model is valid for trees that are not and will not be broken or damaged. 
+For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements. I am excluding bear damaged trees. Increment for a period will be assigned to the beginning of period observation. This means I will want to exclude observations in which a tree is damaged by bear in this or a subsequent observation.
+
+I am including trees with dead or broken tops when they didn't lose more than 25% of their initial height. This is only about 25 trees. There are many more with broken tops that are missing heights, but histograms of the diameter increment of these suggest that they are not that different from the set of trees that have heights.
+
+```{r}
+
+filter(test_d, !is.na(ht_inc1)) %>%
+  ggplot(aes(x = d_inc1, y = stat(count / sum(count)) )) +
+  geom_histogram(aes(fill = "heights available"), alpha = 0.5) +
+  geom_histogram(
+    data = filter(test_d, is.na(ht_inc1)),
+    aes(fill = "heights NA"), alpha = 0.5) +
+  # geom_histogram(
+  #   data = filter(test_d, !get_cond(2, 3), !lead(get_cond(2, 3))),
+  #   aes(fill = "unbroken"), alpha = 0.5)
+  labs(x = "diameter increment", y = "proportion of observations")
+
+```
 
 I'm also filtering out observations that don't have crown ratio, this loses 1 redwood in the L40 treatment, dropping observations from 10 to 9, as well as losing 10 redwood in H80, but this is less of a problem. If CR proves not useful, I will remove this constraint.
 
@@ -26,19 +43,21 @@ I'm also removing trees with less than -0.2 (negative) diameter increment
 
 ```{r}
 
+
+
 test_d <- d_l %>%
-  # calculate SDI for each plot (additive method)
-  group_by(plot) %>%
-  mutate(sdi_plot = sum(12.5 * (dbh / 25.4)^1.605, na.rm = TRUE)) %>%
   group_by(tree_id) %>%
   # only use unbroken live sese or psme from 2018
   filter(
     d_inc1 >= -0.2,
+    # remove trees that lost more than 25% of height
+    is.na(ht_inc1) | (ht_inc1 * 5 / ht) > -1/4,
     spp %in% c("SESE3", "PSMEM"),
     year %in% c("08", "13"),
-    live & lead(live),
-    !get_cond(2, 3) & lead(!get_cond(2, 3)),
+    # Live and doesn't die by next period
+    status == 1 & lead(status == 1),
     !is.na(dbh),
+    # bear free this period and next
     !bear & lead(!bear),
     !is.na(cr)
   ) %>%
@@ -46,12 +65,11 @@ test_d <- d_l %>%
     treat_method = str_extract(treatment, "C|H|L"),
     treat_density = str_extract(treatment, "C|40|80"),
     treat_status = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
-    year = factor(year, levels = c("08", "13"), ordered = FALSE)
+    year = as.character(year)
   ) %>%
-  mutate(plot_year = interaction(plot, year)) %>%
-  select(-c(h_dist, azi, status, rot, cc, x, y, live)) %>%
-  ungroup() %>%
+  select(-c(h_dist, azi, rot, cc, x, y, live)) %>%
   # add a scaled ba_inc1 variable for convenience
+  ungroup() %>%
   mutate(ba_inc_scaled = (ba_inc1 - min(ba_inc1) + 0.1)) 
 
 # Alter one outlier record in year 2013 by using data from previous year
@@ -476,10 +494,15 @@ fl1 <- list(
 
 get_aic(fl1, data = test_d, method = "lmm")
 
-summary(lmod(fl1[[12]]))
+summary(lmer(fl1[[12]], data = test_d))
 plot(predict(lmod(fl1[[12]])), resid(lmod(fl1[[12]]), type = "deviance"))
 
 ```
+
+see:
+[Cross validated post about zero variance](https://stats.stackexchange.com/questions/115090/why-do-i-get-zero-variance-of-a-random-effect-in-my-mixed-model-despite-some-va)
+
+And the singular models section [here](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#singular-models-random-effect-variances-estimated-as-zero-or-correlations-estimated-as---1)
 
 Here is the model list above, with plot random effect, just in case.
 
@@ -491,12 +514,7 @@ get_aic(fl2, data = test_d, method = "lmm")
 ```
 
 
-see:
-[Cross validated post about zero variance](https://stats.stackexchange.com/questions/115090/why-do-i-get-zero-variance-of-a-random-effect-in-my-mixed-model-despite-some-va)
-
-And the singular models section [here](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#singular-models-random-effect-variances-estimated-as-zero-or-correlations-estimated-as---1)
-
-# What does all model selection have to say?
+## What does all model selection have to say?
 
 I'll use dredge from MuMIn to test all models
 
@@ -511,6 +529,14 @@ fm1 <- lmer(
 
 dd <- dredge(fm1, m.lim = c(3, 10))
 
+```
+
+## Chosen full model regression table and marginal means
+
+First I choose a model from above based on parsimony and AICc:
+
+```{r}
+ba_inc_mod <- 
 ```
 
 ## Modeling for each species
