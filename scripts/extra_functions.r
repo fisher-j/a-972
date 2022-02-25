@@ -146,17 +146,23 @@ sci_metric <- function(x, y, z) {
 
 # here is a function to to get a an AIC from a formula
 # optionally split by species
-formula_aic <- function(form, data, method = "lm"){
-  if(method == "lm") {
+formula_aic <- function(form, data, method = "lmm"){
+  if(method == "lmm") {
     mod <- lmer(form, data = data, REML = FALSE)
+    rmse <- sqrt(mean(resid(mod, type = "pearson")^2))
   }
   if(method == "glm") {
     mod <- glmer(form, data = data, family = Gamma(link = "log"))
+    rmse <- sqrt(mean(resid(mod, type = "pearson")^2))
+  }
+  if(method == "lm") {
+    mod <- lm(form, data = data)
+    rmse <- sqrt(mean(resid(mod)^2))
   }
   list(
     formula = deparse1(form),
     aicc = AICc(mod),
-    rmse = sqrt(mean(resid(mod)^2))
+    rmse = rmse
   )
 }
 
@@ -173,4 +179,33 @@ get_aic <- function(formlist, ...) {
   map_dfr(formlist, formula_aic, .id = "row", ...) %>%
   arrange(aicc) %>%
   mutate(aicc = round(aicc, 1), rmse = round(rmse, 3))
+}
+
+
+update_no_simplify <- function(object, ...) {
+  UseMethod("update_no_simplify")
+}
+
+update_no_simplify.formula <- function(old, new) {
+  tmp <- .Call(stats:::C_updateform, as.formula(old), as.formula(new))
+  formula(terms.formula(tmp, simplify = FALSE))
+}
+
+update_no_simplify.default <- function (object, formula., ..., evaluate = TRUE) {
+  if (is.null(call <- getCall(object))) 
+    stop("need an object with call component")
+  extras <- match.call(expand.dots = FALSE)$...
+  if (!missing(formula.)) 
+    call$formula <- update_no_simplify.formula(formula(object), formula.)
+  if (length(extras)) {
+    existing <- !is.na(match(names(extras), names(call)))
+    for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+    if (any(!existing)) {
+      call <- c(as.list(call), extras[!existing])
+      call <- as.call(call)
+    }
+  }
+  if (evaluate) 
+    eval(call, parent.frame())
+  else call
 }
