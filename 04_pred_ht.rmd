@@ -202,6 +202,7 @@ get_aic(fl, data = test_d) %>%
 lmod <- function(fl) {
   lmer(fl, data = test_d, REML = TRUE)
 }
+
 summary(lm(ht_inc1 ~ log(dbh) + treatment4 * spp, data = test_d))
 summary(lmod(fl[[32]]))
 ```
@@ -224,9 +225,14 @@ Here is the summary table of the model used for predicting height increments and
 ```{r}
 library(broom.mixed)
 library(huxtable)
+
 tidy(ht_inc_mod1)
 
 huxreg("Height increment" = ht_inc_mod1, error_pos = "right", statistics = c("N" = "nobs"), stars = NULL)
+
+sjPlot::tab_model(ht_inc_mod1, dv.labels = "Height increment")
+
+modelsummary::modelsummary(ht_inc_mod1)
 ```
 
 ## Best model estimated means

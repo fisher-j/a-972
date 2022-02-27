@@ -21,3 +21,5 @@ OLD*
 # ignore spurious .html in root
 
 /*.html
+
+scratch.R

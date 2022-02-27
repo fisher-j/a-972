@@ -43,8 +43,6 @@ I'm also removing trees with less than -0.2 (negative) diameter increment
 
 ```{r}
 
-
-
 test_d <- d_l %>%
   group_by(tree_id) %>%
   # only use unbroken live sese or psme from 2018

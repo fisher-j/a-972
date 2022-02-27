@@ -130,7 +130,7 @@ new_dbh <- tribble(
   "4L40.3277", "18", 40.9,
   "C4.4600",   "18", 29.0,
   ) %>%
-  mutate(year = factor(year, levels = c("08", "13", "18"), ordered = TRUE))
+  mutate(year = factor(year, levels = c("init", "08", "13", "18"), ordered = TRUE))
 ```
 
 ```{r}
@@ -177,8 +177,6 @@ dbh_problem1 %>%
 Here I'll update the dbh data in the main dataset with the values identified above. I'll also change status 20 to 1 (live tree). Below this point, d_l is an updated dataset.
 
 ```{r}
-# make sure year factors match eg. "init"
-new_dbh$year <- ordered(new_dbh$year, levels = levels(d_l$year))
 d_l <- rows_update(d_l, new_dbh, by = c("tree_id", "year"))
 # make sure all status 20 are accounted for
 all(d_l$tree_id[d_l$status == 20] %in% new_dbh$tree_id)
