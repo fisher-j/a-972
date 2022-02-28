@@ -11,7 +11,7 @@ Here are boxplots showing the variability in 2018 of some potentially important 
 ```{r}
 p_h %>%
   filter(year == "18") %>%
-  select(treatment, spp, dbh, ht, cr, ht_inc) %>%
+  select(treatment, spp, dbh, ht, cr, ht_inc2) %>%
   pivot_longer(
     !c(treatment, spp),
     names_to = "measure",
@@ -20,8 +20,4 @@ p_h %>%
   ggplot(aes(treatment, value)) +
     geom_boxplot() +
     facet_wrap(~ measure, scales = "free_y")
-```
-
-```{r}
-boxplot(dbh ~ plot, data = p_h[p_h$year == "18", ])
 ```

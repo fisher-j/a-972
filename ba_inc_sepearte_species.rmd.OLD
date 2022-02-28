@@ -1,0 +1,164 @@
+## Modeling for each species
+
+### Second year only
+
+I'll split the dataset by species, for now I'll only model ba increment based on second period. That is the increment that we would be most interested in. I might also consider including tree_id as a random effect and year as a fixed effect.
+
+```{r}
+
+d_split <- test_d %>%
+  filter(year == "13") %>%
+  group_by(spp) %>%
+  mutate(ba_inc_scaled_log = log(ba_inc1 - min(ba_inc1) + 1),
+  ba_inc_scaled = ba_inc1 - min(ba_inc1) + 1
+  ) %>%
+  split(~ spp)
+
+```
+
+### Choosing a random effects structure
+
+```{r ranef-spec}
+
+test_ranef <- function(data) {
+  f0 <- formula(ba_inc_scaled_log ~ dbh * treatment + cr)
+  m0 <- gls(f0, data = data, method = "REML")
+  m1 <- lmer(update(f0, ~ . + (1 | plot)), REML = TRUE, data = data)
+  print(AICc(m0, m1))
+  list(m0, m1)
+}
+
+mods <- map(d_split, test_ranef)
+map(mods, ~summary(.x[[2]]))
+summary(mods$SESE3[[2]])
+
+# # This is applicable to a dataset that includes multiple years.
+# f0 <- formula(
+#   log(ba_inc1_scaled) ~ dbh * treatment + cr
+# )
+# m0 <- gls(f0, data = data, method = "REML")
+# m1 <- lmer(update(f0, ~ . + (1 | plot)), REML = TRUE, data = data)
+# m2 <- update(m1, ~ . + (1 | tree_id))
+# m3 <- update(m2, ~ . - (1 | plot))
+# m4 <- update(m2, ~ . + (0 + log(dbh) | plot))
+```
+
+
+This suggests that the optimal random effect for redwood is none! just a linear model. For fir, including plot as a random effect results in a marginally better AIC, but probably not worth it.
+
+This may mean that I can just use a regular GLM with gamma distribution, but I don't know how to test whether this model is better than the log-transformed linear model.
+
+### Test assumptions of linear model
+
+If I am going to use the simple linear model with a log transformation, I should check the residuals for even variance. Unfortunately, I don't really like the looks of the residuals, especially for redwood.
+
+```{r}
+
+lmods <- map(d_split, ~lm(ba_inc_scaled_log ~ dbh * treatment + cr, data = .x))
+
+plot(predict(lmods$SESE3), resid(lmods$SESE3))
+plot(predict(lmods$PSMEM), resid(lmods$PSMEM))
+```
+
+If it turns out that the effect of plot does not really need to be accounted for, then maybe it would be acceptable to just fit a glm for most recent growth increment without any random effects. I'm using just a scaled response now.
+
+```{r}
+
+glmods <- map(d_split,
+  ~glm(ba_inc_scaled ~ dbh * treatment + cr, data = .x), family = Gamma(link = "log")
+  )
+
+plot(predict(glmods$SESE3), resid(glmods$SESE3, type = "deviance"))
+plot(predict(glmods$PSMEM), resid(glmods$PSMEM, type = "deviance"))
+
+```
+
+Here, I think that I [should not be seeing a pattern in the residuals][gamma residuals], but I am, so maybe this GLM model is also not appropriate. 
+
+[gamma residuals](https://stats.stackexchange.com/questions/390063/what-are-the-assumptions-of-a-gamma-glm-or-glmm-for-hypothesis-testing)
+
+### Both years
+
+I'll test models with both years, this will necessitate trying different random effects and fixed effects to account for non-independence and quantify the effect of year.
+
+```{r}
+
+d_split2 <- test_d %>%
+  group_by(spp) %>%
+  mutate(
+    ba_inc_scaled_log = log(ba_inc1 - min(ba_inc1) + 1),
+    ba_inc_scaled = ba_inc1 - min(ba_inc1) + 1
+  ) %>%
+  split(~ spp)
+
+```
+
+
+Here I'll split just by species and determine if interactions with year are important. For psme, including interaction between year and dbh alone is slightly better including more interactions with dbh, the difference is marginal, but the model is simpler.
+
+```{r}
+d_split2 <- split(test_d, ~spp)
+
+
+
+aic_out2 <- map(d_split2, ~ get_aic(form_list2, data = .x, method = "glm"))
+aic_out2
+```
+
+## Exploring marginal means of the most useful model
+
+Based on the above, inclusion of interactions when considering a model with treatment and year, do not have lower AIC. I'll use:
+
+`ba_inc1 + scale_val ~ dbh + treatment + year + (1 | plot)`
+
+NOTE: Do we really care about year (first 5-year period or second), while it is true that there could be an different treatment effect for each year and even that this effect could vary by treatment (interaction), it seems as though the question we are trying to answer is dealing with long-term consequences. For instance, if we could report that a treatment had a strong effect, but only for 5 years and this effect is not persistent, than is it relevant to us? In writing this I realize that if a treatment is only "significant" in the second period, that could be important because it might suggest that there will be further long-term effects, whereas if a treatment is only important in the first period, then it may not really be that important after all.
+
+```{r}
+m7a <- glmer(
+  I(ba_inc1 + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
+  family = Gamma(link = "log"),
+  data = d_split$SESE3
+)
+m7b <- glmer(
+  I(ba_inc1 + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
+  family = Gamma(link = "log"),
+  data = d_split2$PSMEM
+)
+summary(m7a)
+summary(m7b)
+```
+
+Here are pairwise comparisons for SESE, followed by PSME. low intensity is no different than control and high thinning is no different than low thinning.
+
+```{r}
+
+a_mean <- emmeans(m7a, ~ treatment + year)
+
+# learning about back-transforming mean and SE
+# it seems like using the "response" scale is working after all
+emmeans(m7a, ~ treatment + year) %>% 
+  as_tibble() %>%
+  mutate(
+    response = exp(emmean) - scale_val,
+    se_response = exp(SE) - scale_val
+  )
+emmeans(m7a, ~ treatment + year, type = "response")
+
+b_mean <- emmeans(m7b, ~ treatment + year)
+pairs(a_mean)
+contrast(a_mean)
+
+```
+
+Here is the trend from one period to the other. Its a little strange how consistent it is for each treatment. Climate effects? Or Is 
+
+```{r}
+
+emmip(m7a, treatment ~ year)
+emmip(m7b, treatment ~ year)
+
+
+emmeans(m7a, pairwise ~ treatment)
+emmeans(m7b, pairwise ~ treatment)
+
+```

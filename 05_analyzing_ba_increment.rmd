@@ -577,7 +577,7 @@ plot(predict(glm_mod), resid(glm_mod, type = "deviance"))
 
 ```
 
-## Chosen full model regression table and marginal means
+# Estimated marginal means and regression table of selected model
 
 First I choose a model from above based on parsimony and AICc:
 
@@ -586,9 +586,12 @@ First I choose a model from above based on parsimony and AICc:
 ba_inc_mod <- ba_inc_lmm
 
 summary(ba_inc_lmm)
+
 ```
 
-# Estimated marginal means of selected model
+```{r}
+sjPlot::tab_model(ba_inc_mod, dv.labels = "BA increment")
+```
 
 Here I get the marginal estimates and pairwise comparisons for the selected model. If interaction with species and treatment was not included in the model, than we can't compare redwood and douglas-fir response in each treatment.
 

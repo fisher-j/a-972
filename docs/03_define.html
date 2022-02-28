@@ -297,6 +297,7 @@ $(document).ready(function () {
 <li><a href="#define-utm-coordinates-for-each-tree">Define UTM coordinates for each tree</a></li>
 <li><a href="#structural-diversity-sci">Structural diversity SCI</a></li>
 <li><a href="#standardize-crown-ratio">Standardize crown ratio</a></li>
+<li><a href="#calculate-plot-sdi">Calculate plot SDI</a></li>
 <li><a href="#update-post-harvest-data">Update post-harvest data</a></li>
 </ul>
 </div>
@@ -329,15 +330,18 @@ nrow(filter(group_by(d_l, tree_id), any(!live &amp; lead(live))))</code></pre>
 </div>
 <div id="define-diameter-basal-area-and-height-increment" class="section level2">
 <h2>Define diameter, basal area, and height increment</h2>
-<p>I looked at increment earlier to try to suss out bad dbh entries. Here I will add annual height, diameter and basal area increments to the long-form dataset.</p>
+<p>Here I will add annual height, diameter and basal area increments to the dataset. Increment will be defined on the observation level, meaning that it must apply to either the first or second measurement. This is significant for modeling, as I will be predicting an increment based on one period’s dbh observation. I’ll add increment data to both the beginning and ending observations to facilitate modeling based on either observation. *_inc1 will be assigned to the first measurement (refers to subsequent measurement) and *_inc2 will be assigned to the second (refers to previous measurement).</p>
 <pre class="r"><code># Add diameter increment data and update post-harvest data
 d_l &lt;- d_l %&gt;%
   group_by(tree_id) %&gt;%
   mutate(
-    d_inc = (dbh - lag(dbh, order_by = year)) / 5,
-    ht_inc = (ht - lag(ht, order_by = year)) / 5,
     ba = pi * (dbh / 2)^2,
-    ba_inc = (ba - lag(ba, order_by = year)) / 5
+    d_inc2 = (dbh - lag(dbh, order_by = year)) / 5,
+    ht_inc2 = (ht - lag(ht, order_by = year)) / 5,
+    ba_inc2 = (ba - lag(ba, order_by = year)) / 5,
+    d_inc1 = (lead(dbh, order_by = year) - dbh) / 5,
+    ht_inc1 = (lead(ht, order_by = year) - ht) / 5,
+    ba_inc1 = (lead(ba, order_by = year) - ba) / 5
   ) %&gt;%
   ungroup()</code></pre>
 </div>
@@ -352,18 +356,29 @@ d_l &lt;- d_l %&gt;%
 </div>
 <div id="structural-diversity-sci" class="section level2">
 <h2>Structural diversity SCI</h2>
-<pre class="r"><code>library(geometry)
-# calculate within plot coordinates, plot center = origin
+<p>After some experimentation, I determined that ingrowth does have an effect on SCI, especially for the more intense thinnings, supposedly because they let in more light and encourage more understory initiation.</p>
+<p>I also confirmed that the SCI function works the same regardless of whether coordinates are plot coordinates or UTM coordinates.</p>
+<pre class="r"><code># calculate within plot coordinates, plot center = origin
 # this does not work with missing values currently.
-# d_l %&gt;%
-#   group_by(plot, year) %&gt;%
-#   mutate(
-#     circular2xy(h_dist, azi),
-#     sci_ht = sci_metric(x, y, ht),
-#     sci_d = sci_metric(x, y, dbh)
-#   ) %&gt;%
-#   arrange(plot, year)
-# temp &lt;- d_l %&gt;% filter(plot == &quot;1H40&quot;, year == &quot;18&quot;) %&gt;% select(h_dist, azi, ht, dbh)</code></pre>
+calc_sci &lt;- function(data, metric) {
+  data %&gt;%
+    group_by(treatment, year, plot) %&gt;%
+    mutate(
+      &quot;sci_{{metric}}&quot; := sci_metric(x, y, {{metric}}),
+    )
+}
+
+ci &lt;- function(x) {
+  LB &lt;- mean(x) - sd(x) / sqrt(length(x) - 1)
+  UB &lt;- mean(x) + sd(x) / sqrt(length(x) - 1)
+  data.frame(LB = LB, UB = UB)
+}
+summary_sci &lt;- function(data) {
+  data %&gt;%
+  calc_sci(dbh) %&gt;%
+  summarise(across(starts_with(&quot;sci&quot;), first)) %&gt;%
+  summarise(across(starts_with(&quot;sci&quot;), list(mean, ci)))
+}</code></pre>
 </div>
 <div id="standardize-crown-ratio" class="section level2">
 <h2>Standardize crown ratio</h2>
@@ -380,6 +395,14 @@ d_l &lt;- d_l %&gt;%
       TRUE                 ~ cr
     )
   )</code></pre>
+</div>
+<div id="calculate-plot-sdi" class="section level2">
+<h2>Calculate plot SDI</h2>
+<p>For “live” trees only</p>
+<pre class="r"><code>d_l &lt;- d_l %&gt;%
+  group_by(plot) %&gt;%
+  mutate(sdi_plot = sum(12.5 * (dbh * live / 25.4)^1.605, na.rm = TRUE)) %&gt;%
+  ungroup()</code></pre>
 </div>
 <div id="update-post-harvest-data" class="section level2">
 <h2>Update post-harvest data</h2>

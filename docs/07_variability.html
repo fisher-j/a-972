@@ -294,7 +294,7 @@ $(document).ready(function () {
 <p>Here are boxplots showing the variability in 2018 of some potentially important variables.</p>
 <pre class="r"><code>p_h %&gt;%
   filter(year == &quot;18&quot;) %&gt;%
-  select(treatment, spp, dbh, ht, cr, ht_inc) %&gt;%
+  select(treatment, spp, dbh, ht, cr, ht_inc2) %&gt;%
   pivot_longer(
     !c(treatment, spp),
     names_to = &quot;measure&quot;,
@@ -305,8 +305,6 @@ $(document).ready(function () {
     facet_wrap(~ measure, scales = &quot;free_y&quot;)</code></pre>
 <pre><code>## Warning: Removed 3021 rows containing non-finite values (stat_boxplot).</code></pre>
 <p><img src="07_variability_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
-<pre class="r"><code>boxplot(dbh ~ plot, data = p_h[p_h$year == &quot;18&quot;, ])</code></pre>
-<p><img src="07_variability_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 
 
 

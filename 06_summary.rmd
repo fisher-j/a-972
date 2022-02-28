@@ -409,7 +409,6 @@ fig_data <- bind_rows(
   tibble(spp = "PSMEM", get_measures(species = "PSMEM"))
 )
 
-f
 # choose which stand summary variables to include
 fig_include_vars <- c("density", "dbh", "ba", "ht_p")
 

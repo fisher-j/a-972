@@ -299,14 +299,31 @@ $(document).ready(function () {
 <li><a href="#data-exploration">Data exploration</a>
 <ul>
 <li><a href="#outliers">Outliers</a></li>
+<li><a href="#negative-values">Negative values</a></li>
 <li><a href="#crown-ratio">Crown ratio</a></li>
 <li><a href="#plotting-data">Plotting data</a></li>
+<li><a href="#evidence-that-my-response-is-not-normally-distributed">Evidence that my response is not normally distributed?</a></li>
+<li><a href="#change-in-ba-inc-over-years-at-tree-level">Change in ba-inc over years at tree level</a></li>
 </ul></li>
-<li><a href="#exploring-models">Exploring models</a>
+<li><a href="#modeling">Modeling</a>
 <ul>
-<li><a href="#basic-model-form">Basic model form</a></li>
-<li><a href="#modeling-with-subsets">Modeling with subsets</a></li>
-<li><a href="#exploring-marginal-means-of-the-most-useful-model">Exploring marginal means of the most useful model</a></li>
+<li><a href="#basic-model-forms">Basic model forms</a></li>
+<li><a href="#moving-forward-with-log---log-model-mixed-effects">Moving forward with log - log model: Mixed effects</a></li>
+<li><a href="#log-log-model-fixed-effects">log-log model fixed effects</a></li>
+<li><a href="#what-does-all-model-selection-have-to-say">What does all model selection have to say?</a></li>
+</ul></li>
+<li><a href="#is-a-glm-going-to-work">Is a glm going to work?</a></li>
+<li><a href="#estimated-marginal-means-and-regression-table-of-selected-model">Estimated marginal means and regression table of selected model</a></li>
+<li><a href="#model-validation">Model validation</a>
+<ul>
+<li><a href="#best-model-validation">Best model validation</a></li>
+<li><a href="#residual-vs-fitted">Residual vs fitted</a></li>
+<li><a href="#homogeneity-of-random-group-residuals">Homogeneity of random group residuals</a></li>
+<li><a href="#normality-of-residuals">Normality of residuals</a>
+<ul>
+<li><a href="#leverage-and-cooks-distance">Leverage and Cooks distance</a></li>
+<li><a href="#random-effects-distribution">Random effects distribution</a></li>
+</ul></li>
 </ul></li>
 </ul>
 </div>
@@ -320,67 +337,94 @@ library(patchwork)</code></pre>
 </div>
 <div id="define-trees-of-interest" class="section level1">
 <h1>Define trees of interest</h1>
-<p>For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements. I am excluding bear damaged trees.</p>
+<p>For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements. I am excluding bear damaged trees. Increment for a period will be assigned to the beginning of period observation. This means I will want to exclude observations in which a tree is damaged by bear in this or a subsequent observation.</p>
+<p>I am including trees with dead or broken tops when they didn’t lose more than 25% of their initial height. This is only about 25 trees. There are many more with broken tops that are missing heights, but histograms of the diameter increment of these suggest that they are not that different from the set of trees that have heights.</p>
+<p>I’m also filtering out observations that don’t have crown ratio, this loses 1 redwood in the L40 treatment, dropping observations from 10 to 9, as well as losing 10 redwood in H80, but this is less of a problem. If CR proves not useful, I will remove this constraint.</p>
+<p>I’m also removing trees with less than -0.2 (negative) diameter increment</p>
 <pre class="r"><code>test_d &lt;- d_l %&gt;%
-  # calculate SDI for each plot (additive method)
-  group_by(plot) %&gt;%
-  mutate(sdi_plot = sum(12.5 * (dbh / 25.4)^1.605, na.rm = TRUE)) %&gt;%
-  ungroup() %&gt;%
+  group_by(tree_id) %&gt;%
   # only use unbroken live sese or psme from 2018
   filter(
+    d_inc1 &gt;= -0.2,
+    # remove trees that lost more than 25% of height
+    is.na(ht_inc1) | (ht_inc1 * 5 / ht) &gt; -1/4,
     spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;),
-    year %in% c(&quot;18&quot;, &quot;13&quot;),
-    status == 1,
-    !get_cond(2, 3),
-    !is.na(dbh)
+    year %in% c(&quot;08&quot;, &quot;13&quot;),
+    # Live and doesn&#39;t die by next period
+    status == 1 &amp; lead(status == 1),
+    !is.na(dbh),
+    # bear free this period and next
+    !bear &amp; lead(!bear),
+    !is.na(cr)
   ) %&gt;%
   mutate(
     treat_method = str_extract(treatment, &quot;C|H|L&quot;),
     treat_density = str_extract(treatment, &quot;C|40|80&quot;),
     treat_status = if_else(str_detect(treatment, &quot;C&quot;), &quot;unthinned&quot;, &quot;thinned&quot;),
-    year = factor(year, levels = c(&quot;13&quot;, &quot;18&quot;), ordered = FALSE)
+    year = as.character(year)
   ) %&gt;%
-  mutate(year = factor(year, ordered = FALSE)) %&gt;%
-  select(-c(h_dist, azi, status, rot, cc, x, y, live))
+  select(-c(h_dist, azi, rot, cc, x, y, live)) %&gt;%
+  # add a scaled ba_inc1 variable for convenience
+  ungroup() %&gt;%
+  mutate(ba_inc_scaled = (ba_inc1 - min(ba_inc1) + 1)) 
 
-# Remove bear damaged trees
-test_d_bear &lt;- test_d
-test_d &lt;- test_d[test_d$bear == FALSE, ]
-
-# Alter one outlier record by using data from previous year
+# Alter one outlier record in year 2013 by using data from previous year
 big_tree &lt;- &quot;4H80.4019&quot;
 replacement_data &lt;- filter(test_d, tree_id == big_tree, year == &quot;13&quot;) %&gt;%
-  mutate(
-    dbh = dbh + d_inc * 5,
-    d_inc = d_inc,
-    ba = ba + ba_inc * 5,
-    ba_inc = ba_inc
+  transmute(
+    dbh = dbh,
+    d_inc1 = d_inc2,
+    ba = ba,
+    ba_inc1 = ba_inc2,
   )
-bad_rec &lt;- with(test_d, which(tree_id == big_tree &amp; year == &quot;18&quot;))
+bad_rec &lt;- with(test_d, which(tree_id == big_tree &amp; year == &quot;13&quot;))
 test_d[bad_rec, names(replacement_data)] &lt;- replacement_data
 
 display_vars &lt;- function(x) {
-  select(x, c(tree_id, year, dbh, ht, bear, cr, notes, cond, d_inc, ba_inc))
+  select(x, c(tree_id, year, dbh, ht_p, bear, cr, notes, cond, d_inc1, ba_inc1))
 }</code></pre>
-<p>Number of redwoods and Douglas fir trees in each plot and each treatment. Not including bear damaged trees.</p>
+<pre class="r"><code>ggplot() +
+  geom_density(
+    data = filter(test_d, !is.na(ht_inc1)), 
+    aes(x = d_inc1, fill = &quot;heights available&quot;), alpha = 0.5) +
+  geom_density(
+    data = filter(test_d, is.na(ht_inc1)),
+    aes(x = d_inc1, fill = &quot;heights NA&quot;), alpha = 0.5) +
+  # geom_histogram(
+  #   data = filter(test_d, !get_cond(2, 3), !lead(get_cond(2, 3))),
+  #   aes(fill = &quot;unbroken&quot;), alpha = 0.5)
+  labs(x = &quot;diameter increment&quot;, y = &quot;Density&quot;, fill = NULL)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p>I also need to have a scaling value for making response non-negative for log transformation which will be defined as</p>
+<p><code>-(min(ba_inc1)) + 1</code></p>
+<p>for convenience, I computed a new response variable based on this value called <code>ba_inc_scaled</code></p>
+<pre class="r"><code>scale_val &lt;- -min(test_d$ba_inc1) + 1</code></pre>
+<p>Number of redwoods and Douglas fir trees in each plot and each treatment. I have a little problem with sample size when it comes to redwood. Some plots have zero or one observation. It seems like bears took a tole on the</p>
 <pre class="r"><code>test_d %&gt;%
   group_by(plot) %&gt;%
-  filter(year == &quot;18&quot;) %&gt;%
   mutate(n_sese = sum(spp == &quot;SESE3&quot;)) %&gt;%
-  ggplot(aes(fct_reorder(plot, n_sese))) +
+  group_by(treatment) %&gt;%
+  mutate(n_sese_treat = sum(spp == &quot;SESE3&quot;)) %&gt;%
+  arrange(desc(n_sese_treat), desc(n_sese)) %&gt;%
+  ggplot(aes(fct_inorder(plot))) +
     geom_bar(aes(fill = spp)) +
     geom_text(
       aes(label = after_stat(count), group = spp),
       stat = &quot;count&quot;,
       position = position_stack(vjust = .5)
     ) +
-    scale_fill_manual(values = palette())</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+    facet_wrap(~year) +
+    coord_flip() +
+    scale_fill_manual(values = palette()) +
+    labs(x = &quot;Plots, nested within treatments&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
 <pre class="r"><code>test_d %&gt;%
-  group_by(treatment) %&gt;%
-  filter(year == &quot;18&quot;) %&gt;%
+  group_by(plot) %&gt;%
   mutate(n_sese = sum(spp == &quot;SESE3&quot;)) %&gt;%
-  ggplot(aes(fct_reorder(treatment, n_sese))) +
+  group_by(treatment) %&gt;%
+  mutate(n_sese_treat = sum(spp == &quot;SESE3&quot;)) %&gt;%
+  arrange(desc(n_sese_treat), desc(n_sese)) %&gt;%
+  ggplot(aes(fct_reorder(treatment, n_sese, .desc = TRUE))) +
     geom_bar(aes(fill = spp)) +
     geom_text(
       aes(label = after_stat(count),
@@ -388,21 +432,24 @@ display_vars &lt;- function(x) {
       stat = &quot;count&quot;,
       position = position_stack(vjust = .5)
     ) +
+    facet_wrap(~year) +
+    coord_flip() +
     scale_fill_manual(values = palette())</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-3-2.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-5-2.png" width="672" /></p>
 </div>
 <div id="data-exploration" class="section level1">
 <h1>Data exploration</h1>
 <div id="outliers" class="section level2">
 <h2>Outliers</h2>
 <p>Here I’m looking for any outliers in basal area increment, or extreme changes. There are definitely basal area outliers some of the most extreme can be explained by having bear damage, but on average, bear-damaged trees have diameter increments almost double those of non-bear-damaged. It is unclear whether this is due to loose bark, or the fact that these trees tend to be faster growing. This question might need further investigation. Following Dagley et. al 2018, I will remove bear damaged trees from analysis. Another option could be including bear damage as a covariate.</p>
+<p><em>Note, I have already removed increments less than -0.2 and adjusted one large tree with extrememe growth using its first increment</em></p>
 <pre class="r"><code># outliers defined as 1.5 times above or below IQR
 test_d %&gt;%
   filter(
-    out(ba_inc)
+    out(ba_inc1)
   ) %&gt;%
   group_by(tree_id) %&gt;%
-  arrange(ba_inc) %&gt;%
+  arrange(ba_inc1) %&gt;%
   display_vars %&gt;%
   color_groups()</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -420,7 +467,7 @@ year
 dbh
 </th>
 <th style="text-align:right;">
-ht
+ht_p
 </th>
 <th style="text-align:left;">
 bear
@@ -435,23 +482,23 @@ notes
 cond
 </th>
 <th style="text-align:right;">
-d_inc
+d_inc1
 </th>
 <th style="text-align:right;">
-ba_inc
+ba_inc1
 </th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align:left;">
-C1.4180
+C2.4303
 </td>
 <td style="text-align:left;">
-18
+13
 </td>
 <td style="text-align:right;">
-52.324
+34.798
 </td>
 <td style="text-align:right;">
 28.34502
@@ -460,7 +507,887 @@ C1.4180
 FALSE
 </td>
 <td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+frass
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.1176
+</td>
+<td style="text-align:right;">
+65.99358
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H80.3821
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+33.274
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.60195
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+frass
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1684
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+66.42935
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.1864
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+41.402
+</td>
+<td style="text-align:right;">
+26.82109
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:left;">
+frass
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+0.9652
+</td>
+<td style="text-align:right;">
+66.42935
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L80.1958
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+41.402
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.60195
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+frass; BD healed
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.9652
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+66.42935
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40.3269
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+35.052
+</td>
+<td style="text-align:right;">
+24.38281
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+frass; small scar at base
+</td>
+<td style="text-align:left;">
+9
+</td>
+<td style="text-align:right;">
+1.1176
+</td>
+<td style="text-align:right;">
+66.43948
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C1.4205
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35.306
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.68760
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1176
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+66.88539
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C4.4602
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+39.370
+</td>
+<td style="text-align:right;">
+28.64980
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:right;">
+1.0160
+</td>
+<td style="text-align:right;">
+66.88539
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.3208
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30.480
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.24931
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2700
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+67.13874
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4H40.3915
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+32.258
+</td>
+<td style="text-align:right;">
+26.21152
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.2192
+</td>
+<td style="text-align:right;">
+67.61505
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.3222
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+39.878
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.68760
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+frass
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0160
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+67.69612
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4H80.4007
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+35.814
+</td>
+<td style="text-align:right;">
+23.46845
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.1176
+</td>
+<td style="text-align:right;">
+67.77719
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H80.3982
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+51.054
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+28.64980
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+frass
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.8128
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+67.77719
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2L40.3490
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+34.290
+</td>
+<td style="text-align:right;">
+31.08808
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+FRASS
+</td>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:right;">
+1.1684
+</td>
+<td style="text-align:right;">
+68.29403
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3671
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40.386
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.56416
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1,4,22
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0160
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+68.50685
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L80.3435
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+40.386
+</td>
+<td style="text-align:right;">
+24.38281
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+4
+</td>
+<td style="text-align:right;">
+1.0160
+</td>
+<td style="text-align:right;">
+68.50685
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C1.4231
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+48.514
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.82109
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.8636
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+68.73994
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H40.3003
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+40.640
+</td>
+<td style="text-align:right;">
+25.90674
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:right;">
+1.0160
+</td>
+<td style="text-align:right;">
+68.91222
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3.4540
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+43.688
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31.08808
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.9652
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+69.89523
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H80.3574
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+27.940
+</td>
+<td style="text-align:right;">
+24.38281
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.4224
+</td>
+<td style="text-align:right;">
+70.37153
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L80.3302
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+33.782
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.85888
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2192
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+70.53368
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.4053
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+46.990
+</td>
+<td style="text-align:right;">
+25.29717
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+0.9144
+</td>
+<td style="text-align:right;">
+70.77690
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H40.3027
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+41.910
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.90674
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4,22
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0160
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+70.93905
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C4.4635
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+35.814
+</td>
+<td style="text-align:right;">
+28.34502
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+frass
+</td>
+<td style="text-align:left;">
+1
+</td>
+<td style="text-align:right;">
+1.1684
+</td>
+<td style="text-align:right;">
+71.09106
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H80.4029
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+47.244
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.43066
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+frass
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.9144
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+71.14173
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H80.3159
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+50.292
+</td>
+<td style="text-align:right;">
+26.82109
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+old bear damage
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+0.8636
+</td>
+<td style="text-align:right;">
+71.15186
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H40.1911
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32.512
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.90674
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2700
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+71.19240
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.1862
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+27.178
+</td>
+<td style="text-align:right;">
+20.72539
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.4732
+</td>
+<td style="text-align:right;">
+71.41535
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3644
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+38.100
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+28.95459
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1176
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+71.79032
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C1.4180
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+47.752
+</td>
+<td style="text-align:right;">
+26.51631
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
 </td>
 <td style="text-align:left;">
 NA
@@ -476,64 +1403,65 @@ NA
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-C1.4179
+4L40.3277
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-50.292
+34.798
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-26.82109
+22.24931
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-30
+25
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
+will be measure with 3276 nest time
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
+3,6
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-0.9652
+1.2204
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-72.59091
+72.55653
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-C1.4169
+C1.4179
 </td>
 <td style="text-align:left;">
-13
+08
 </td>
 <td style="text-align:right;">
-58.928
+45.466
 </td>
 <td style="text-align:right;">
-26.82109
+24.38281
 </td>
 <td style="text-align:left;">
 FALSE
 </td>
 <td style="text-align:right;">
-30
+35
 </td>
 <td style="text-align:left;">
-BD grown over
+NA
 </td>
 <td style="text-align:left;">
 </td>
 <td style="text-align:right;">
-0.8128
+0.9652
 </td>
 <td style="text-align:right;">
-72.64158
+72.59091
 </td>
 </tr>
 <tr>
@@ -541,22 +1469,22 @@ BD grown over
 1L40.3664
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-18
+13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-44.196
+38.608
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
+24.68760
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
+30
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
+frass
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 4,22
@@ -573,22 +1501,22 @@ NA
 1H80.3574
 </td>
 <td style="text-align:left;">
-18
+13
 </td>
 <td style="text-align:right;">
-41.148
+35.052
 </td>
 <td style="text-align:right;">
-30.17373
+27.73545
 </td>
 <td style="text-align:left;">
 FALSE
 </td>
 <td style="text-align:right;">
-NA
+20
 </td>
 <td style="text-align:left;">
-NA
+frass
 </td>
 <td style="text-align:left;">
 22
@@ -601,48 +1529,17 @@ NA
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 3L40.3212
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-44.704
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-28.64980
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-30
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-flagged from raking; frass
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1176
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-73.57393
-</td>
-</tr>
-<tr>
 <td style="text-align:left;">
-1H40.3029
-</td>
-<td style="text-align:left;">
-13
+08
 </td>
 <td style="text-align:right;">
-46.736
+39.116
 </td>
 <td style="text-align:right;">
-29.56416
+25.90674
 </td>
 <td style="text-align:left;">
 FALSE
@@ -651,59 +1548,57 @@ FALSE
 35
 </td>
 <td style="text-align:left;">
-illegible note
+X
 </td>
 <td style="text-align:left;">
-22
 </td>
 <td style="text-align:right;">
-1.0668
+1.1176
 </td>
 <td style="text-align:right;">
-73.84755
+73.57393
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-1L40.3670
+1H40.3029
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-13
+08
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-43.180
+41.402
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-27.43066
+26.21152
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-30
+35
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
+X
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-22
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1684
+1.0668
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-73.88808
+73.84755
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-3H40.1856
+1L40.3670
 </td>
 <td style="text-align:left;">
-18
+08
 </td>
 <td style="text-align:right;">
-40.386
+37.338
 </td>
 <td style="text-align:right;">
 27.73545
@@ -712,113 +1607,175 @@ NA
 FALSE
 </td>
 <td style="text-align:right;">
-35
+30
 </td>
 <td style="text-align:left;">
-NA
+X
 </td>
 <td style="text-align:left;">
 </td>
 <td style="text-align:right;">
-1.2700
+1.1684
 </td>
 <td style="text-align:right;">
-74.23265
+73.88808
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-1L40.3662
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-46.990
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-22
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.0668
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-74.27318
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3H40.1860
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-41.910
-</td>
-<td style="text-align:right;">
-22.85888
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-35
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-1.2192
-</td>
-<td style="text-align:right;">
-74.42519
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L40.3679
+3H40.1856
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-43.688
+34.036
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-28.04023
+24.07803
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-25
+35
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 frass
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2700
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+74.23265
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L40.3662
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+41.656
+</td>
+<td style="text-align:right;">
+27.12588
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
 22
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1684
+<td style="text-align:right;">
+1.0668
+</td>
+<td style="text-align:right;">
+74.27318
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H40.1860
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+35.814
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.81103
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2192
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+74.42519
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L40.3679
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+37.846
+</td>
+<td style="text-align:right;">
+26.51631
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.1684
+</td>
+<td style="text-align:right;">
 74.82043
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3059
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.990
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.55410
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3,6
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.9652
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+74.90150
 </td>
 </tr>
 <tr>
@@ -826,25 +1783,24 @@ frass
 2L40.3485
 </td>
 <td style="text-align:left;">
-18
+13
 </td>
 <td style="text-align:right;">
-37.084
+29.972
 </td>
 <td style="text-align:right;">
-29.56416
+27.43066
 </td>
 <td style="text-align:left;">
 FALSE
 </td>
 <td style="text-align:right;">
-NA
+20
 </td>
 <td style="text-align:left;">
-NA
+FRASS
 </td>
 <td style="text-align:left;">
-22
 </td>
 <td style="text-align:right;">
 1.4224
@@ -858,19 +1814,19 @@ NA
 1H80.3528
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-18
+13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-43.942
+38.100
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-31.69765
+29.25937
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-25
+30
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
@@ -886,16 +1842,78 @@ NA
 </tr>
 <tr>
 <td style="text-align:left;">
-1L80.3405
+2L40.3510
 </td>
 <td style="text-align:left;">
-13
+08
 </td>
 <td style="text-align:right;">
-45.720
+33.274
 </td>
 <td style="text-align:right;">
-27.73545
+24.38281
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.3208
+</td>
+<td style="text-align:right;">
+75.88451
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C4.4601
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+45.212
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.07803
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SPLIT BELOW DBH
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0160
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+76.20880
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4H40.3957
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+33.528
+</td>
+<td style="text-align:right;">
+25.29717
 </td>
 <td style="text-align:left;">
 FALSE
@@ -904,7 +1922,258 @@ FALSE
 25
 </td>
 <td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.3208
+</td>
+<td style="text-align:right;">
+76.41149
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1L40.3670
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+43.180
+</td>
+<td style="text-align:right;">
+27.43066
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
 NA
+</td>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:right;">
+1.0668
+</td>
+<td style="text-align:right;">
+76.82699
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L80.3405
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+45.720
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.73545
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0160
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+77.01954
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40.3043
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+39.116
+</td>
+<td style="text-align:right;">
+26.21152
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.1684
+</td>
+<td style="text-align:right;">
+77.15128
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C4.4700
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+39.116
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.25937
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1684
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+77.15128
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C3.4446
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+45.974
+</td>
+<td style="text-align:right;">
+23.46845
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+old DBH
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.0160
+</td>
+<td style="text-align:right;">
+77.42490
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H40.3029
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.736
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.56416
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+illegible note
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+22
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0160
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+78.64100
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40.3956
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+36.576
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.21152
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.2700
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+79.29972
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.1875
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+43.434
+</td>
+<td style="text-align:right;">
+26.51631
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+X
 </td>
 <td style="text-align:left;">
 </td>
@@ -912,21 +2181,83 @@ NA
 1.1176
 </td>
 <td style="text-align:right;">
-75.35754
+81.15427
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-2L40.3510
+3L80.3380
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-39.878
+36.068
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-26.82109
+25.29717
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.3208
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+81.68125
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2L80.3728
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+31.750
+</td>
+<td style="text-align:right;">
+22.55410
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.4732
+</td>
+<td style="text-align:right;">
+81.99540
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L80.1932
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+55.118
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.56416
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
@@ -935,15 +2266,16 @@ FALSE
 25
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-FRASS
+frass; small wound at base
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
+4
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-1.3208
+0.9144
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-75.88451
+82.45144
 </td>
 </tr>
 <tr>
@@ -972,448 +2304,6 @@ FRASS
 4
 </td>
 <td style="text-align:right;">
-1.3208
-</td>
-<td style="text-align:right;">
-76.41149
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1L40.3670
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-48.514
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-22
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.0668
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-76.82699
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1L80.3405
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-50.800
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-1.0160
-</td>
-<td style="text-align:right;">
-77.01954
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H40.3043
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-44.958
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-26.51631
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1684
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-77.15128
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C4.4700
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-44.958
-</td>
-<td style="text-align:right;">
-30.17373
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-25
-</td>
-<td style="text-align:left;">
-may be alive?
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-1.1684
-</td>
-<td style="text-align:right;">
-77.15128
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-C3.4446
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-51.054
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.0160
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-77.42490
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1H40.3029
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-51.816
-</td>
-<td style="text-align:right;">
-32.30722
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-22
-</td>
-<td style="text-align:right;">
-1.0160
-</td>
-<td style="text-align:right;">
-78.64100
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1L80.3389
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-45.974
-</td>
-<td style="text-align:right;">
-27.12588
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-30
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1
-</td>
-<td style="text-align:right;">
-1.1684
-</td>
-<td style="text-align:right;">
-79.01596
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4H40.3956
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-42.926
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-29.25937
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.2700
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-79.29972
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4H40.3926
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-44.704
-</td>
-<td style="text-align:right;">
-25.29717
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-20
-</td>
-<td style="text-align:left;">
-BD healed over
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-1.2192
-</td>
-<td style="text-align:right;">
-79.77603
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3H40.1875
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-49.022
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-27.43066
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-frass
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1176
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-81.15427
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3L80.3380
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-42.672
-</td>
-<td style="text-align:right;">
-29.86894
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-1.3208
-</td>
-<td style="text-align:right;">
-81.68125
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2L80.3728
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-39.116
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-24.38281
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.4732
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-81.99540
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4L80.1932
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-59.690
-</td>
-<td style="text-align:right;">
-32.61201
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-25
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
-0.9144
-</td>
-<td style="text-align:right;">
-82.45144
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4H40.3957
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-46.228
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:right;">
 1.2192
 </td>
 <td style="text-align:right;">
@@ -1421,49 +2311,17 @@ NA
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3H40.3200
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-46.482
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1,4
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.2192
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-83.18110
-</td>
-</tr>
-<tr>
 <td style="text-align:left;">
-2H80.3159
+3H40.3200
 </td>
 <td style="text-align:left;">
 13
 </td>
 <td style="text-align:right;">
-50.292
+40.386
 </td>
 <td style="text-align:right;">
-26.82109
+27.43066
 </td>
 <td style="text-align:left;">
 FALSE
@@ -1472,15 +2330,48 @@ FALSE
 25
 </td>
 <td style="text-align:left;">
-old bear damage
+frass
 </td>
 <td style="text-align:left;">
+1,4
 </td>
 <td style="text-align:right;">
-1.1176
+1.2192
 </td>
 <td style="text-align:right;">
-83.38378
+83.18110
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C4.4601
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+50.292
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+28.95459
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+might have to measure as one tree with 4600 next remeasure
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1,3,6
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.0156
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+84.28133
 </td>
 </tr>
 <tr>
@@ -1488,22 +2379,22 @@ old bear damage
 2L80.3745
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-18
+13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-47.498
+41.148
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-31.69765
+28.34502
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-25
+20
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
+FRASS
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 1
@@ -1520,13 +2411,13 @@ NA
 3H40.1859
 </td>
 <td style="text-align:left;">
-18
+13
 </td>
 <td style="text-align:right;">
-38.100
+29.718
 </td>
 <td style="text-align:right;">
-21.00000
+19.81103
 </td>
 <td style="text-align:left;">
 FALSE
@@ -1535,7 +2426,7 @@ FALSE
 25
 </td>
 <td style="text-align:left;">
-NA
+limbs raked
 </td>
 <td style="text-align:left;">
 </td>
@@ -1547,227 +2438,8 @@ NA
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 1L40.3679
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-49.784
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-22
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.2192
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-89.50481
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.3149
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-53.848
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-26.51631
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1176
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-89.62642
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C1.4209
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-61.722
-</td>
-<td style="text-align:right;">
-27.73545
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-1,4,6
-</td>
-<td style="text-align:right;">
-0.9652
-</td>
-<td style="text-align:right;">
-89.92031
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H40.3081
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-54.356
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-29.56416
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1176
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-90.51822
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3L40.3212
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-50.800
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.2192
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-91.45057
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-3L40.3231
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-33.782
-</td>
-<td style="text-align:right;">
-19.20146
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-30
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-2.0320
-</td>
-<td style="text-align:right;">
-91.61271
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40.3247
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-55.118
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-29.86894
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-frass
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1176
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-91.85593
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2H40.3070
 </td>
 <td style="text-align:left;">
 13
@@ -1776,7 +2448,102 @@ frass
 43.688
 </td>
 <td style="text-align:right;">
-27.73545
+28.04023
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+frass
+</td>
+<td style="text-align:left;">
+22
+</td>
+<td style="text-align:right;">
+1.2192
+</td>
+<td style="text-align:right;">
+89.50481
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C1.4209
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+56.896
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.60195
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+triple top
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1,4,6
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.9652
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+89.92031
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40.3081
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+48.768
+</td>
+<td style="text-align:right;">
+26.51631
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.1176
+</td>
+<td style="text-align:right;">
+90.51822
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3L40.3212
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+44.704
+</td>
+<td style="text-align:right;">
+28.64980
 </td>
 <td style="text-align:left;">
 FALSE
@@ -1785,15 +2552,77 @@ FALSE
 30
 </td>
 <td style="text-align:left;">
-bear damage healed over
+flagged from raking; frass
 </td>
 <td style="text-align:left;">
 </td>
 <td style="text-align:right;">
-1.4732
+1.2192
 </td>
 <td style="text-align:right;">
-92.57546
+91.45057
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.3231
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.622
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+18.59189
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+raked crown
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.0320
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+91.61271
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40.3247
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+49.530
+</td>
+<td style="text-align:right;">
+28.04023
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.1176
+</td>
+<td style="text-align:right;">
+91.85593
 </td>
 </tr>
 <tr>
@@ -1801,19 +2630,19 @@ bear damage healed over
 2H40.3036
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-18
+13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-40.640
+32.512
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-23.16367
+20.72539
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
+25
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
@@ -1829,33 +2658,33 @@ NA
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 3H40.1860
 </td>
-<td style="text-align:left;">
-18
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
 </td>
-<td style="text-align:right;">
-48.514
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+41.910
 </td>
-<td style="text-align:right;">
-24.68760
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.85888
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
-<td style="text-align:right;">
-25
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 NA
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1.3208
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 93.80169
 </td>
 </tr>
@@ -1864,13 +2693,13 @@ NA
 3H40.4053
 </td>
 <td style="text-align:left;">
-13
+08
 </td>
 <td style="text-align:right;">
-46.990
+40.132
 </td>
 <td style="text-align:right;">
-25.29717
+25.60195
 </td>
 <td style="text-align:left;">
 FALSE
@@ -1879,7 +2708,7 @@ FALSE
 25
 </td>
 <td style="text-align:left;">
-NA
+tagged as 4053
 </td>
 <td style="text-align:left;">
 </td>
@@ -1891,98 +2720,127 @@ NA
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 2H40.3060
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
+<td style="text-align:left;">
+08
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-50.292
+<td style="text-align:right;">
+43.942
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-24.99238
+<td style="text-align:right;">
+23.77324
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 FALSE
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-15
+<td style="text-align:right;">
+30
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
+<td style="text-align:left;">
+X
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 1.2700
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
+<td style="text-align:right;">
 93.99424
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 3H40.1848
 </td>
-<td style="text-align:left;">
-18
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
 </td>
-<td style="text-align:right;">
-44.958
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+37.592
 </td>
-<td style="text-align:right;">
-30.47851
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.43066
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
-<td style="text-align:right;">
-35
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40
 </td>
-<td style="text-align:left;">
-NA
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+frass
 </td>
-<td style="text-align:left;">
-1
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1.4732
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 95.51436
 </td>
 </tr>
 <tr>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: #EEE9E9 !important;">
 4L80.1932
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+49.276
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.51631
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+ADVANCED REGEN
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.1684
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+95.79812
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40.3257
 </td>
 <td style="text-align:left;">
 13
 </td>
 <td style="text-align:right;">
-55.118
+39.878
 </td>
 <td style="text-align:right;">
-29.56416
+27.73545
 </td>
 <td style="text-align:left;">
 FALSE
 </td>
 <td style="text-align:right;">
-25
+20
 </td>
 <td style="text-align:left;">
-frass; small wound at base
+frass
 </td>
 <td style="text-align:left;">
-4
 </td>
 <td style="text-align:right;">
-1.1684
+1.4224
 </td>
 <td style="text-align:right;">
-95.79812
+97.04462
 </td>
 </tr>
 <tr>
@@ -2010,10 +2868,74 @@ NA
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-1.2192
+1.1684
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-95.82852
+102.79068
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3644
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+43.688
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+33.22158
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+23
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.4224
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+105.55730
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40.1875
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+49.022
+</td>
+<td style="text-align:right;">
+27.43066
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:left;">
+frass
+</td>
+<td style="text-align:left;">
+1
+</td>
+<td style="text-align:right;">
+1.3208
+</td>
+<td style="text-align:right;">
+108.55701
 </td>
 </tr>
 <tr>
@@ -2041,194 +2963,6 @@ NA
 <td style="text-align:left;">
 </td>
 <td style="text-align:right;">
-1.2700
-</td>
-<td style="text-align:right;">
-96.52777
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H40.3068
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-46.990
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-28.64980
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.4224
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-97.04462
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-4L40.3257
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-46.990
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-30
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-1.4224
-</td>
-<td style="text-align:right;">
-97.04462
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.3130
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-58.674
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-28.34502
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-35
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-old bear damage
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.1684
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-102.32451
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1L40.3644
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-50.800
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-4
-</td>
-<td style="text-align:left;">
-4,23
-</td>
-<td style="text-align:right;">
-1.4224
-</td>
-<td style="text-align:right;">
-105.55730
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-3H40.1875
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-55.626
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-30.17373
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-30
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.3208
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-108.55701
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-1L80.3393
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-58.166
-</td>
-<td style="text-align:right;">
-31.08808
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-NA
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
 1.3208
 </td>
 <td style="text-align:right;">
@@ -2237,16 +2971,142 @@ NA
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-2H40.3081
+4L80.1968
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-48.768
+41.910
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-26.51631
+19.81103
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+frass
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1,3,4,6
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.6256
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+117.39399
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3L40.1890
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+36.322
+</td>
+<td style="text-align:right;">
+27.43066
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:left;">
+frass
+</td>
+<td style="text-align:left;">
+1
+</td>
+<td style="text-align:right;">
+1.8288
+</td>
+<td style="text-align:right;">
+117.47506
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40.3060
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+50.292
+</td>
+<td style="text-align:right;">
+24.99238
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.4224
+</td>
+<td style="text-align:right;">
+120.31262
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40.3247
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+55.118
+</td>
+<td style="text-align:right;">
+29.86894
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:left;">
+frass
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.3208
+</td>
+<td style="text-align:right;">
+121.20443
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3087
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+38.100
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.38281
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
@@ -2255,70 +3115,69 @@ FALSE
 25
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
+X
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-1.6764
+1.8796
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-117.38385
+126.36271
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H80.3130
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+58.674
+</td>
+<td style="text-align:right;">
+28.34502
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:left;">
+old bear damage
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:right;">
+1.3208
+</td>
+<td style="text-align:right;">
+128.58209
 </td>
 </tr>
 <tr>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-3L40.1890
+2H40.3086
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-18
+08
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-45.466
+57.658
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
+25.60195
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
+25
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-1
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.8288
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-117.47506
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H40.3060
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-57.404
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
+X
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 </td>
@@ -2326,100 +3185,7 @@ NA
 1.4224
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-120.31262
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4L40.3247
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-61.722
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-35
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.3208
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-121.20443
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-2H40.3087
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-47.498
-</td>
-<td style="text-align:right;">
-25.29717
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-20
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-1.8796
-</td>
-<td style="text-align:right;">
-126.36271
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H80.3130
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-65.278
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-29.86894
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-FALSE
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-30
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.3208
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-128.58209
+136.77048
 </td>
 </tr>
 <tr>
@@ -2451,39 +3217,38 @@ frass
 1.4224
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-136.77048
+152.66083
 </td>
 </tr>
 <tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-2H40.3086
+<td style="text-align:left;">
+4H80.4019
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
+<td style="text-align:left;">
+08
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-71.882
+<td style="text-align:right;">
+53.340
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-28.64980
+<td style="text-align:right;">
+25.60195
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
+<td style="text-align:left;">
 FALSE
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-NA
+<td style="text-align:right;">
+35
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-NA
+<td style="text-align:left;">
+X
 </td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-4
+<td style="text-align:left;">
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-1.4224
+<td style="text-align:right;">
+1.7780
 </td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-152.66083
+<td style="text-align:right;">
+161.38633
 </td>
 </tr>
 <tr>
@@ -2517,166 +3282,243 @@ NA
 161.38633
 </td>
 </tr>
-<tr>
-<td style="text-align:left;">
-4H80.4019
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-71.120
-</td>
-<td style="text-align:right;">
-27.73545
-</td>
-<td style="text-align:left;">
-FALSE
-</td>
-<td style="text-align:right;">
-40
-</td>
-<td style="text-align:left;">
-NA
-</td>
-<td style="text-align:left;">
-</td>
-<td style="text-align:right;">
-1.7780
-</td>
-<td style="text-align:right;">
-161.38633
-</td>
-</tr>
 </tbody>
 </table>
 <pre class="r"><code># dot plot of outliers
 test_d %&gt;%
-  ggplot(aes(x = d_inc, y = fct_reorder(tree_id, d_inc))) +
+  ggplot(aes(x = ba_inc1, y = fct_reorder(tree_id, d_inc1))) +
     geom_line(aes(group = tree_id), alpha = .3) +
     geom_point(aes(color = year), alpha = .5) +
     scale_y_discrete(breaks = NULL, expand = expansion(add = 10)) +
     scale_color_manual(values = palette()) +
     guides(color = guide_legend(override.aes = list(shape = c(19, 19)))) +
     labs(
-      title = &quot;Bear damaged trees excluded&quot;,
-      x = &quot;diameter increment (cm)&quot;,
+      x = &quot;BA increment (cm)&quot;,
       y = &quot;tree id (sorted by diameter increment)&quot;
     )</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p>To put outliers in terms of ba_inc1 in context, if we look at the full dataset, including bear damaged trees, and plot <em>diameter</em> increment instead of basal area, then we see a more consistent gradient of diameter measurements.</p>
+<pre class="r"><code>d_l %&gt;%
+  filter(year %in% c(&quot;08&quot;, &quot;13&quot;), live) %&gt;%
+  ggplot(aes(x = d_inc1, y = fct_reorder(tree_id, d_inc1))) +
+    geom_line(aes(group = tree_id), alpha = .3) +
+    geom_point(aes(color = year), alpha = .5) +
+    scale_y_discrete(breaks = NULL, expand = expansion(add = 10)) +
+    scale_color_manual(values = palette()) +
+    guides(color = guide_legend(override.aes = list(shape = c(19, 19)))) +
+    labs(
+      x = &quot;diameter increment (cm)&quot;,
+      y = &quot;tree id ALL TREES (sorted by diameter increment)&quot;
+    )</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+</div>
+<div id="negative-values" class="section level2">
+<h2>Negative values</h2>
+<p>Here is a summary of the remaining negative diameter increment values.</p>
+<pre class="r"><code>local({
+  neg_ba_inc &lt;- test_d %&gt;% 
+    filter(ba_inc1 &lt; 0) %&gt;%
+    arrange(d_inc1) %&gt;%
+    pull(d_inc1) 
+  print(paste(&quot;N: &quot;, length(neg_ba_inc)))
+  summary(neg_ba_inc)
+})</code></pre>
+<pre><code>## [1] &quot;N:  58&quot;</code></pre>
+<pre><code>##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+## -0.15240 -0.10160 -0.05080 -0.06832 -0.05080 -0.05080</code></pre>
 </div>
 <div id="crown-ratio" class="section level2">
 <h2>Crown ratio</h2>
-<p>Crown ratio would be an important variable to include in a diameter increment model. Unfortunately, CR is missing for many trees—more than for heights:</p>
+<p>I’m going to test cr in the model, it doesn’t lose too many more observations by including it, if it doesn’t seem to be worth it, I might include those few observations back in the data.</p>
 <pre class="r"><code>test_d %&gt;%
-  group_by(year) %&gt;%
-  summarize(
-    &quot;missing height&quot; = sum(is.na(ht)),
-    &quot;missing cr&quot; = sum(is.na(cr))
-  ) %&gt;%
-  color_groups()</code></pre>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
-<caption>
-</caption>
-<thead>
-<tr>
-<th style="text-align:left;">
-year
-</th>
-<th style="text-align:right;">
-missing height
-</th>
-<th style="text-align:right;">
-missing cr
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:right;">
-1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-455
-</td>
-<td style="text-align:right;">
-674
-</td>
-</tr>
-</tbody>
-</table>
+  ggplot(aes(x = cr, fill = spp)) +
+    geom_bar() +
+    facet_wrap(~ year)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 </div>
 <div id="plotting-data" class="section level2">
 <h2>Plotting data</h2>
 <p>First I’ll look at distributions of the response:</p>
-<pre class="r"><code>hist(test_d$ba_inc, main = &quot;Basal area increment&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
-<pre class="r"><code>hist(log(test_d$ba_inc + 18), main = &quot;Log of basal area increment + constant&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-6-2.png" width="672" /></p>
-<pre class="r"><code>with(test_d, plot(dbh, ba_inc))</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-6-3.png" width="672" /></p>
+<pre class="r"><code>hist(test_d$ba_inc1, main = &quot;Basal area increment&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre class="r"><code>hist(log(test_d$ba_inc_scaled), main = &quot;Log of basal area increment + constant&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
+<pre class="r"><code>with(test_d, plot(dbh, ba_inc1))</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-3.png" width="672" /></p>
+<pre class="r"><code>hist(test_d$dbh, main = &quot;DBHt&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-4.png" width="672" /></p>
+<pre class="r"><code>hist(log(test_d$dbh + 18), main = &quot;Log of DBH&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-5.png" width="672" /></p>
+<p>relationship of ba_inc1 with dbh by species and year is not exactly linear, I will use a transformation or a GLM with a different distribution.</p>
+<pre class="r"><code>test_d %&gt;%
+  ggplot(aes(x = dbh, y = ba_inc1, color = spp)) +
+  geom_point(alpha = 0.3) +
+  facet_wrap(~ year) +
+  scale_color_manual(values = palette())</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<pre class="r"><code>test_d %&gt;%
+  ggplot(aes(x = (dbh), y = log(ba_inc_scaled), color = spp)) +
+  geom_point(alpha = 0.3) +
+  facet_wrap(~ year) +
+  scale_color_manual(values = palette())</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-11-2.png" width="672" /></p>
+<pre class="r"><code>test_d %&gt;%
+  ggplot(aes(x = log(dbh), y = (ba_inc1), color = spp)) +
+  geom_point(alpha = 0.3) +
+  facet_wrap(~ year) +
+  scale_color_manual(values = palette())</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-11-3.png" width="672" /></p>
+<pre class="r"><code>test_d %&gt;%
+  ggplot(aes(x = log(dbh), y = log(ba_inc_scaled), color = spp)) +
+  geom_point(alpha = 0.3) +
+  facet_wrap(~ year) +
+  scale_color_manual(values = palette())</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-11-4.png" width="672" /></p>
+<p>does crown ratio have a relationship with diameter increment?</p>
+<pre class="r"><code>test_d %&gt;%
+  ggplot(aes(cr, d_inc1), color = spp) +
+  geom_point() +
+  geom_smooth(method = &quot;lm&quot;) +
+  stat_cor()</code></pre>
+<pre><code>## `geom_smooth()` using formula &#39;y ~ x&#39;</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
 </div>
+<div id="evidence-that-my-response-is-not-normally-distributed" class="section level2">
+<h2>Evidence that my response is not normally distributed?</h2>
+<p>looking at 2-inch diameter classes, it would seem that ba_inc is not normally distributed by dbh.</p>
+<pre class="r"><code>d_l %&gt;%
+  filter(live, !bear, year %in% c(&quot;08&quot;, &quot;13&quot;)) %&gt;%
+  mutate(dbh_cut = cut_interval(dbh, length = 2)) %&gt;%
+  group_by(dbh_cut) %&gt;%
+  filter(n() &gt; 100) %&gt;%
+  ggplot(aes((ba_inc1))) +
+    geom_histogram() +
+    facet_wrap(~ dbh_cut, scales = &quot;free&quot;)</code></pre>
+<pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
 </div>
-<div id="exploring-models" class="section level1">
-<h1>Exploring models</h1>
-<div id="basic-model-form" class="section level2">
-<h2>Basic model form</h2>
-<p>Basal area increment is expected to vary by dbh. I’ll plot these by treatments, and or by year to assess relationship. In exploring the relationship between ba_inc and dbh I tried the following model forms:</p>
-<pre><code>model a: scaled_ba_inc = exp((dbh) * treatment * spp), gamma distribution
-model b: scaled_ba_inc = exp((dbh) * treatment * spp), gaussian distribution
-model c: log(ba_inc) = dbh * treatment * spp 
-model d: ba_inc = (log(dbh) + dbh) * treatment * spp</code></pre>
-<p>The scaling value was computed as <code>abs(min(ba_inc)) + 1</code></p>
-<pre class="r"><code>scale_val &lt;- with(test_d, abs(min(ba_inc)) + 1)
+<div id="change-in-ba-inc-over-years-at-tree-level" class="section level2">
+<h2>Change in ba-inc over years at tree level</h2>
+<p>We can see that in the control, relatively few redwood decreased in size. Few trees over all decreased in size in the H40 and L40 treatments, In the L80 treatment, few redwoods decreased in size, and many fir did. In the intense treatments (40’s) majority of trees increased in growth rate. Overall, there seems to be a species * treatment * year interaction</p>
+<pre class="r"><code>test_d %&gt;%
+  filter(ba_inc1 &lt; 150) %&gt;%
+  group_by(tree_id) %&gt;%
+  mutate(
+    increase = if_else(
+      any(ba_inc1 &gt; lag(ba_inc1), na.rm = TRUE),
+      &quot;BA inc. incresed&quot;,
+      &quot;BA inc. decreased&quot;
+      )
+   ) %&gt;%
+  ggplot(aes(year, ba_inc1, color = increase, group = tree_id)) +
+    geom_line(size = .8, alpha = .4) +
+    facet_wrap(~ treatment + spp) +
+    scale_x_discrete(expand = expansion(mult = 0.1)) +
+    scale_y_continuous(expand = expansion(mult = 0.01)) +
+    theme(legend.position = &quot;bottom&quot;) +
+    labs(color = NULL)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-14-1.png" width="864" /></p>
+<p>And what about at the plot level, can I discern any interactions between species, year and plot?</p>
+<pre class="r"><code>plot_bainc_change &lt;- function(treatment) {
+  test_d %&gt;%
+    filter(ba_inc1 &lt; 150, treatment == {{treatment}}) %&gt;%
+    group_by(tree_id) %&gt;%
+    mutate(increase = any(ba_inc1 &gt; lag(ba_inc1), na.rm = TRUE)) %&gt;%
+    ggplot(aes(year, ba_inc1, color = increase, group = tree_id)) +
+      theme(legend.position = &quot;bottom&quot;) +
+      geom_line(size = .8, alpha = .7) +
+      facet_grid(rows = vars(spp), cols = vars(plot)) +
+      scale_x_discrete(expand = expansion(mult = 0.1)) +
+      scale_y_continuous(expand = expansion(mult = 0.01))
+}
 
-m6a &lt;- glm(
-  I(ba_inc + scale_val) ~ dbh * treatment * spp,
+plot_bainc_change(&quot;C&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-15-1.png" width="960" /></p>
+<pre class="r"><code>plot_bainc_change(&quot;H40&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-15-2.png" width="960" /></p>
+<pre class="r"><code>plot_bainc_change(&quot;L40&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-15-3.png" width="960" /></p>
+<pre class="r"><code>plot_bainc_change(&quot;H80&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-15-4.png" width="960" /></p>
+<pre class="r"><code>plot_bainc_change(&quot;L80&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-15-5.png" width="960" /></p>
+</div>
+</div>
+<div id="modeling" class="section level1">
+<h1>Modeling</h1>
+<p>Is year significant for basal area increment? T-Test? It looks like year is close to significant for the higher intensity treatments.</p>
+<pre class="r"><code>test_d %&gt;%
+  group_by(treatment) %&gt;%
+  select(year, ba_inc1) %&gt;%
+  summarize(as.data.frame(t.test(ba_inc1 ~ year)[c(&quot;estimate&quot;, &quot;parameter&quot;, &quot;p.value&quot;)]))</code></pre>
+<pre><code>## Adding missing grouping variables: `treatment`</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;treatment&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## # A tibble: 10 x 4
+## # Groups:   treatment [5]
+##    treatment estimate parameter p.value
+##    &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
+##  1 C             11.5      524.  0.0142
+##  2 C             14.6      524.  0.0142
+##  3 H40           32.2      176.  0.0530
+##  4 H40           40.4      176.  0.0530
+##  5 H80           16.2      517.  0.609 
+##  6 H80           17.0      517.  0.609 
+##  7 L40           40.9      149.  0.0451
+##  8 L40           47.1      149.  0.0451
+##  9 L80           15.6      516.  0.305 
+## 10 L80           17.1      516.  0.305</code></pre>
+<div id="basic-model-forms" class="section level2">
+<h2>Basic model forms</h2>
+<p>Basal area increment is expected to vary by dbh and crown ratio. We hope to see a treatment effect. Because of the interaction with year, I will try to model for the most recent increment period only.</p>
+<pre><code>model a: scaled_ba_inc1 = exp((dbh) * treatment * spp),   distribution
+model b: scaled_ba_inc1 = exp((dbh) * treatment * spp), gaussian distribution
+model c: log(ba_inc1) = dbh * treatment * spp 
+model d: ba_inc1 = (log(dbh) + dbh) * treatment * spp</code></pre>
+<p>The scaling value was computed as <code>-(min(ba_inc1)) + 1</code></p>
+<pre class="r"><code>m6a &lt;- glm(
+  ba_inc_scaled ~ dbh * treatment * spp,
   family = Gamma(link = &quot;log&quot;),
   data = test_d
 )
 
 m6b &lt;- glm(
-  I(ba_inc + scale_val) ~ dbh * treatment * spp,
+  ba_inc_scaled ~ dbh * treatment * spp,
   family = gaussian(link = &quot;log&quot;),
   data = test_d
 )
 
-m6c &lt;- lm(log(ba_inc + scale_val) ~ dbh * treatment * spp, data = test_d)
+m6c &lt;- lm(log(ba_inc_scaled) ~ dbh * treatment * spp, data = test_d)
 
-m6d &lt;- lm(ba_inc ~ log(dbh) + dbh * treatment * spp, data = test_d)
+m6d &lt;- lm(log(ba_inc_scaled) ~ log(dbh) * treatment * spp, data = test_d)</code></pre>
+<p>A and B are comparable, and C and D are comparable. E is not comparable with anything.</p>
+<pre class="r"><code>AICc(m6a, m6b, m6c, m6d)</code></pre>
+<table class="huxtable" style="border-collapse: collapse; border: 0px; margin-bottom: 2em; margin-top: 2em; ; margin-left: auto; margin-right: auto;  " id="tab:unnamed-chunk-18">
+<col><col><tr>
+<th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">df</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">AICc</th></tr>
+<tr>
+<td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">21</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">1.48e+04</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">21</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">1.62e+04</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">21</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.71e+03</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">21</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.7e+03&nbsp;</td></tr>
+</table>
 
-test_d %&gt;%
-  ungroup() %&gt;%
-  mutate(
-    as_tibble(predict(m6a, se.fit = TRUE)[1:2]),
-    upr = exp(fit + 2 * se.fit),
-    lwr = exp(fit - 2 * se.fit)
-    ) %&gt;%
-  ggplot(aes(y = ba_inc, x = dbh, color = spp)) +
-    geom_point(alpha = 0.3) +
-    geom_line(aes(y = predict(m6a, type = &quot;response&quot;) - scale_val), size = 1) +
-    geom_ribbon(
-      aes(ymin = lwr - scale_val, ymax = upr - scale_val, group = spp),
-      alpha = 0.2,
-      color = NA
-    ) +
-    facet_wrap(vars(treatment)) +
-    scale_color_manual(values = palette()) +
-    labs(title = &quot;gamma GLM with log link&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-1.png" width="960" /></p>
 <pre class="r"><code>test_d %&gt;%
-  ggplot(aes(x = dbh, y = ba_inc + scale_val, color = spp)) +
+  ggplot(aes(x = dbh, y = ba_inc1 + scale_val, color = spp)) +
+    geom_point(alpha = .2) +
+    facet_wrap(vars(treatment)) +
+    geom_smooth(
+      method = &quot;glm&quot;,
+      formula = y ~ x,
+      method.args = list(family = Gamma(link = &quot;log&quot;))
+    ) +
+    scale_color_manual(values = palette()) +
+    labs(title = &quot;Gamma glm wih log link&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<pre class="r"><code>test_d %&gt;%
+  ggplot(aes(x = dbh, y = ba_inc1 + scale_val, color = spp)) +
     geom_point(alpha = .2) +
     facet_wrap(vars(treatment)) +
     geom_smooth(
@@ -2686,423 +3528,724 @@ test_d %&gt;%
     ) +
     scale_color_manual(values = palette()) +
     labs(title = &quot;Gaussian glm wih log link&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-2.png" width="960" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-19-2.png" width="672" /></p>
 <pre class="r"><code>test_d %&gt;%
-  ggplot(aes(x = dbh, y = log(ba_inc + scale_val), color = spp)) +
+  ggplot(aes(x = dbh, y = log(ba_inc_scaled), color = spp)) +
     geom_point(alpha = .2) +
     facet_wrap(vars(treatment)) +
     geom_smooth(method = &quot;lm&quot;, formula = y ~ x) +
     scale_color_manual(values = palette()) +
     labs(title = &quot;Linear model, log-transformed&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-3.png" width="960" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-19-3.png" width="672" /></p>
 <pre class="r"><code>test_d %&gt;%
-  ggplot(aes(x = dbh, y = ba_inc, color = spp)) +
-    geom_point(aes(), alpha = .2) +
-    geom_smooth(method = &quot;lm&quot;, formula = y ~ log(x) + x) +
+  ggplot(aes(x = log(dbh), y = log(ba_inc_scaled), color = spp)) +
+    geom_point(alpha = .2) +
     facet_wrap(vars(treatment)) +
-    scale_color_manual(values = palette()[5:6]) +
-    labs(title = &quot;linear model: y ~ log(x) + x&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-4.png" width="960" /></p>
-<p>I don’t think that the model with transformed response is comparable but the other three I think are. The gamma glm with log link has the lowest AIC. I will use it moving forward.</p>
-<pre class="r"><code>AIC(m6a, m6b, m6c, m6d)</code></pre>
-<pre><code>##     df        AIC
-## m6a 21 13276.3472
-## m6b 21 14113.3250
-## m6c 21   166.3493
-## m6d 22 14008.1041</code></pre>
+    geom_smooth(method = &quot;lm&quot;, formula = y ~ x) +
+    scale_color_manual(values = palette()) +
+    labs(title = &quot;Linear model, log-log-transformed&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-19-4.png" width="672" /></p>
 </div>
-<div id="modeling-with-subsets" class="section level2">
-<h2>Modeling with subsets</h2>
-<p>Next I’ll split the data by species and year and determine the best categorical predictor ie, treatment, treatment intensity, treatment status, or sdi and treatment status. Im using <code>plot</code> as a random effect.</p>
-<p>For Douglas-fir and redwood, treatment density appears to be the best predictor in both years. For redwood, inclusion of interaction with dbh has a lower AIC. For Douglas-fir,</p>
-<p>This suggests that I could combine years.</p>
-<pre class="r"><code>d_split1 &lt;- split(test_d, ~ year + spp)
-
-form_list1 &lt;- list(
-  I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_method + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treatment + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_method + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_status + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_status + sdi_plot + (1 | plot)
+<div id="moving-forward-with-log---log-model-mixed-effects" class="section level2">
+<h2>Moving forward with log - log model: Mixed effects</h2>
+<p>So, if my gamma GLM is not going to work, I will focus instead on using a mixed effect linear model. First, I’ll determine random effects using full model.</p>
+<pre class="r"><code>f0 &lt;- formula(
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + spp + year + cr
 )
 
-aic_out1 &lt;- map(d_split1, ~ get_aic(form_list1, data = .x, method = &quot;glm&quot;)[1:5, ])
+m1 &lt;- lmer(update(f0, ~ . + (1 | tree_id) + (1 | plot)), REML = FALSE, data = test_d)
+m2 &lt;- update(m1, ~ . - (1 | plot))
+m3 &lt;- update(m1, ~ . - (1 | tree_id))
+m0 &lt;- lm(f0, data = test_d)
 
-aic_out1</code></pre>
-<pre><code>## $`13.PSMEM`
-## # A tibble: 5 x 4
-##   row   formula                                                       aicc  rmse
-##   &lt;chr&gt; &lt;chr&gt;                                                        &lt;dbl&gt; &lt;dbl&gt;
-## 1 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)     5619. 0.24 
-## 2 1     I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot)         5621. 0.24 
-## 3 7     I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot)     5622. 0.24 
-## 4 5     I(ba_inc + scale_val) ~ dbh * treatment + (1 | plot)         5622. 0.239
-## 5 9     I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 ~ 5625. 0.24 
-## 
-## $`18.PSMEM`
-## # A tibble: 5 x 4
-##   row   formula                                                       aicc  rmse
-##   &lt;chr&gt; &lt;chr&gt;                                                        &lt;dbl&gt; &lt;dbl&gt;
-## 1 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)     4806. 0.228
-## 2 7     I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot)     4807. 0.228
-## 3 1     I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot)         4809. 0.228
-## 4 5     I(ba_inc + scale_val) ~ dbh * treatment + (1 | plot)         4814. 0.228
-## 5 9     I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 ~ 4814. 0.228
-## 
-## $`13.SESE3`
-## # A tibble: 5 x 4
-##   row   formula                                                       aicc  rmse
-##   &lt;chr&gt; &lt;chr&gt;                                                        &lt;dbl&gt; &lt;dbl&gt;
-## 1 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)     1516. 0.197
-## 2 7     I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot)     1516. 0.195
-## 3 10    I(ba_inc + scale_val) ~ dbh * treat_status + sdi_plot + (1 ~ 1519. 0.196
-## 4 9     I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 ~ 1519. 0.197
-## 5 1     I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot)         1520. 0.197
-## 
-## $`18.SESE3`
-## # A tibble: 5 x 4
-##   row   formula                                                       aicc  rmse
-##   &lt;chr&gt; &lt;chr&gt;                                                        &lt;dbl&gt; &lt;dbl&gt;
-## 1 7     I(ba_inc + scale_val) ~ dbh * treat_density + (1 | plot)     1277  0.231
-## 2 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)     1281. 0.237
-## 3 5     I(ba_inc + scale_val) ~ dbh * treatment + (1 | plot)         1284  0.23 
-## 4 1     I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot)         1284. 0.237
-## 5 9     I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 ~ 1284. 0.238</code></pre>
-<p>Here I’ll split just by species and determine if interactions with year are important. For psme, including interaction between year and dbh alone is slightly better including more interactions with dbh, the difference is marginal, but the model is simpler.</p>
-<pre class="r"><code>d_split2 &lt;- split(test_d, ~spp)
+AICc(m0, m1, m2, m3)</code></pre>
+<table class="huxtable" style="border-collapse: collapse; border: 0px; margin-bottom: 2em; margin-top: 2em; ; margin-left: auto; margin-right: auto;  " id="tab:unnamed-chunk-20">
+<col><col><tr>
+<th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">df</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">AICc</th></tr>
+<tr>
+<td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">14</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.49e+03</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">16</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.15e+03</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">15</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.15e+03</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">15</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.49e+03</td></tr>
+</table>
 
-form_list2 &lt;- list(
-  I(ba_inc + scale_val) ~ dbh + treatment + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_method + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_method + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_method + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_density + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treatment + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_method + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_status + year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treatment * year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_method * year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density * year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_status * year + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status * sdi_plot + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh + treat_status + sdi_plot + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + year + year:dbh + (1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + year + year:treat_density +(1 | plot),
-  I(ba_inc + scale_val) ~ dbh * treat_density + year + year:treat_density + year:dbh +(1 | plot)
-
-)
-
-aic_out2 &lt;- map(d_split2, ~ get_aic(form_list2, data = .x, method = &quot;glm&quot;))
-aic_out2</code></pre>
-<pre><code>## $PSMEM
-## # A tibble: 24 x 4
-##    row   formula                                                      aicc  rmse
-##    &lt;chr&gt; &lt;chr&gt;                                                       &lt;dbl&gt; &lt;dbl&gt;
-##  1 10    I(ba_inc + scale_val) ~ dbh + treat_density + year + (1 |~ 10413. 0.235
-##  2 14    I(ba_inc + scale_val) ~ dbh * treat_density + year + (1 |~ 10414. 0.235
-##  3 23    I(ba_inc + scale_val) ~ dbh * treat_density + year + year~ 10415. 0.234
-##  4 8     I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plo~ 10415. 0.235
-##  5 22    I(ba_inc + scale_val) ~ dbh * treat_density + year + year~ 10416. 0.235
-##  6 12    I(ba_inc + scale_val) ~ dbh * treatment + year + (1 | plo~ 10416. 0.234
-##  7 24    I(ba_inc + scale_val) ~ dbh * treat_density + year + year~ 10416. 0.234
-##  8 18    I(ba_inc + scale_val) ~ dbh * treat_density * year + (1 |~ 10420. 0.234
-##  9 11    I(ba_inc + scale_val) ~ dbh + treat_status + year + (1 | ~ 10425. 0.235
-## 10 15    I(ba_inc + scale_val) ~ dbh * treat_status + year + (1 | ~ 10427. 0.235
-## # ... with 14 more rows
-## 
-## $SESE3
-## # A tibble: 24 x 4
-##    row   formula                                                      aicc  rmse
-##    &lt;chr&gt; &lt;chr&gt;                                                       &lt;dbl&gt; &lt;dbl&gt;
-##  1 14    I(ba_inc + scale_val) ~ dbh * treat_density + year + (1 | ~ 2787. 0.214
-##  2 23    I(ba_inc + scale_val) ~ dbh * treat_density + year + year:~ 2787. 0.213
-##  3 24    I(ba_inc + scale_val) ~ dbh * treat_density + year + year:~ 2788. 0.213
-##  4 18    I(ba_inc + scale_val) ~ dbh * treat_density * year + (1 | ~ 2788. 0.212
-##  5 22    I(ba_inc + scale_val) ~ dbh * treat_density + year + year:~ 2788. 0.214
-##  6 10    I(ba_inc + scale_val) ~ dbh + treat_density + year + (1 | ~ 2791. 0.216
-##  7 3     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)    2794. 0.217
-##  8 6     I(ba_inc + scale_val) ~ dbh + treat_density + (1 | plot)    2794. 0.217
-##  9 12    I(ba_inc + scale_val) ~ dbh * treatment + year + (1 | plot) 2795. 0.214
-## 10 8     I(ba_inc + scale_val) ~ dbh + treatment + year + (1 | plot) 2795. 0.216
-## # ... with 14 more rows</code></pre>
+<p>Including plot in the random effects results in a singular fit and no random intercepts are calculated for plot, rendering it useless. This could mean that after accounting for fixed effects, there is no discernable variation in plot, or it could mean that there is some other problem. Either way, I don’t think it makes any sense to include it right now.</p>
+<p><code>log_ba_inc_scaled ~ fixed_effects + (1 | tree_id)</code></p>
 </div>
-<div id="exploring-marginal-means-of-the-most-useful-model" class="section level2">
-<h2>Exploring marginal means of the most useful model</h2>
-<p>Based on the above, inclusion of interactions when considering a model with treatment and year, do not have lower AIC. I’ll use:</p>
-<p><code>ba_inc + scale_val ~ dbh + treatment + year + (1 | plot)</code></p>
-<p>NOTE: Do we really care about year (first 5-year period or second), while it is true that there could be an different treatment effect for each year and even that this effect could vary by treatment (interaction), it seems as though the question we are trying to answer is dealing with long-term consequences. For instance, if we could report that a treatment had a strong effect, but only for 5 years and this effect is not persistent, than is it relevant to us? In writing this I realize that if a treatment is only “significant” in the second period, that could be important because it might suggest that there will be further long-term effects, whereas if a treatment is only important in the first period, then it may not really be that important after all.</p>
-<pre class="r"><code>m7a &lt;- glmer(
-  I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
-  family = Gamma(link = &quot;log&quot;),
-  data = d_split2$SESE3
+<div id="log-log-model-fixed-effects" class="section level2">
+<h2>log-log model fixed effects</h2>
+<pre class="r"><code>fl1 &lt;- list(
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp * treatment + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp * treatment + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + year:spp +(1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + treatment:spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr:year + cr:spp + spp + (1 | tree_id)
 )
-m7b &lt;- glmer(
-  I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 | plot),
-  family = Gamma(link = &quot;log&quot;),
-  data = d_split2$PSMEM
-)
-summary(m7a)</code></pre>
-<pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace
-##   Approximation) [glmerMod]
-##  Family: Gamma  ( log )
-## Formula: I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 |  
-##     plot)
-##    Data: d_split2$SESE3
+
+get_aic(fl1, data = test_d, method = &quot;lmm&quot;)</code></pre>
+<table class="huxtable" style="border-collapse: collapse; border: 0px; margin-bottom: 2em; margin-top: 2em; ; margin-left: auto; margin-right: auto;  " id="tab:unnamed-chunk-21">
+<col><col><col><col><tr>
+<th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">row</th><th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">formula</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">aicc</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">rmse</th></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">18</td><td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + treatment:spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.11e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.22&nbsp;</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">16</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.11e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.219</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">17</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.12e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.22&nbsp;</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">14</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp * treatment + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.15e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.225</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">13</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.15e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.225</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">15</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + year:spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.15e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.224</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">19</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr:year + cr:spp + spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.16e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.228</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">6</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.21e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.224</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">9</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.22e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.239</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">10</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.23e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.222</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">12</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp * treatment + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.24e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.222</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">11</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.24e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.222</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">3</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.26e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.237</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">4</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.32e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.219</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">5</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.33e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.219</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">7</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.38e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.245</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">8</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + spp + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.39e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.245</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">1</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.45e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.24&nbsp;</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2</td><td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + (1 | tree_id)</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.45e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.241</td></tr>
+</table>
+
+<p>Here I’ll look at the top model, plot labels refer to diameter increment (cm/year). Unfortuantely the residuals do not apppear to be evenly distributed. I’m not sure that I can use this model.</p>
+<pre class="r"><code>ba_inc_lmm &lt;- lmer(fl1[[16]], data = test_d, REML = TRUE)
+
+summary(ba_inc_lmm)</code></pre>
+<pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
+## Formula: log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year *  
+##     spp + (1 | tree_id)
+##    Data: test_d
 ## 
-##      AIC      BIC   logLik deviance df.resid 
-##   2794.4   2830.3  -1388.2   2776.4      387 
+## REML criterion at convergence: 2169.2
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -2.4283 -0.6445 -0.0347  0.5879  3.4765 
+## -6.9081 -0.3856  0.0519  0.4506  4.3160 
 ## 
 ## Random effects:
 ##  Groups   Name        Variance Std.Dev.
-##  plot     (Intercept) 0.002295 0.04791 
-##  Residual             0.046105 0.21472 
-## Number of obs: 396, groups:  plot, 19
+##  tree_id  (Intercept) 0.11559  0.3400  
+##  Residual             0.07975  0.2824  
+## Number of obs: 2070, groups:  tree_id, 1140
 ## 
 ## Fixed effects:
-##              Estimate Std. Error t value Pr(&gt;|z|)    
-## (Intercept)   3.49306    0.04901  71.274  &lt; 2e-16 ***
-## scale(dbh)    0.55040    0.01212  45.394  &lt; 2e-16 ***
-## treatmentH40  0.36755    0.07259   5.063 4.12e-07 ***
-## treatmentH80  0.11835    0.06821   1.735   0.0827 .  
-## treatmentL40  0.37092    0.08469   4.380 1.19e-05 ***
-## treatmentL80  0.13885    0.06802   2.041   0.0412 *  
-## year18       -0.04929    0.02187  -2.253   0.0242 *  
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+##                     Estimate Std. Error t value
+## (Intercept)        -2.073865   0.120183 -17.256
+## log(dbh)            1.457863   0.039818  36.613
+## treatmentH40        0.541081   0.046285  11.690
+## treatmentH80        0.175976   0.032510   5.413
+## treatmentL40        0.525690   0.048978  10.733
+## treatmentL80        0.162223   0.031893   5.086
+## cr                  0.013434   0.002528   5.315
+## year13             -0.350106   0.057791  -6.058
+## sppSESE3            0.418895   0.082973   5.049
+## cr:year13           0.011733   0.002755   4.259
+## cr:sppSESE3        -0.009182   0.003602  -2.549
+## year13:sppSESE3     0.035440   0.097511   0.363
+## cr:year13:sppSESE3 -0.001854   0.004489  -0.413</code></pre>
+<pre><code>## 
+## Correlation matrix not shown by default, as p = 13 &gt; 12.
+## Use print(x, correlation=TRUE)  or
+##     vcov(x)        if you need it</code></pre>
+<pre class="r"><code>residual_plot &lt;- function(mod, val = 1) {
+  resid &lt;- resid(mod, type = &quot;deviance&quot;)
+  plot(
+    predict(mod), resid,
+    main = &quot;residual vs fitted&quot;,
+    sub = &quot;labels are diameter increment (cm/yr)&quot;,
+    xlab = &quot;log(ba_inc) prediction&quot;,
+    ylab = &quot;deviance residaul&quot;
+  )
+  outliers &lt;- which(abs(resid) &gt; val)
+  label &lt;- round(test_d$d_inc1[outliers], 3)
+  text(predict(mod)[outliers], resid[outliers] + 0.1, label, col = &quot;firebrick&quot;)
+}
+
+residual_plot(ba_inc_lmm)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<p>see: <a href="https://stats.stackexchange.com/questions/115090/why-do-i-get-zero-variance-of-a-random-effect-in-my-mixed-model-despite-some-va">Cross validated post about zero variance</a></p>
+<p>And the singular models section <a href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#singular-models-random-effect-variances-estimated-as-zero-or-correlations-estimated-as---1">here</a></p>
+<p>Here is the model list above, with plot random effect, just in case.</p>
+<pre class="r"><code>fl2 &lt;- lapply(fl1, update_no_simplify, ~ . + (1 | plot))
+get_aic(fl2, data = test_d, method = &quot;lmm&quot;)</code></pre>
+<pre><code>## boundary (singular) fit: see ?isSingular
+## boundary (singular) fit: see ?isSingular
+## boundary (singular) fit: see ?isSingular
+## boundary (singular) fit: see ?isSingular
+## boundary (singular) fit: see ?isSingular
+## boundary (singular) fit: see ?isSingular
+## boundary (singular) fit: see ?isSingular
+## boundary (singular) fit: see ?isSingular</code></pre>
+<table class="huxtable" style="border-collapse: collapse; border: 0px; margin-bottom: 2em; margin-top: 2em; ; margin-left: auto; margin-right: auto;  " id="tab:unnamed-chunk-23">
+<col><col><col><col><tr>
+<th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">row</th><th style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">formula</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">aicc</th><th style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: bold;">rmse</th></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">18</td><td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + treatment:spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.11e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0.4pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.22&nbsp;</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">16</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.11e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.219</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">17</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.12e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.22&nbsp;</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">14</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp * treatment + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.15e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.225</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">13</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.15e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.225</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">15</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + year:spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.15e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.224</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">19</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr:year + cr:spp + spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.16e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.228</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">6</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.21e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.224</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">9</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.22e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.239</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">10</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.24e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.222</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">12</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp * treatment + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.24e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.222</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">11</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.24e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.222</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">3</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.26e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.237</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">4</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.32e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.219</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">5</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.33e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.219</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">7</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.38e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.245</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">8</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + spp + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.39e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.245</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">1</td><td style="vertical-align: top; text-align: left; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) + treatment + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; padding: 6pt 6pt 6pt 6pt; font-weight: normal;">2.45e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0pt 0pt;    padding: 6pt 6pt 6pt 6pt; font-weight: normal;">0.24&nbsp;</td></tr>
+<tr>
+<td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0.4pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2</td><td style="vertical-align: top; text-align: left; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">log(ba_inc1 + scale_val) ~ log(dbh) * treatment + (1 | tree_id) + (1 | plot)</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">2.46e+03</td><td style="vertical-align: top; text-align: right; white-space: normal; border-style: solid solid solid solid; border-width: 0pt 0.4pt 0.4pt 0pt;    padding: 6pt 6pt 6pt 6pt; background-color: rgb(242, 242, 242); font-weight: normal;">0.241</td></tr>
+</table>
+
+</div>
+<div id="what-does-all-model-selection-have-to-say" class="section level2">
+<h2>What does all model selection have to say?</h2>
+<p>I’ll use dredge from MuMIn to test all possible models with 3 to 10 predictors models</p>
+<pre class="r"><code>options(na.action = &quot;na.fail&quot;)
+
+fm1 &lt;- lmer(
+  log(ba_inc_scaled) ~ log(dbh) * treatment + cr * year * spp + (1 | tree_id),
+  data = test_d
+)
+
+dd &lt;- dredge(fm1, m.lim = c(3, 10))
+
+dd</code></pre>
+</div>
+</div>
+<div id="is-a-glm-going-to-work" class="section level1">
+<h1>Is a glm going to work?</h1>
+<p>While GLMs with gamma family are used in the literature for basal area increment models. I had a hard time getting them to converge. They are computationally expensive (slow) to fit and when I look at the residuals, they are not all the different from the log-log model fit above.</p>
+<pre class="r"><code>glm_mod &lt;- glmer(
+  ba_inc_scaled ~ treatment + scale(dbh) + scale(cr) + spp + year + (1 | plot) + (1 | tree_id),
+  data = test_d,
+  family = Gamma(link = &quot;log&quot;)
+)
+
+allFit(glm_mod)
+
+glm_converge &lt;- mixedup::converge_it(glm_mod)
+
+summary(glm_mod)
+plot(predict(glm_mod), resid(glm_mod, type = &quot;deviance&quot;))</code></pre>
+</div>
+<div id="estimated-marginal-means-and-regression-table-of-selected-model" class="section level1">
+<h1>Estimated marginal means and regression table of selected model</h1>
+<p>First I choose a model from above based on parsimony and AICc:</p>
+<pre class="r"><code>ba_inc_mod &lt;- ba_inc_lmm
+
+summary(ba_inc_lmm)</code></pre>
+<pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
+## Formula: log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year *  
+##     spp + (1 | tree_id)
+##    Data: test_d
 ## 
-## Correlation of Fixed Effects:
-##             (Intr) scl(d) trtH40 trtH80 trtL40 trtL80
-## scale(dbh)   0.002                                   
-## treatmntH40 -0.652 -0.040                            
-## treatmntH80 -0.688  0.033  0.464                     
-## treatmntL40 -0.550 -0.052  0.368  0.389              
-## treatmntL80 -0.688  0.023  0.466  0.494  0.390       
-## year18      -0.212 -0.051  0.022  0.008  0.039  0.003</code></pre>
-<pre class="r"><code>summary(m7b)</code></pre>
-<pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace
-##   Approximation) [glmerMod]
-##  Family: Gamma  ( log )
-## Formula: I(ba_inc + scale_val) ~ scale(dbh) + treatment + year + (1 |  
-##     plot)
-##    Data: d_split2$PSMEM
-## 
-##      AIC      BIC   logLik deviance df.resid 
-##  10415.2  10463.1  -5198.6  10397.2     1491 
+## REML criterion at convergence: 2169.2
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -4.3618 -0.5843 -0.0116  0.6046  4.9598 
+## -6.9081 -0.3856  0.0519  0.4506  4.3160 
 ## 
 ## Random effects:
-##  Groups   Name        Variance  Std.Dev.
-##  plot     (Intercept) 0.0005675 0.02382 
-##  Residual             0.0480469 0.21920 
-## Number of obs: 1500, groups:  plot, 20
+##  Groups   Name        Variance Std.Dev.
+##  tree_id  (Intercept) 0.11559  0.3400  
+##  Residual             0.07975  0.2824  
+## Number of obs: 2070, groups:  tree_id, 1140
 ## 
 ## Fixed effects:
-##               Estimate Std. Error t value Pr(&gt;|z|)    
-## (Intercept)   3.475141   0.025705 135.192  &lt; 2e-16 ***
-## scale(dbh)    0.391080   0.007124  54.898  &lt; 2e-16 ***
-## treatmentH40  0.230847   0.039268   5.879 4.13e-09 ***
-## treatmentH80  0.099744   0.035469   2.812  0.00492 ** 
-## treatmentL40  0.244897   0.038641   6.338 2.33e-10 ***
-## treatmentL80  0.055182   0.035386   1.559  0.11889    
-## year18       -0.092302   0.012414  -7.436 1.04e-13 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+##                     Estimate Std. Error t value
+## (Intercept)        -2.073865   0.120183 -17.256
+## log(dbh)            1.457863   0.039818  36.613
+## treatmentH40        0.541081   0.046285  11.690
+## treatmentH80        0.175976   0.032510   5.413
+## treatmentL40        0.525690   0.048978  10.733
+## treatmentL80        0.162223   0.031893   5.086
+## cr                  0.013434   0.002528   5.315
+## year13             -0.350106   0.057791  -6.058
+## sppSESE3            0.418895   0.082973   5.049
+## cr:year13           0.011733   0.002755   4.259
+## cr:sppSESE3        -0.009182   0.003602  -2.549
+## year13:sppSESE3     0.035440   0.097511   0.363
+## cr:year13:sppSESE3 -0.001854   0.004489  -0.413</code></pre>
+<pre><code>## 
+## Correlation matrix not shown by default, as p = 13 &gt; 12.
+## Use print(x, correlation=TRUE)  or
+##     vcov(x)        if you need it</code></pre>
+<pre class="r"><code>sjPlot::tab_model(ba_inc_mod, dv.labels = &quot;BA increment&quot;)</code></pre>
+<table style="border-collapse:collapse; border:none;">
+<tr>
+<th style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm;  text-align:left; ">
+ 
+</th>
+<th colspan="3" style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm; ">
+BA increment
+</th>
+</tr>
+<tr>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  text-align:left; ">
+Predictors
+</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">
+Estimates
+</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">
+CI
+</td>
+<td style=" text-align:center; border-bottom:1px solid; font-style:italic; font-weight:normal;  ">
+p
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+(Intercept)
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-2.07
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-2.31 – -1.84
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+dbh [log]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+1.46
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+1.38 – 1.54
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+treatment [H40]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.54
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.45 – 0.63
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+treatment [H80]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.18
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.11 – 0.24
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+treatment [L40]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.53
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.43 – 0.62
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+treatment [L80]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.16
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.10 – 0.22
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+cr
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.01
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.01 – 0.02
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+year [13]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.35
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.46 – -0.24
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+spp [SESE3]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.42
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.26 – 0.58
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+cr * year [13]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.01
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.01 – 0.02
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>&lt;0.001</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+cr * spp [SESE3]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.01
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.02 – -0.00
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+<strong>0.011</strong>
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+year [13] * spp [SESE3]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.04
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.16 – 0.23
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.716
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
+(cr * year [13]) * spp<br>[SESE3]
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.00
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+-0.01 – 0.01
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
+0.680
+</td>
+</tr>
+<tr>
+<td colspan="4" style="font-weight:bold; text-align:left; padding-top:.8em;">
+Random Effects
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+σ<sup>2</sup>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.08
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+τ<sub>00</sub> <sub>tree_id</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.12
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+ICC
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.59
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+N <sub>tree_id</sub>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+1140
+</td>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm; border-top:1px solid;">
+Observations
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left; border-top:1px solid;" colspan="3">
+2070
+</td>
+</tr>
+<tr>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; padding-top:0.1cm; padding-bottom:0.1cm;">
+Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
+</td>
+<td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="3">
+0.661 / 0.862
+</td>
+</tr>
+</table>
+<p>Here I get the marginal estimates and pairwise comparisons for the selected model. If interaction with species and treatment was not included in the model, than we can’t compare redwood and douglas-fir response in each treatment.</p>
+<pre class="r"><code>emmeans(ba_inc_mod, pairwise ~ treatment, type = &quot;response&quot;)</code></pre>
+<pre><code>## $emmeans
+##  treatment response    SE   df lower.CL upper.CL
+##  C             12.2 0.460 1163     11.3     13.1
+##  H40           25.7 1.314 1138     23.2     28.4
+##  H80           15.8 0.548 1137     14.7     16.9
+##  L40           25.2 1.391 1143     22.6     28.0
+##  L80           15.5 0.550 1131     14.4     16.6
 ## 
-## Correlation of Fixed Effects:
-##             (Intr) scl(d) trtH40 trtH80 trtL40 trtL80
-## scale(dbh)   0.117                                   
-## treatmntH40 -0.631 -0.145                            
-## treatmntH80 -0.688 -0.050  0.459                     
-## treatmntL40 -0.654 -0.255  0.450  0.469              
-## treatmntL80 -0.689 -0.053  0.459  0.501  0.471       
-## year18      -0.223 -0.213  0.013 -0.001  0.036 -0.005</code></pre>
-<p>Here are pairwise comparisons for SESE, followed by PSME. low intensity is no different than control and high thinning is no different than low thinning.</p>
-<pre class="r"><code>a_mean &lt;- emmeans(m7a, ~ treatment + year)
+## Results are averaged over the levels of: year, spp 
+## Degrees-of-freedom method: kenward-roger 
+## Confidence level used: 0.95 
+## Intervals are back-transformed from the log(mu + 6.685) scale 
+## 
+## $contrasts
+##  contrast  ratio     SE   df null t.ratio p.value
+##  C / H40   0.582 0.0269 1128    1 -11.690  &lt;.0001
+##  C / H80   0.839 0.0273 1144    1  -5.413  &lt;.0001
+##  C / L40   0.591 0.0290 1131    1 -10.733  &lt;.0001
+##  C / L80   0.850 0.0271 1130    1  -5.086  &lt;.0001
+##  H40 / H80 1.441 0.0678 1135    1   7.762  &lt;.0001
+##  H40 / L40 1.016 0.0595 1116    1   0.263  0.9990
+##  H40 / L80 1.461 0.0684 1126    1   8.089  &lt;.0001
+##  H80 / L40 0.705 0.0354 1140    1  -6.963  &lt;.0001
+##  H80 / L80 1.014 0.0339 1117    1   0.411  0.9940
+##  L40 / L80 1.438 0.0710 1133    1   7.359  &lt;.0001
+## 
+## Results are averaged over the levels of: year, spp 
+## Degrees-of-freedom method: kenward-roger 
+## P value adjustment: tukey method for comparing a family of 5 estimates 
+## Tests are performed on the log scale</code></pre>
+<p>Here I plot the expected response by species and dbh</p>
+<pre class="r"><code>emmip(
+  ba_inc_mod,
+  spp ~ dbh | treatment,
+  CIs = TRUE,
+  plotit = FALSE,
+  at = list(dbh = seq(10, 60, 2)),
+  type = &quot;response&quot;
+) %&gt;% 
+  ggplot(aes(dbh, yvar, color = spp)) +
+    geom_line() +
+    facet_wrap(~ treatment ) +
+    geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = spp), alpha = .2) +
+    theme_bw() +
+    scale_color_manual(
+      values = c(SESE3 = &quot;black&quot;, PSMEM = &quot;#969696&quot;),
+      aesthetics = c(&quot;color&quot;, &quot;fill&quot;)
+    ) +
+    labs(y = &quot;Predicted BA increment&quot;, title = &quot;back transformed from log-log model&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+</div>
+<div id="model-validation" class="section level1">
+<h1>Model validation</h1>
+<div id="best-model-validation" class="section level2">
+<h2>Best model validation</h2>
+<pre class="r"><code># augment data with fitted, residual cooks distance and leverage
 
-# learning about back-transforming mean and SE
-# it seems like using the &quot;response&quot; scale is working after all
-emmeans(m7a, ~ treatment + year) %&gt;% 
-  as_tibble() %&gt;%
-  mutate(
-    response = exp(emmean) - scale_val,
-    se_response = exp(SE) - scale_val
-  )</code></pre>
-<pre><code>## # A tibble: 10 x 9
-##    treatment year  emmean     SE    df asymp.LCL asymp.UCL response se_response
-##    &lt;fct&gt;     &lt;fct&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;
-##  1 C         13      3.49 0.0490   Inf      3.40      3.59     15.3       -16.6
-##  2 H40       13      3.86 0.0550   Inf      3.75      3.97     29.9       -16.6
-##  3 H80       13      3.61 0.0496   Inf      3.51      3.71     19.4       -16.6
-##  4 L40       13      3.86 0.0707   Inf      3.73      4.00     30.0       -16.5
-##  5 L80       13      3.63 0.0494   Inf      3.54      3.73     20.2       -16.6
-##  6 C         18      3.44 0.0493   Inf      3.35      3.54     13.7       -16.6
-##  7 H40       18      3.81 0.0559   Inf      3.70      3.92     27.6       -16.6
-##  8 H80       18      3.56 0.0501   Inf      3.46      3.66     17.6       -16.6
-##  9 L40       18      3.81 0.0719   Inf      3.67      3.96     27.7       -16.5
-## 10 L80       18      3.58 0.0497   Inf      3.49      3.68     18.3       -16.6</code></pre>
-<pre class="r"><code>emmeans(m7a, ~ treatment + year, type = &quot;response&quot;)</code></pre>
-<pre><code>##  treatment year response   SE  df asymp.LCL asymp.UCL
-##  C         13       15.3 1.61 Inf      12.1      18.4
-##  H40       13       29.9 2.61 Inf      24.8      35.0
-##  H80       13       19.4 1.83 Inf      15.8      23.0
-##  L40       13       30.0 3.37 Inf      23.4      36.6
-##  L80       13       20.2 1.87 Inf      16.5      23.8
-##  C         18       13.7 1.54 Inf      10.7      16.7
-##  H40       18       27.6 2.53 Inf      22.6      32.5
-##  H80       18       17.6 1.76 Inf      14.2      21.1
-##  L40       18       27.7 3.26 Inf      21.3      34.1
-##  L80       18       18.3 1.79 Inf      14.8      21.9
-## 
-## Confidence level used: 0.95 
-## Intervals are back-transformed from the identity scale</code></pre>
-<pre class="r"><code>b_mean &lt;- emmeans(m7b, ~ treatment + year)
-pairs(a_mean)</code></pre>
-<pre><code>##  contrast        estimate     SE  df z.ratio p.value
-##  C 13 - H40 13   -0.36755 0.0726 Inf  -5.063  &lt;.0001
-##  C 13 - H80 13   -0.11835 0.0682 Inf  -1.735  0.7756
-##  C 13 - L40 13   -0.37092 0.0847 Inf  -4.380  0.0005
-##  C 13 - L80 13   -0.13885 0.0680 Inf  -2.041  0.5694
-##  C 13 - C 18      0.04929 0.0219 Inf   2.253  0.4199
-##  C 13 - H40 18   -0.31827 0.0763 Inf  -4.172  0.0012
-##  C 13 - H80 18   -0.06906 0.0718 Inf  -0.962  0.9943
-##  C 13 - L40 18   -0.32163 0.0883 Inf  -3.643  0.0101
-##  C 13 - L80 18   -0.08956 0.0715 Inf  -1.252  0.9637
-##  H40 13 - H80 13  0.24920 0.0730 Inf   3.414  0.0226
-##  H40 13 - L40 13 -0.00336 0.0890 Inf  -0.038  1.0000
-##  H40 13 - L80 13  0.22870 0.0728 Inf   3.142  0.0534
-##  H40 13 - C 18    0.41684 0.0753 Inf   5.532  &lt;.0001
-##  H40 13 - H40 18  0.04929 0.0219 Inf   2.253  0.4199
-##  H40 13 - H80 18  0.29849 0.0759 Inf   3.933  0.0034
-##  H40 13 - L40 18  0.04592 0.0920 Inf   0.499  1.0000
-##  H40 13 - L80 18  0.27799 0.0756 Inf   3.677  0.0089
-##  H80 13 - L40 13 -0.25257 0.0856 Inf  -2.949  0.0925
-##  H80 13 - L80 13 -0.02050 0.0685 Inf  -0.299  1.0000
-##  H80 13 - C 18    0.16764 0.0715 Inf   2.346  0.3591
-##  H80 13 - H40 18 -0.19992 0.0765 Inf  -2.613  0.2112
-##  H80 13 - H80 18  0.04929 0.0219 Inf   2.253  0.4199
-##  H80 13 - L40 18 -0.20328 0.0891 Inf  -2.282  0.4006
-##  H80 13 - L80 18  0.02879 0.0718 Inf   0.401  1.0000
-##  L40 13 - L80 13  0.23207 0.0855 Inf   2.715  0.1673
-##  L40 13 - C 18    0.42020 0.0866 Inf   4.851  0.0001
-##  L40 13 - H40 18  0.05265 0.0912 Inf   0.577  0.9999
-##  L40 13 - H80 18  0.30185 0.0877 Inf   3.442  0.0205
-##  L40 13 - L40 18  0.04929 0.0219 Inf   2.253  0.4199
-##  L40 13 - L80 18  0.28135 0.0874 Inf   3.218  0.0424
-##  L80 13 - C 18    0.18814 0.0714 Inf   2.636  0.2010
-##  L80 13 - H40 18 -0.17942 0.0764 Inf  -2.348  0.3579
-##  L80 13 - H80 18  0.06979 0.0720 Inf   0.969  0.9939
-##  L80 13 - L40 18 -0.18278 0.0890 Inf  -2.054  0.5605
-##  L80 13 - L80 18  0.04929 0.0219 Inf   2.253  0.4199
-##  C 18 - H40 18   -0.36755 0.0726 Inf  -5.063  &lt;.0001
-##  C 18 - H80 18   -0.11835 0.0682 Inf  -1.735  0.7756
-##  C 18 - L40 18   -0.37092 0.0847 Inf  -4.380  0.0005
-##  C 18 - L80 18   -0.13885 0.0680 Inf  -2.041  0.5694
-##  H40 18 - H80 18  0.24920 0.0730 Inf   3.414  0.0226
-##  H40 18 - L40 18 -0.00336 0.0890 Inf  -0.038  1.0000
-##  H40 18 - L80 18  0.22870 0.0728 Inf   3.142  0.0534
-##  H80 18 - L40 18 -0.25257 0.0856 Inf  -2.949  0.0925
-##  H80 18 - L80 18 -0.02050 0.0685 Inf  -0.299  1.0000
-##  L40 18 - L80 18  0.23207 0.0855 Inf   2.715  0.1673
-## 
-## Results are given on the log (not the response) scale. 
-## P value adjustment: tukey method for comparing a family of 10 estimates</code></pre>
-<pre class="r"><code>contrast(a_mean)</code></pre>
-<pre><code>##  contrast      estimate     SE  df z.ratio p.value
-##  C 13 effect    -0.1745 0.0459 Inf  -3.803  0.0005
-##  H40 13 effect   0.1931 0.0499 Inf   3.870  0.0005
-##  H80 13 effect  -0.0561 0.0464 Inf  -1.211  0.2511
-##  L40 13 effect   0.1964 0.0603 Inf   3.258  0.0028
-##  L80 13 effect  -0.0356 0.0463 Inf  -0.770  0.4411
-##  C 18 effect    -0.2238 0.0453 Inf  -4.937  &lt;.0001
-##  H40 18 effect   0.1438 0.0501 Inf   2.870  0.0082
-##  H80 18 effect  -0.1054 0.0461 Inf  -2.287  0.0317
-##  L40 18 effect   0.1471 0.0611 Inf   2.409  0.0266
-##  L80 18 effect  -0.0849 0.0458 Inf  -1.854  0.0798
-## 
-## Results are given on the log (not the response) scale. 
-## P value adjustment: fdr method for 10 tests</code></pre>
-<p>Here is the trend from one period to the other. Its a little strange how consistent it is for each treatment. Climate effects? Or Is</p>
-<pre class="r"><code>emmip(m7a, treatment ~ year)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
-<pre class="r"><code>emmip(m7b, treatment ~ year)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
-<pre class="r"><code>emmeans(m7a, pairwise ~ treatment)</code></pre>
-<pre><code>## $emmeans
-##  treatment emmean     SE  df asymp.LCL asymp.UCL
-##  C           3.47 0.0479 Inf      3.37      3.56
-##  H40         3.84 0.0544 Inf      3.73      3.94
-##  H80         3.59 0.0486 Inf      3.49      3.68
-##  L40         3.84 0.0705 Inf      3.70      3.98
-##  L80         3.61 0.0483 Inf      3.51      3.70
-## 
-## Results are averaged over the levels of: year 
-## Results are given on the log(mu + 17.62) (not the response) scale. 
-## Confidence level used: 0.95 
-## 
-## $contrasts
-##  contrast  estimate     SE  df z.ratio p.value
-##  C - H40   -0.36755 0.0726 Inf  -5.063  &lt;.0001
-##  C - H80   -0.11835 0.0682 Inf  -1.735  0.4124
-##  C - L40   -0.37092 0.0847 Inf  -4.380  0.0001
-##  C - L80   -0.13885 0.0680 Inf  -2.041  0.2462
-##  H40 - H80  0.24920 0.0730 Inf   3.414  0.0058
-##  H40 - L40 -0.00336 0.0890 Inf  -0.038  1.0000
-##  H40 - L80  0.22870 0.0728 Inf   3.142  0.0145
-##  H80 - L40 -0.25257 0.0856 Inf  -2.949  0.0265
-##  H80 - L80 -0.02050 0.0685 Inf  -0.299  0.9983
-##  L40 - L80  0.23207 0.0855 Inf   2.715  0.0517
-## 
-## Results are averaged over the levels of: year 
-## Results are given on the log (not the response) scale. 
-## P value adjustment: tukey method for comparing a family of 5 estimates</code></pre>
-<pre class="r"><code>emmeans(m7b, pairwise ~ treatment)</code></pre>
-<pre><code>## $emmeans
-##  treatment emmean     SE  df asymp.LCL asymp.UCL
-##  C           3.43 0.0251 Inf      3.38      3.48
-##  H40         3.66 0.0301 Inf      3.60      3.72
-##  H80         3.53 0.0251 Inf      3.48      3.58
-##  L40         3.67 0.0290 Inf      3.62      3.73
-##  L80         3.48 0.0250 Inf      3.44      3.53
-## 
-## Results are averaged over the levels of: year 
-## Results are given on the log(mu + 17.62) (not the response) scale. 
-## Confidence level used: 0.95 
-## 
-## $contrasts
-##  contrast  estimate     SE  df z.ratio p.value
-##  C - H40    -0.2308 0.0393 Inf  -5.879  &lt;.0001
-##  C - H80    -0.0997 0.0355 Inf  -2.812  0.0395
-##  C - L40    -0.2449 0.0386 Inf  -6.338  &lt;.0001
-##  C - L80    -0.0552 0.0354 Inf  -1.559  0.5236
-##  H40 - H80   0.1311 0.0390 Inf   3.361  0.0070
-##  H40 - L40  -0.0140 0.0408 Inf  -0.344  0.9970
-##  H40 - L80   0.1757 0.0390 Inf   4.507  0.0001
-##  H80 - L40  -0.1452 0.0383 Inf  -3.793  0.0014
-##  H80 - L80   0.0446 0.0354 Inf   1.259  0.7163
-##  L40 - L80   0.1897 0.0382 Inf   4.969  &lt;.0001
-## 
-## Results are averaged over the levels of: year 
-## Results are given on the log (not the response) scale. 
-## P value adjustment: tukey method for comparing a family of 5 estimates</code></pre>
+augment1 &lt;- function(dat, mod) {
+  dat %&gt;% mutate(
+    fitted = fitted(mod),
+    resid = resid(mod, type = &quot;pearson&quot;),
+    cooks = cooks.distance(mod),
+    lev = hatvalues(mod)
+  )
+}
+
+ba_inc_d &lt;- augment1(test_d, ba_inc_mod)</code></pre>
+</div>
+<div id="residual-vs-fitted" class="section level2">
+<h2>Residual vs fitted</h2>
+<p>I also plot residual vs the predictor and explanatory variables</p>
+<pre class="r"><code>plot(
+  resid ~ fitted,
+  data = ba_inc_d,
+  pch = 16,
+  xlab = &quot;fitted values&quot;,
+  ylab = &quot;Scaled residuals&quot;,
+  main = &quot;Residual vs fitted, colored by treatment&quot;,
+  col = as.factor(treatment)
+)
+abline(0,0)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-31-1.png" width="672" /></p>
+<pre class="r"><code>plot(
+  resid ~ log(dbh),
+  data = ba_inc_d,
+  xlab = &quot;log(dbh)&quot;,
+  ylab = &quot;Scaled residuals&quot;,
+  main = &quot;Residual vs log(dbh)&quot;,
+  col = 2,
+  pch = 16
+)
+abline(0,0)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-31-2.png" width="672" /></p>
+<pre class="r"><code>plot(
+  resid ~ cr,
+  data = ba_inc_d,
+  xlab = &quot;crown ratio&quot;,
+  ylab = &quot;Scaled residuals&quot;,
+  main = &quot;Residual vs crown ratio, colored by species&quot;,
+  col = as.factor(spp),
+  alpha = 0.5,
+  pch = 16
+)
+abline(0,0)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-31-3.png" width="672" /></p>
+</div>
+<div id="homogeneity-of-random-group-residuals" class="section level2">
+<h2>Homogeneity of random group residuals</h2>
+<p>I can check that random group residuals are homogenous.</p>
+<p>I can’t really check if residuals are homogenous for each tree, because there are over a thousand of them.</p>
+<pre class="r"><code>plot(
+  ba_inc_mod,
+  resid(., scaled=TRUE) ~ fitted(.)| plot,
+  abline = 0,
+  pch = 16,
+  xlab = &quot;Fitted values&quot;,
+  ylab = &quot;Standardised residuals&quot;
+)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
+</div>
+<div id="normality-of-residuals" class="section level2">
+<h2>Normality of residuals</h2>
+<p>It seems we are violating the assumption of normality of residuals here.</p>
+<pre class="r"><code>qqnorm(resid(ba_inc_mod, type = &quot;pearson&quot;), pch=16, col = 1,  main = &quot;QQplot for pearosn residuals&quot;)
+qqline(resid(ba_inc_mod, type = &quot;pearson&quot;))</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-1.png" width="960" /></p>
+<div id="leverage-and-cooks-distance" class="section level3">
+<h3>Leverage and Cooks distance</h3>
+<p>Cooks outliers, defined as &gt; 3 x mean(cooks distance) are colored in red. None of these “outliers” seem like they would disproportionately affect regression.</p>
+<pre class="r"><code># Plot leverage against standardised residuals
+
+plot(
+  resid ~ lev,
+  data = ba_inc_d,
+  las = 1,
+  ylab = &quot;Standardised residuals&quot;,
+  xlab = &quot;Leverage&quot;,
+  col = palette.colors(palette = &quot;tableau10&quot;, alpha = .5)[1],
+  main = &quot;Leverage vs residuals&quot;,
+  pch = 16
+)
+
+points(resid ~ lev, data = filter(ba_inc_d, cooks &gt; 6 * mean(cooks)), pch = 16, col =3)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-34-1.png" width="960" /></p>
+<pre class="r"><code>plot(ba_inc_d$lev,pch=16,col=&quot;red&quot;,ylim=c(0,1.2),las=1,ylab=&quot;Leverage/Cook&#39;s distance value&quot;)
+points(ba_inc_d$cooks,pch=17,col=&quot;blue&quot;)
+points(x=1650,y=1,pch=16,col=&quot;red&quot;)
+points(x=1650,y=0.8,pch=17,col=&quot;blue&quot;)
+text(x=1650,y=1,&quot;Leverage&quot;,adj=c(0,0.5))
+text(x=1650,y=0.8,&quot;Cook&#39;s distance&quot;,adj=c(0,0.5))</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-34-2.png" width="960" /></p>
+</div>
+<div id="random-effects-distribution" class="section level3">
+<h3>Random effects distribution</h3>
+<p>The distribution of random effects (plots) should be roughly normal. Here our distribution is skewed, <a href="" title="https://stats.stackexchange.com/a/366500">from what I’ve read</a>, this should not be a problem for estimates or their std’s.</p>
+<pre class="r"><code>hist(as.vector(unlist(ranef(ba_inc_mod)$tree_id)), col = 1)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
+</div>
 </div>
 </div>
 

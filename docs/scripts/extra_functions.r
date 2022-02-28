@@ -48,10 +48,16 @@ plot_ht <- function(data, mag = 1.5) {
 }
 
 # function to filter condition values with OR logic
-get_cond <- function(...) {
+
+get_cond <- function(..., str = FALSE) {
   vals <- unlist(list(...))
   cond <- evalq(cond, parent.frame())
-  map_lgl(str_split(cond, ","), ~ any(as.numeric(.x) %in% vals))
+  cond <- str_split(cond, ",")
+  if (str == TRUE) {
+    map_chr(cond, ~ toString(.x[.x %in% vals]))
+  } else {
+    map_lgl(cond, ~ any(as.numeric(.x) %in% vals))
+  }
 }
 
 #' Calculate XY coordinates based on distance and bearing
@@ -86,7 +92,7 @@ circular2xy <- function(distance, bearing, center.x = 0, center.y = 0) {
   delta.y <- distance * cos(bearing.rad)
   tree.x <- center.x + delta.x
   tree.y <- center.y + delta.y
-  return(data.frame(x=tree.x,y=tree.y))
+  return(data.frame(x = tree.x, y = tree.y))
 }
 
 # get equations for models
@@ -112,7 +118,6 @@ npc <- function(dat, x) {
 
 # These are the functions for calculating the SCI metric
 # for structural heterogeity
-
 cross_product <- function(a, b) {
   if(length(a)!=3 || length(b)!=3){
         stop("Cross product is only defined for 3D vectors.")
@@ -133,7 +138,7 @@ tri_area <- function(tri, points) {
 
 sci_metric <- function(x, y, z) {
   points <- as.matrix(cbind(x, y, z))
-  deln_obj <- delaunayn(points[, 1:2], output.options = "Fa")
+  deln_obj <- geometry::delaunayn(points[, 1:2], output.options = "Fa")
   area3d <- sum(tri_area(deln_obj$tri, points))
   area2d <- sum(deln_obj$areas)
   area3d / area2d
@@ -141,17 +146,23 @@ sci_metric <- function(x, y, z) {
 
 # here is a function to to get a an AIC from a formula
 # optionally split by species
-formula_aic <- function(form, data, method = "lm"){
-  if(method == "lm") {
+formula_aic <- function(form, data, method = "lmm"){
+  if(method == "lmm") {
     mod <- lmer(form, data = data, REML = FALSE)
+    rmse <- sqrt(mean(resid(mod, type = "pearson")^2))
   }
   if(method == "glm") {
     mod <- glmer(form, data = data, family = Gamma(link = "log"))
+    rmse <- sqrt(mean(resid(mod, type = "pearson")^2))
+  }
+  if(method == "lm") {
+    mod <- lm(form, data = data)
+    rmse <- sqrt(mean(resid(mod)^2))
   }
   list(
     formula = deparse1(form),
     aicc = AICc(mod),
-    rmse = sqrt(mean(resid(mod)^2))
+    rmse = rmse
   )
 }
 
@@ -168,4 +179,33 @@ get_aic <- function(formlist, ...) {
   map_dfr(formlist, formula_aic, .id = "row", ...) %>%
   arrange(aicc) %>%
   mutate(aicc = round(aicc, 1), rmse = round(rmse, 3))
+}
+
+
+update_no_simplify <- function(object, ...) {
+  UseMethod("update_no_simplify")
+}
+
+update_no_simplify.formula <- function(old, new) {
+  tmp <- .Call(stats:::C_updateform, as.formula(old), as.formula(new))
+  formula(terms.formula(tmp, simplify = FALSE))
+}
+
+update_no_simplify.default <- function (object, formula., ..., evaluate = TRUE) {
+  if (is.null(call <- getCall(object))) 
+    stop("need an object with call component")
+  extras <- match.call(expand.dots = FALSE)$...
+  if (!missing(formula.)) 
+    call$formula <- update_no_simplify.formula(formula(object), formula.)
+  if (length(extras)) {
+    existing <- !is.na(match(names(extras), names(call)))
+    for (a in names(extras)[existing]) call[[a]] <- extras[[a]]
+    if (any(!existing)) {
+      call <- c(as.list(call), extras[!existing])
+      call <- as.call(call)
+    }
+  }
+  if (evaluate) 
+    eval(call, parent.frame())
+  else call
 }
