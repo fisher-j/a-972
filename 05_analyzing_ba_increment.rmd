@@ -280,7 +280,7 @@ test_d %>%
   ggplot(aes(cr, d_inc1), color = spp) +
   geom_point() +
   geom_smooth(method = "lm") +
-  stat_cor()
+  ggpubr::stat_cor()
 
 ```
 
@@ -560,6 +560,8 @@ dd
 
 While GLMs with gamma family are used in the literature for basal area increment models. I had a hard time getting them to converge. They are computationally expensive (slow) to fit and when I look at the residuals, they are not all the different from the log-log model fit above.
 
+In looking at the results for the GLM model, it looks very similar to the linear log log model, the qq plot reveals similarly light tailed distribution.
+
 ```{r, eval=FALSE}
 
 glm_mod <- glmer(
@@ -679,7 +681,6 @@ plot(
   ylab = "Scaled residuals",
   main = "Residual vs crown ratio, colored by species",
   col = as.factor(spp),
-  alpha = 0.5,
   pch = 16
 )
 abline(0,0)
@@ -729,7 +730,7 @@ plot(
   las = 1,
   ylab = "Standardised residuals",
   xlab = "Leverage",
-  col = palette.colors(palette = "tableau10", alpha = .5)[1],
+  col = palette.colors(palette = "tableau10", alpha = .5)[factor(year)],
   main = "Leverage vs residuals",
   pch = 16
 )
