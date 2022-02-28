@@ -316,14 +316,11 @@ $(document).ready(function () {
 <li><a href="#estimated-marginal-means-and-regression-table-of-selected-model">Estimated marginal means and regression table of selected model</a></li>
 <li><a href="#model-validation">Model validation</a>
 <ul>
-<li><a href="#best-model-validation">Best model validation</a></li>
 <li><a href="#residual-vs-fitted">Residual vs fitted</a></li>
 <li><a href="#homogeneity-of-random-group-residuals">Homogeneity of random group residuals</a></li>
-<li><a href="#normality-of-residuals">Normality of residuals</a>
-<ul>
+<li><a href="#normality-of-residuals">Normality of residuals</a></li>
 <li><a href="#leverage-and-cooks-distance">Leverage and Cooks distance</a></li>
 <li><a href="#random-effects-distribution">Random effects distribution</a></li>
-</ul></li>
 </ul></li>
 </ul>
 </div>
@@ -4141,8 +4138,6 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 </div>
 <div id="model-validation" class="section level1">
 <h1>Model validation</h1>
-<div id="best-model-validation" class="section level2">
-<h2>Best model validation</h2>
 <pre class="r"><code># augment data with fitted, residual cooks distance and leverage
 
 augment1 &lt;- function(dat, mod) {
@@ -4155,7 +4150,6 @@ augment1 &lt;- function(dat, mod) {
 }
 
 ba_inc_d &lt;- augment1(test_d, ba_inc_mod)</code></pre>
-</div>
 <div id="residual-vs-fitted" class="section level2">
 <h2>Residual vs fitted</h2>
 <p>I also plot residual vs the predictor and explanatory variables</p>
@@ -4214,8 +4208,9 @@ abline(0,0)</code></pre>
 <pre class="r"><code>qqnorm(resid(ba_inc_mod, type = &quot;pearson&quot;), pch=16, col = 1,  main = &quot;QQplot for pearosn residuals&quot;)
 qqline(resid(ba_inc_mod, type = &quot;pearson&quot;))</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-1.png" width="960" /></p>
-<div id="leverage-and-cooks-distance" class="section level3">
-<h3>Leverage and Cooks distance</h3>
+</div>
+<div id="leverage-and-cooks-distance" class="section level2">
+<h2>Leverage and Cooks distance</h2>
 <p>Cooks outliers, defined as &gt; 3 x mean(cooks distance) are colored in red. None of these “outliers” seem like they would disproportionately affect regression.</p>
 <pre class="r"><code># Plot leverage against standardised residuals
 
@@ -4240,12 +4235,11 @@ text(x=1650,y=1,&quot;Leverage&quot;,adj=c(0,0.5))
 text(x=1650,y=0.8,&quot;Cook&#39;s distance&quot;,adj=c(0,0.5))</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-34-2.png" width="960" /></p>
 </div>
-<div id="random-effects-distribution" class="section level3">
-<h3>Random effects distribution</h3>
+<div id="random-effects-distribution" class="section level2">
+<h2>Random effects distribution</h2>
 <p>The distribution of random effects (plots) should be roughly normal. Here our distribution is skewed, <a href="" title="https://stats.stackexchange.com/a/366500">from what I’ve read</a>, this should not be a problem for estimates or their std’s.</p>
 <pre class="r"><code>hist(as.vector(unlist(ranef(ba_inc_mod)$tree_id)), col = 1)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
-</div>
 </div>
 </div>
 

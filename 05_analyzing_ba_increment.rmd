@@ -628,7 +628,6 @@ emmip(
 
 # Model validation
 
-## Best model validation
 
 ```{r}
 # augment data with fitted, residual cooks distance and leverage
@@ -716,7 +715,7 @@ qqnorm(resid(ba_inc_mod, type = "pearson"), pch=16, col = 1,  main = "QQplot for
 qqline(resid(ba_inc_mod, type = "pearson"))
 ```
 
-### Leverage and Cooks distance
+## Leverage and Cooks distance
 
 Cooks outliers, defined as > 3 x mean(cooks distance) are colored in red. None of these "outliers" seem like they would disproportionately affect regression. 
 
@@ -746,7 +745,7 @@ text(x=1650,y=0.8,"Cook's distance",adj=c(0,0.5))
 
 ```
 
-### Random effects distribution
+## Random effects distribution
 
 The distribution of random effects (plots) should be roughly normal. Here our distribution is skewed, [from what I've read], this should not be a problem for estimates or their std's.
 
