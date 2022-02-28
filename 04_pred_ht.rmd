@@ -9,10 +9,10 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = TRUE)
 ```{r}
 library(lme4)
 library(emmeans)
-library(nlme)
 library(MuMIn)
-library(ggpubr)
 palette("Tableau 10")
+library(broom.mixed)
+
 ```
 
 # Introduction
@@ -126,16 +126,16 @@ We will determine the optimal random effects structure using the global fixed ef
     (1 | plot) + (1 | tree_id)
     (log(dbh) | plot) + (1 | tree_id)
 
-I'll do this using AICc and Restricted Maximum Likelihood Estimation (REML), which I believe is the preferred method when comparing random effects structure, whereas ML is necessary when comparing different fixed effects.
+I'll do this using AIC and Restricted Maximum Likelihood Estimation (REML), which I believe is the preferred method when comparing random effects structure, whereas ML is necessary when comparing different fixed effects.
 
 ```{r ranef-spec}
 f0 <- formula(ht_inc1 ~ log(dbh) * treatment * spp * year)
-m0 <- gls(f0, data = test_d, method = "REML")
+m0 <- nlme::gls(f0, data = test_d, method = "REML")
 m1 <- lmer(update(f0, ~ . + (1 | plot)), REML = TRUE, data = test_d)
 m2 <- update(m1, ~ . + (1 | tree_id))
 m3 <- update(m2, ~ . + (0 + log(dbh) | plot))
 
-AICc(m0, m1, m2, m3)
+AIC(m0, m1, m2, m3)
 ```
 
 The optimal random effects structure, includes the random intercept only for `plot`. I will assume this random effects structure in all further height models.
@@ -190,7 +190,7 @@ fl <- list(
 
 ```
 
-I use AICc to assess the fit of each of the models with coefficients estimated with ML in order to compare among various fixed effects.
+I use AIC to assess the fit of each of the models with coefficients estimated with ML in order to compare among various fixed effects.
 
 ```{r}
 
@@ -221,12 +221,6 @@ summary(ht_inc_mod1)
 Here is the summary table of the model used for predicting height increments and thus heights
 
 ```{r}
-library(broom.mixed)
-library(huxtable)
-
-tidy(ht_inc_mod1)
-
-huxreg("Height increment" = ht_inc_mod1, error_pos = "right", statistics = c("N" = "nobs"), stars = NULL)
 
 sjPlot::tab_model(ht_inc_mod1, dv.labels = "Height increment")
 
@@ -425,4 +419,8 @@ d_l <- left_join(d_l, new_heights, by = c("tree_id", "year")) %>%
   mutate(ht_p = if_else(spp %in% c("SESE3", "PSMEM"), ht_p, ht))
 
 
+```
+
+```{r}
+head(d_l)
 ```

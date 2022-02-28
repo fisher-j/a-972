@@ -397,7 +397,7 @@ m6d <- lm(log(ba_inc_scaled) ~ log(dbh) * treatment * spp, data = test_d)
 A and B are comparable, and C and D are comparable. E is not comparable with anything.
 
 ```{r}
-AICc(m6a, m6b, m6c, m6d)
+AIC(m6a, m6b, m6c, m6d)
 ```
 
 
