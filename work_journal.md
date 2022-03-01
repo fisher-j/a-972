@@ -11,9 +11,9 @@
   * remove: ICC
   * did this for [ht-increment model regression table] as well.
 
-[non-parametric test function](06_summary.html#species-dominance-significance-test)
-[dbh + cr](05_analyzing_ba_increment.html#estimated-marginal-means-and-regression-table-of-selected-model)
-[ht-increment model regression table](04_pred_ht.html#best-model-scrapping-above)
+[non-parametric test function]: (06_summary.html#species-dominance-significance-test)
+[dbh + cr]: (05_analyzing_ba_increment.html#estimated-marginal-means-and-regression-table-of-selected-model)
+[ht-increment model regression table]:(04_pred_ht.html#best-model-scrapping-above)
 
 ## 02/27/2022
 
