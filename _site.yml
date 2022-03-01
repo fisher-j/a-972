@@ -24,3 +24,4 @@ output:
     toc: true
     highlight: textmate
     code_folding: hide
+    df_print: default

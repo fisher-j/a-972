@@ -195,8 +195,8 @@ I use AIC to assess the fit of each of the models with coefficients estimated wi
 ```{r}
 
 get_aic(fl, data = test_d) %>%
-  kbl(caption = "AICS for ht increment models") %>%
-  kable_styling(full_width = FALSE)
+  kableExtra::kbl(caption = "AICS for ht increment models") %>%
+  kableExtra::kable_styling(full_width = FALSE)
 
 lmod <- function(fl) {
   lmer(fl, data = test_d, REML = TRUE)
@@ -222,7 +222,12 @@ Here is the summary table of the model used for predicting height increments and
 
 ```{r}
 
-sjPlot::tab_model(ht_inc_mod1, dv.labels = "Height increment")
+sjPlot::tab_model(ht_inc_mod1,
+  dv.labels = "Height increment",
+  show.ci = FALSE,
+  show.se = TRUE,
+  show.icc = FALSE
+)
 
 modelsummary::modelsummary(ht_inc_mod1)
 ```

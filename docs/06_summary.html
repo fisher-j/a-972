@@ -631,10 +631,10 @@ any(nrow(filter(d_l, status %in% c(1, 2, 3, 15, 16), is.na(dbh))))</code></pre>
 <h2>All species</h2>
 <pre class="r"><code>get_measures(d_l) %&gt;%
   make_summary() %&gt;%
-  kbl() %&gt;%
-  kable_classic(full_width = FALSE, html_font = &quot;Garamond&quot;) %&gt;%
-  add_header_above(c(&quot; &quot; = 2, &quot;Treatment&quot; = 5)) %&gt;%
-  collapse_rows(columns = 1, valign = &quot;top&quot;)</code></pre>
+  kableExtra::kbl() %&gt;%
+  kableExtra::kable_classic(full_width = FALSE, html_font = &quot;Garamond&quot;) %&gt;%
+  kableExtra::add_header_above(c(&quot; &quot; = 2, &quot;Treatment&quot; = 5)) %&gt;%
+  kableExtra::collapse_rows(columns = 1, valign = &quot;top&quot;)</code></pre>
 <table class=" lightable-classic" style="font-family: Garamond; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -1046,10 +1046,10 @@ Basal area (m<sup>2</sup>/ha)
 <h2>Redwood</h2>
 <pre class="r"><code>get_measures(species = &quot;SESE3&quot;) %&gt;%
   make_summary() %&gt;%
-  kbl() %&gt;%
-  kable_classic(full_width = FALSE, html_font = &quot;Garamond&quot;) %&gt;%
-  add_header_above(c(&quot; &quot; = 2, &quot;Treatment&quot; = 5)) %&gt;%
-  collapse_rows(columns = 1, valign = &quot;top&quot;)</code></pre>
+  kableExtra::kbl() %&gt;%
+  kableExtra::kable_classic(full_width = FALSE, html_font = &quot;Garamond&quot;) %&gt;%
+  kableExtra::add_header_above(c(&quot; &quot; = 2, &quot;Treatment&quot; = 5)) %&gt;%
+  kableExtra::collapse_rows(columns = 1, valign = &quot;top&quot;)</code></pre>
 <table class=" lightable-classic" style="font-family: Garamond; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -1461,10 +1461,10 @@ Basal area (m<sup>2</sup>/ha)
 <h2>Douglas-fir</h2>
 <pre class="r"><code>get_measures(species = &quot;PSMEM&quot;) %&gt;%
   make_summary() %&gt;%
-  kbl() %&gt;%
-  kable_classic(full_width = FALSE, html_font = &quot;Garamond&quot;) %&gt;%
-  add_header_above(c(&quot; &quot; = 2, &quot;Treatment&quot; = 5)) %&gt;%
-  collapse_rows(columns = 1, valign = &quot;top&quot;)</code></pre>
+  kableExtra::kbl() %&gt;%
+  kableExtra::kable_classic(full_width = FALSE, html_font = &quot;Garamond&quot;) %&gt;%
+  kableExtra::add_header_above(c(&quot; &quot; = 2, &quot;Treatment&quot; = 5)) %&gt;%
+  kableExtra::collapse_rows(columns = 1, valign = &quot;top&quot;)</code></pre>
 <table class=" lightable-classic" style="font-family: Garamond; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -1875,7 +1875,7 @@ Basal area (m<sup>2</sup>/ha)
 </div>
 <div id="figures" class="section level1">
 <h1>Figures</h1>
-<p><img src="06_summary_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
+<p><img src="06_summary_files/figure-html/unnamed-chunk-17-1.png" width="687.36" /></p>
 </div>
 <div id="species-dominance" class="section level1">
 <h1>Species dominance</h1>
@@ -1932,8 +1932,8 @@ spp_dom_pct &lt;- function(...) {
   label_parsed
 )
 
-make_dominance_fig &lt;- function(data = spp_dom_pct(d_l)) {
-  data %&gt;%
+make_dominance_fig &lt;- function(...) {
+  spp_dom_pct(...) %&gt;%
     my_sort(items = &quot;treatment&quot;) %&gt;%
     mutate(measure = factor(measure, levels = c(&quot;dbh&quot;, &quot;ht_p&quot;, &quot;ba_inc2&quot;))) %&gt;%
     ggplot(aes(year, freq, fill = spp)) +
@@ -1952,7 +1952,8 @@ make_dominance_fig &lt;- function(data = spp_dom_pct(d_l)) {
         legend.box.spacing = element_blank(),
         panel.grid = element_blank(),
         # strip.background.y = element_blank(),
-        strip.placement = &quot;outside&quot;
+        strip.placement = &quot;outside&quot;,
+        axis.text.x = element_text(angle = 90, vjust = 0.25)
       ) +
       # scale_x_continuous(breaks = yr_breaks) +
       scale_y_continuous(breaks = c(0, .5, 1)) +
@@ -1963,9 +1964,9 @@ make_dominance_fig &lt;- function(data = spp_dom_pct(d_l)) {
       labs(y = &quot;Proportion of highest ranking trees&quot;, x = &quot;Year&quot;)
 }
 
-make_dominance_fig()</code></pre>
+make_dominance_fig(years = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;))</code></pre>
 <pre><code>## Warning in spp_dom_raw(...): Measures missing values (entries removed): ba_inc2</code></pre>
-<pre><code>## Warning: Removed 10 rows containing missing values (position_stack).</code></pre>
+<pre><code>## Warning: Removed 20 rows containing missing values (position_stack).</code></pre>
 <p><img src="06_summary_files/figure-html/unnamed-chunk-19-1.png" width="334.08" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/dominance_fig.pdf&quot;,
@@ -1974,21 +1975,35 @@ make_dominance_fig()</code></pre>
   height = 8,
   units = &quot;cm&quot;
 )</code></pre>
-<pre><code>## Warning: Removed 10 rows containing missing values (position_stack).</code></pre>
+<pre><code>## Warning: Removed 20 rows containing missing values (position_stack).</code></pre>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/dominance_fig.jpg&quot;,
   width = 8.84,
   height = 8,
   units = &quot;cm&quot;
 )</code></pre>
-<pre><code>## Warning: Removed 10 rows containing missing values (position_stack).</code></pre>
+<pre><code>## Warning: Removed 20 rows containing missing values (position_stack).</code></pre>
 <p>Now I need to display the average values for these dominant species, perhaps along with their standard deviations. I think I’ll just do this for each treatment in the most recent measurement period.</p>
 </div>
 <div id="species-dominance-significance-test" class="section level2">
 <h2>Species dominance significance test</h2>
 <p>A Wilcoxon rank-sum test could be used to test if one treatment results in changes that are significantly greater than another treatment. Unfortunately, it seems like none of the treatments that show an average increase in the number of dominant SESE are significant at the alpha = 0.05 level, using a 1-sided test. One-sided permutation tests shows even larger p-values, and these I would expect to be more accurate given the number of zeros in the data.</p>
 <p>To start, I will only test significance for dbh ranked dominance, to see if treatment effect is significant there. first I get a list of differences from 2008 to 2018 for each plot in a treatment, this represents the treatments effect on redwood dominance. Then I compare the treatments to see is ones with a larger average effect, are significantly larger than those with a smaller average effect: 1-sided non-parametric tests. Wilcox rank-sum has lower p-values, than the permutation test. The data has a lot of zeros, and very few data points, none of the one-sided differences are significant. It is too soon to tell if redwood dominance has been affected.</p>
-<pre class="r"><code># Takes one of my dominance metrics: dbh, ht, ba_inc2
+<pre class="r"><code># This is the permutation calculation
+
+new_diff &lt;- function(d_null) {
+  new_samp &lt;- sample(d_null)
+  mean(new_samp[5:8]) - mean(new_samp[1:4])
+}
+
+perm_test &lt;- function(x, y, M = 1e5) {
+  obs_diff &lt;- mean(x) - mean(y)
+  d_null &lt;- c(x, y)
+  perm_diff &lt;- replicate(M, new_diff(d_null))
+  sum(perm_diff &gt;= obs_diff) / M
+}
+
+# Takes one of my dominance metrics: dbh, ht, ba_inc2
 
 non_para_dom_test &lt;- function(metric) {
   # only 2013 and 2018 available for basal area increment
@@ -1996,8 +2011,8 @@ non_para_dom_test &lt;- function(metric) {
   
   # summarize differences between 2018 and 2013 for each treatment
   # (plot differences)
-  W1 &lt;- spp_dom_cnt(metrics = metric) %&gt;%
-    filter(spp == &quot;SESE3&quot;, year %in% years) %&gt;%
+  W1 &lt;- spp_dom_cnt(metrics = metric, years = years) %&gt;%
+    filter(spp == &quot;SESE3&quot;) %&gt;%
     group_by(plot) %&gt;%
     mutate(diff = n - lag(n)) %&gt;%
     drop_na() %&gt;%
@@ -2025,7 +2040,117 @@ non_para_dom_test &lt;- function(metric) {
     list(test = paste(x[1], &quot;&gt;&quot;, x[2]), Wilcox.P = wilout$p.value, Perm.P = permout)  
   }) %&gt;%
     bind_rows()
-}</code></pre>
+}
+
+non_para_dom_test(&quot;dbh&quot;)</code></pre>
+<pre><code>## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties</code></pre>
+<pre><code>## # A tibble: 8 x 3
+##   test      Wilcox.P Perm.P
+##   &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;
+## 1 H80 &gt; L40   0.0668  0.142
+## 2 L80 &gt; L40   0.0668  0.143
+## 3 C &gt; L40     0.310   0.285
+## 4 H40 &gt; L40   0.128   0.287
+## 5 H80 &gt; C     0.321   0.503
+## 6 H80 &gt; H40   0.304   0.499
+## 7 L80 &gt; C     0.321   0.499
+## 8 L80 &gt; H40   0.304   0.498</code></pre>
+<pre class="r"><code>non_para_dom_test(&quot;ba_inc2&quot;)</code></pre>
+<pre><code>## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties
+
+## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
+## compute exact p-value with ties</code></pre>
+<pre><code>## # A tibble: 9 x 3
+##   test      Wilcox.P Perm.P
+##   &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;
+## 1 C &gt; L40     0.0235 0.0430
+## 2 L80 &gt; L40   0.0443 0.0856
+## 3 H80 &gt; L40   0.0432 0.0861
+## 4 C &gt; H40     0.103  0.187 
+## 5 L80 &gt; H40   0.176  0.241 
+## 6 H40 &gt; L40   0.215  0.327 
+## 7 H80 &gt; H40   0.215  0.329 
+## 8 C &gt; H80     0.304  0.500 
+## 9 L80 &gt; H80   0.437  0.499</code></pre>
+<pre class="r"><code>non_para_dom_test(&quot;ht&quot;)</code></pre>
+<pre><code>## Warning in spp_dom_raw(...): Measures missing values (entries removed): ht
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
+
+## Warning in spp_dom_raw(...): cannot compute exact p-value with ties</code></pre>
+<pre><code>## # A tibble: 10 x 3
+##    test      Wilcox.P Perm.P
+##    &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;
+##  1 L80 &gt; H40   0.0316 0.0574
+##  2 C &gt; H40     0.0902 0.100 
+##  3 L80 &gt; L40   0.0671 0.0990
+##  4 H80 &gt; H40   0.178  0.199 
+##  5 L80 &gt; H80   0.231  0.213 
+##  6 C &gt; L40     0.224  0.242 
+##  7 L40 &gt; H40   0.5    0.301 
+##  8 L80 &gt; C     0.221  0.297 
+##  9 C &gt; H80     0.385  0.429 
+## 10 H80 &gt; L40   0.385  0.429</code></pre>
 </div>
 </div>
 

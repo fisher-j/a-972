@@ -20,9 +20,9 @@ color_groups <- function(x, caption = "", background = "#EEE9E9") {
     filter(group_id %% 2 == 0) %>%
     pull(rowname)
   x %>%
-    kbl(caption = caption) %>%
-    kable_styling(full_width = FALSE) %>%
-    row_spec(even_groups, background = background)
+    kableExtra::kbl(caption = caption) %>%
+    kableExtra::kable_styling(full_width = FALSE) %>%
+    kableExtra::row_spec(even_groups, background = background)
 }
 
 # Outlier Function

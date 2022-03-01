@@ -49,7 +49,8 @@ test_d <- d_l %>%
     treat_method = str_extract(treatment, "C|H|L"),
     treat_density = str_extract(treatment, "C|40|80"),
     treat_status = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
-    year = as.character(year)
+    year = as.character(year),
+    cr = cr / 100
   ) %>%
   select(-c(h_dist, azi, rot, cc, x, y, live)) %>%
   # add a scaled ba_inc1 variable for convenience
@@ -173,7 +174,8 @@ test_d %>%
     guides(color = guide_legend(override.aes = list(shape = c(19, 19)))) +
     labs(
       x = "BA increment (cm)",
-      y = "tree id (sorted by diameter increment)"
+      y = "tree id (sorted by diameter increment)",
+      title = "data in dataset"
     )
 
 ```
@@ -192,7 +194,8 @@ d_l %>%
     guides(color = guide_legend(override.aes = list(shape = c(19, 19)))) +
     labs(
       x = "diameter increment (cm)",
-      y = "tree id ALL TREES (sorted by diameter increment)"
+      y = "tree id ALL TREES (sorted by diameter increment)",
+      title = "all data"
     )
 
 ```
@@ -340,11 +343,6 @@ plot_bainc_change <- function(treatment) {
       scale_y_continuous(expand = expansion(mult = 0.01))
 }
 
-plot_bainc_change("C")
-plot_bainc_change("H40")
-plot_bainc_change("L40")
-plot_bainc_change("H80")
-plot_bainc_change("L80")
 
 ```
 
@@ -452,7 +450,7 @@ So, if my gamma GLM is not going to work, I will focus instead on using a mixed 
 ```{r}
 
 f0 <- formula(
-  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + spp + year + cr
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + spp + year * cr
 )
 
 m1 <- lmer(update(f0, ~ . + (1 | tree_id) + (1 | plot)), REML = FALSE, data = test_d)
@@ -499,10 +497,10 @@ get_aic(fl1, data = test_d, method = "lmm")
 
 ```
 
-Here I'll look at the top model, plot labels refer to diameter increment (cm/year). Unfortuantely the residuals do not apppear to be evenly distributed. I'm not sure that I can use this model.
+Here I'll look at the top model, plot labels refer to diameter increment (cm/year). Unfortunately the residuals do not appear to be evenly distributed. I'm not sure that I can use this model.
 
 ```{r}
-ba_inc_lmm <- lmer(fl1[[16]], data = test_d, REML = TRUE)
+ba_inc_lmm <- lmer(fl1[[17]], data = test_d, REML = TRUE)
 
 summary(ba_inc_lmm)
 
@@ -528,19 +526,18 @@ see:
 
 And the singular models section [here](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#singular-models-random-effect-variances-estimated-as-zero-or-correlations-estimated-as---1)
 
-Here is the model list above, with plot random effect, just in case.
+Here I can include the random effect of plot if I have to with plot random effect.
 
-```{r}
+```{r, eval=FALSE}
 
 fl2 <- lapply(fl1, update_no_simplify, ~ . + (1 | plot))
 get_aic(fl2, data = test_d, method = "lmm")
 
 ```
 
-
 ## What does all model selection have to say?
 
-I'll use dredge from MuMIn to test all possible models with 3 to 10 predictors models
+I could use dredge from MuMIn to test all possible models with 3 to 10 predictors models
 
 ```{r, eval=FALSE}
 
@@ -556,29 +553,6 @@ dd <- dredge(fm1, m.lim = c(3, 10))
 dd
 ```
 
-# Is a glm going to work?
-
-While GLMs with gamma family are used in the literature for basal area increment models. I had a hard time getting them to converge. They are computationally expensive (slow) to fit and when I look at the residuals, they are not all the different from the log-log model fit above.
-
-In looking at the results for the GLM model, it looks very similar to the linear log log model, the qq plot reveals similarly light tailed distribution.
-
-```{r, eval=FALSE}
-
-glm_mod <- glmer(
-  ba_inc_scaled ~ treatment + scale(dbh) + scale(cr) + spp + year + (1 | plot) + (1 | tree_id),
-  data = test_d,
-  family = Gamma(link = "log")
-)
-
-allFit(glm_mod)
-
-glm_converge <- mixedup::converge_it(glm_mod)
-
-summary(glm_mod)
-plot(predict(glm_mod), resid(glm_mod, type = "deviance"))
-
-```
-
 # Estimated marginal means and regression table of selected model
 
 First I choose a model from above based on parsimony and AICc:
@@ -587,12 +561,19 @@ First I choose a model from above based on parsimony and AICc:
 
 ba_inc_mod <- ba_inc_lmm
 
-summary(ba_inc_lmm)
+summary(ba_inc_mod)
 
 ```
 
 ```{r}
-sjPlot::tab_model(ba_inc_mod, dv.labels = "BA increment")
+
+sjPlot::tab_model(ba_inc_mod,
+  dv.labels = "BA increment",
+  show.ci = FALSE,
+  show.se = TRUE,
+  show.icc = FALSE
+)
+
 ```
 
 Here I get the marginal estimates and pairwise comparisons for the selected model. If interaction with species and treatment was not included in the model, than we can't compare redwood and douglas-fir response in each treatment.
@@ -603,30 +584,86 @@ emmeans(ba_inc_mod, pairwise ~ treatment, type = "response")
 
 ```
 
-Here I plot the expected response by species and dbh
+Here I plot the expected response by species and dbh, averaged over the effect of year.
 
 ```{r}
+library(patchwork)
 
-emmip(
+
+a <- emmip(
   ba_inc_mod,
   spp ~ dbh | treatment,
   CIs = TRUE,
   plotit = FALSE,
   at = list(dbh = seq(10, 60, 2)),
   type = "response"
-) %>% 
+) %>%
+  mutate(
+    treatment = recode_factor(treatment,
+      H40 = "H40", L40 = "L40", H80 = "C80", L80 = "L80", C = "Control"
+    ),
+    spp = recode(spp, SESE3 = "redwood", PSMEM = "Douglas-fir")
+  ) %>%
   ggplot(aes(dbh, yvar, color = spp)) +
     geom_line() +
     facet_wrap(~ treatment ) +
     geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = spp), alpha = .2) +
     theme_bw() +
+    theme(legend.position = c(0.1, 0.85), legend.background = element_blank()) +
     scale_color_manual(
-      values = c(SESE3 = "black", PSMEM = "#969696"),
+      values = c("#969696", "black"),
       aesthetics = c("color", "fill")
     ) +
-    labs(y = "Predicted BA increment", title = "back transformed from log-log model")
+    labs(
+      x = "Dbh (cm)",
+      y = expression(Basal ~ area ~ increment ~ (cm^2 ~ year^-1)) 
+    # title = "back transformed from log-log model, averaged over year"
+    )
 
 ```
+
+Here is the expected response resulting from the interaction of year and crown ratio.
+
+```{r}
+b <- emmip(
+  ba_inc_mod,
+  year ~ cr,
+  CIs = TRUE,
+  plotit = FALSE,
+  at = list(cr = seq(.05, .65, .1)),
+  type = "response"
+) %>%
+  mutate(year = fct_recode(year, "2008 - 2013" = "08", "2013 - 2018" = "13")) %>%
+  ggplot(aes(cr, yvar, color = year)) +
+    geom_line() +
+    # facet_wrap(~ treatment ) +
+    geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = year), alpha = .2) +
+    theme_bw() +
+    theme(legend.position = c(0.35, 0.75), legend.background = element_blank()) +
+    scale_color_manual(
+      values = c("#969696", "black"),
+      aesthetics = c("color", "fill")
+    ) +
+    labs(
+      x = "Crown ratio",
+      y = "BA increment"
+      # title = "Effect of interaction of year and crown-ratio on BA increment"
+    )
+
+```
+
+Can I put these different plots together?
+
+```{r, fig.width=7.16, fig.height=5.91}
+
+layout <- c(
+  area(1, 1, 200, 300),
+  area(119, 219, 200, 299)
+)
+
+a + b + plot_layout(design = layout)
+```
+
 
 # Model validation
 
@@ -754,4 +791,27 @@ The distribution of random effects (plots) should be roughly normal. Here our di
 
 ```{r}
 hist(as.vector(unlist(ranef(ba_inc_mod)$tree_id)), col = 1)
+```
+
+# Is a glm going to work?
+
+While GLMs with gamma family are used in the literature for basal area increment models. I had a hard time getting them to converge. They are computationally expensive (slow) to fit and when I look at the residuals, they are not all the different from the log-log model fit above.
+
+In looking at the results for the GLM model, it looks very similar to the linear log log model, the qq plot reveals similarly light tailed distribution.
+
+```{r, eval=FALSE}
+
+glm_mod <- glmer(
+  ba_inc_scaled ~ treatment + scale(dbh) + scale(cr) + spp + year + (1 | plot) + (1 | tree_id),
+  data = test_d,
+  family = Gamma(link = "log")
+)
+
+allFit(glm_mod)
+
+glm_converge <- mixedup::converge_it(glm_mod)
+
+summary(glm_mod)
+plot(predict(glm_mod), resid(glm_mod, type = "deviance"))
+
 ```

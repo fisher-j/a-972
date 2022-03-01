@@ -65,8 +65,8 @@ change_d %>%
   rbind(rep(NA, 4)) %>%
   {bind_cols(.[1:11, ], .[12:22, ], .name_repair = "minimal")} %>%
   ungroup() %>%
-  kbl() %>%
-  kable_styling()
+  kableExtra::kbl() %>%
+  kableExtra::kable_styling()
 
 ```
 
@@ -163,13 +163,13 @@ dbh_problem1 %>%
   unite("bear_seq", starts_with("bear"), sep = ">") %>%
   unite("cr_seq", starts_with("cr"), sep = ">") %>%
   unite("status_seq", starts_with("status"), sep = ">") %>%
-  kbl() %>%
-  kable_styling(bootstrap_options = "hover") %>%
-  column_spec(3, background = dbh_color[[1]]) %>%
-  column_spec(4, background = dbh_color[[2]]) %>%
-  column_spec(5, background = dbh_color[[3]]) %>%
-  column_spec(12, background = outlier_color[[1]]) %>%
-  column_spec(13, background = outlier_color[[2]])
+  kableExtra::kbl() %>%
+  kableExtra::kable_styling(bootstrap_options = "hover") %>%
+  kableExtra::column_spec(3, background = dbh_color[[1]]) %>%
+  kableExtra::column_spec(4, background = dbh_color[[2]]) %>%
+  kableExtra::column_spec(5, background = dbh_color[[3]]) %>%
+  kableExtra::column_spec(12, background = outlier_color[[1]]) %>%
+  kableExtra::column_spec(13, background = outlier_color[[2]])
 ```
 
 ### *Update dbh values in main dataset*
@@ -366,13 +366,13 @@ problem_ht %>%
   unite("status_seq", starts_with("status"), sep = ">") %>%
   unite("dbh_seq", starts_with("dbh"), sep = ">") %>%
   unite("cond_seq", starts_with("cond"), sep = ">") %>%
-  kbl() %>%
-  kable_styling() %>%
-  column_spec(3, background = ht_fix_color[[1]]) %>%
-  column_spec(4, background = ht_fix_color[[2]]) %>%
-  column_spec(5, background = ht_fix_color[[3]]) %>%
-  column_spec(14, background = ht_change_color[[1]]) %>%
-  column_spec(15, background = ht_change_color[[2]])
+  kableExtra::kbl() %>%
+  kableExtra::kable_styling() %>%
+  kableExtra::column_spec(3, background = ht_fix_color[[1]]) %>%
+  kableExtra::column_spec(4, background = ht_fix_color[[2]]) %>%
+  kableExtra::column_spec(5, background = ht_fix_color[[3]]) %>%
+  kableExtra::column_spec(14, background = ht_change_color[[1]]) %>%
+  kableExtra::column_spec(15, background = ht_change_color[[2]])
 
 ```
 
@@ -429,7 +429,7 @@ filter(p_h, status %in% c(1, 2, 3, 15, 16)) %>%
   group_by(year, measured = !is.na(ht)) %>%
   summarise(n = n()) %>%
   mutate(freq = n / sum(n), .keep = "unused") %>%
-  filter(measured)
+  filter(measured) %>% kableExtra::kbl() %>% kableExtra::kable_styling()
 
 # what proportion of trees in 2018 by treatment and plot DO have height data?
 filter(d_l, status %in% c(1, 2, 3, 15, 16), year == "18") %>%

@@ -360,8 +360,8 @@ out_d &lt;- change_d %&gt;%
   rbind(rep(NA, 4)) %&gt;%
   {bind_cols(.[1:11, ], .[12:22, ], .name_repair = &quot;minimal&quot;)} %&gt;%
   ungroup() %&gt;%
-  kbl() %&gt;%
-  kable_styling()</code></pre>
+  kableExtra::kbl() %&gt;%
+  kableExtra::kable_styling()</code></pre>
 <table class="table" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -769,13 +769,13 @@ dbh_problem1 %&gt;%
   unite(&quot;bear_seq&quot;, starts_with(&quot;bear&quot;), sep = &quot;&gt;&quot;) %&gt;%
   unite(&quot;cr_seq&quot;, starts_with(&quot;cr&quot;), sep = &quot;&gt;&quot;) %&gt;%
   unite(&quot;status_seq&quot;, starts_with(&quot;status&quot;), sep = &quot;&gt;&quot;) %&gt;%
-  kbl() %&gt;%
-  kable_styling(bootstrap_options = &quot;hover&quot;) %&gt;%
-  column_spec(3, background = dbh_color[[1]]) %&gt;%
-  column_spec(4, background = dbh_color[[2]]) %&gt;%
-  column_spec(5, background = dbh_color[[3]]) %&gt;%
-  column_spec(12, background = outlier_color[[1]]) %&gt;%
-  column_spec(13, background = outlier_color[[2]])</code></pre>
+  kableExtra::kbl() %&gt;%
+  kableExtra::kable_styling(bootstrap_options = &quot;hover&quot;) %&gt;%
+  kableExtra::column_spec(3, background = dbh_color[[1]]) %&gt;%
+  kableExtra::column_spec(4, background = dbh_color[[2]]) %&gt;%
+  kableExtra::column_spec(5, background = dbh_color[[3]]) %&gt;%
+  kableExtra::column_spec(12, background = outlier_color[[1]]) %&gt;%
+  kableExtra::column_spec(13, background = outlier_color[[2]])</code></pre>
 <table class="table table-hover" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -4493,13 +4493,13 @@ problem_ht %&gt;%
   unite(&quot;status_seq&quot;, starts_with(&quot;status&quot;), sep = &quot;&gt;&quot;) %&gt;%
   unite(&quot;dbh_seq&quot;, starts_with(&quot;dbh&quot;), sep = &quot;&gt;&quot;) %&gt;%
   unite(&quot;cond_seq&quot;, starts_with(&quot;cond&quot;), sep = &quot;&gt;&quot;) %&gt;%
-  kbl() %&gt;%
-  kable_styling() %&gt;%
-  column_spec(3, background = ht_fix_color[[1]]) %&gt;%
-  column_spec(4, background = ht_fix_color[[2]]) %&gt;%
-  column_spec(5, background = ht_fix_color[[3]]) %&gt;%
-  column_spec(14, background = ht_change_color[[1]]) %&gt;%
-  column_spec(15, background = ht_change_color[[2]])</code></pre>
+  kableExtra::kbl() %&gt;%
+  kableExtra::kable_styling() %&gt;%
+  kableExtra::column_spec(3, background = ht_fix_color[[1]]) %&gt;%
+  kableExtra::column_spec(4, background = ht_fix_color[[2]]) %&gt;%
+  kableExtra::column_spec(5, background = ht_fix_color[[3]]) %&gt;%
+  kableExtra::column_spec(14, background = ht_change_color[[1]]) %&gt;%
+  kableExtra::column_spec(15, background = ht_change_color[[2]])</code></pre>
 <table class="table" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -7276,14 +7276,57 @@ filter(p_h, status %in% c(1, 2, 3, 15, 16)) %&gt;%
   group_by(year, measured = !is.na(ht)) %&gt;%
   summarise(n = n()) %&gt;%
   mutate(freq = n / sum(n), .keep = &quot;unused&quot;) %&gt;%
-  filter(measured)</code></pre>
-<pre><code>## # A tibble: 3 x 3
-## # Groups:   year [3]
-##   year  measured  freq
-##   &lt;ord&gt; &lt;lgl&gt;    &lt;dbl&gt;
-## 1 08    TRUE     0.983
-## 2 13    TRUE     0.998
-## 3 18    TRUE     0.526</code></pre>
+  filter(measured) %&gt;% kableExtra::kbl() %&gt;% kableExtra::kable_styling()</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:left;">
+measured
+</th>
+<th style="text-align:right;">
+freq
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+0.9830839
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+0.9977827
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+0.5257475
+</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code># what proportion of trees in 2018 by treatment and plot DO have height data?
 filter(d_l, status %in% c(1, 2, 3, 15, 16), year == &quot;18&quot;) %&gt;%
   group_by(plot, measured = !is.na(ht)) %&gt;%

@@ -8,4 +8,9 @@ date: "`r format(Sys.Date(), '%m/%d/%Y')`"
 
 Welcome to the webpage for the A-972 10-year data analysis. The following pages document the steps I've taken in R to clean and analyze the A-972 dataset.
 
+# Work completed
+
+```{r, child="work_journal.md"}
+
+```
 

@@ -360,10 +360,10 @@ make_summary <- function(data, measures = c("dbh", "ht_p", "density", "ba")) {
 
 get_measures(d_l) %>%
   make_summary() %>%
-  kbl() %>%
-  kable_classic(full_width = FALSE, html_font = "Garamond") %>%
-  add_header_above(c(" " = 2, "Treatment" = 5)) %>%
-  collapse_rows(columns = 1, valign = "top")
+  kableExtra::kbl() %>%
+  kableExtra::kable_classic(full_width = FALSE, html_font = "Garamond") %>%
+  kableExtra::add_header_above(c(" " = 2, "Treatment" = 5)) %>%
+  kableExtra::collapse_rows(columns = 1, valign = "top")
 
 ```
 
@@ -373,10 +373,10 @@ get_measures(d_l) %>%
 
 get_measures(species = "SESE3") %>%
   make_summary() %>%
-  kbl() %>%
-  kable_classic(full_width = FALSE, html_font = "Garamond") %>%
-  add_header_above(c(" " = 2, "Treatment" = 5)) %>%
-  collapse_rows(columns = 1, valign = "top")
+  kableExtra::kbl() %>%
+  kableExtra::kable_classic(full_width = FALSE, html_font = "Garamond") %>%
+  kableExtra::add_header_above(c(" " = 2, "Treatment" = 5)) %>%
+  kableExtra::collapse_rows(columns = 1, valign = "top")
 
 ```
 
@@ -386,16 +386,16 @@ get_measures(species = "SESE3") %>%
 
 get_measures(species = "PSMEM") %>%
   make_summary() %>%
-  kbl() %>%
-  kable_classic(full_width = FALSE, html_font = "Garamond") %>%
-  add_header_above(c(" " = 2, "Treatment" = 5)) %>%
-  collapse_rows(columns = 1, valign = "top")
+  kableExtra::kbl() %>%
+  kableExtra::kable_classic(full_width = FALSE, html_font = "Garamond") %>%
+  kableExtra::add_header_above(c(" " = 2, "Treatment" = 5)) %>%
+  kableExtra::collapse_rows(columns = 1, valign = "top")
 
 ```
 
 # Figures
 
-```{r, fig.height = 6.7, fig.width = 7, echo = FALSE, message=FALSE, warning = FALSE}
+```{r, fig.height = 5.91, fig.width = 7.16, echo = FALSE, message=FALSE, warning = FALSE}
 
 fix_year <- function(year) {
   case_when(year == "init" ~2007.5,
@@ -538,8 +538,8 @@ dominance_labels <- as_labeller(
   label_parsed
 )
 
-make_dominance_fig <- function(data = spp_dom_pct(d_l)) {
-  data %>%
+make_dominance_fig <- function(...) {
+  spp_dom_pct(...) %>%
     my_sort(items = "treatment") %>%
     mutate(measure = factor(measure, levels = c("dbh", "ht_p", "ba_inc2"))) %>%
     ggplot(aes(year, freq, fill = spp)) +
@@ -558,7 +558,8 @@ make_dominance_fig <- function(data = spp_dom_pct(d_l)) {
         legend.box.spacing = element_blank(),
         panel.grid = element_blank(),
         # strip.background.y = element_blank(),
-        strip.placement = "outside"
+        strip.placement = "outside",
+        axis.text.x = element_text(angle = 90, vjust = 0.25)
       ) +
       # scale_x_continuous(breaks = yr_breaks) +
       scale_y_continuous(breaks = c(0, .5, 1)) +
@@ -569,7 +570,7 @@ make_dominance_fig <- function(data = spp_dom_pct(d_l)) {
       labs(y = "Proportion of highest ranking trees", x = "Year")
 }
 
-make_dominance_fig()
+make_dominance_fig(years = c("init", "08", "13", "18"))
 
 ggsave(
   filename = "figs/dominance_fig.pdf",
@@ -601,6 +602,20 @@ To start, I will only test significance for dbh ranked dominance, to see if trea
 
 ```{r}
 
+# This is the permutation calculation
+
+new_diff <- function(d_null) {
+  new_samp <- sample(d_null)
+  mean(new_samp[5:8]) - mean(new_samp[1:4])
+}
+
+perm_test <- function(x, y, M = 1e5) {
+  obs_diff <- mean(x) - mean(y)
+  d_null <- c(x, y)
+  perm_diff <- replicate(M, new_diff(d_null))
+  sum(perm_diff >= obs_diff) / M
+}
+
 # Takes one of my dominance metrics: dbh, ht, ba_inc2
 
 non_para_dom_test <- function(metric) {
@@ -609,8 +624,8 @@ non_para_dom_test <- function(metric) {
   
   # summarize differences between 2018 and 2013 for each treatment
   # (plot differences)
-  W1 <- spp_dom_cnt(metrics = metric) %>%
-    filter(spp == "SESE3", year %in% years) %>%
+  W1 <- spp_dom_cnt(metrics = metric, years = years) %>%
+    filter(spp == "SESE3") %>%
     group_by(plot) %>%
     mutate(diff = n - lag(n)) %>%
     drop_na() %>%
@@ -640,4 +655,7 @@ non_para_dom_test <- function(metric) {
     bind_rows()
 }
 
+non_para_dom_test("dbh")
+non_para_dom_test("ba_inc2")
+non_para_dom_test("ht")
 ```
