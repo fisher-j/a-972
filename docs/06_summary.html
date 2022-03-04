@@ -449,7 +449,7 @@ measures$dom_ht &lt;- function(data, species) {
       tree_id %in% ht_id_2018
     ) %&gt;%
     group_by(plot, year) %&gt;%
-    slice_max(order_by = ht_p, n = 8, with_ties = FALSE) %&gt;%
+    slice_max(order_by = dbh, n = 8, with_ties = FALSE) %&gt;%
     filter(spp %in% species) %&gt;%
     group_by(treatment, year) %&gt;%
     summarise(
@@ -638,98 +638,6 @@ Control
 <tbody>
 <tr>
 <td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-1590.6 (418.0)
-</td>
-<td style="text-align:left;">
-1693.8 (181.0)
-</td>
-<td style="text-align:left;">
-1628.1 (160.2)
-</td>
-<td style="text-align:left;">
-1775.0 (120.3)
-</td>
-<td style="text-align:left;">
-1556.2 (191.1)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:left;">
-496.9 (121.8)
-</td>
-<td style="text-align:left;">
-415.6 (56.2)
-</td>
-<td style="text-align:left;">
-1275.0 (127.9)
-</td>
-<td style="text-align:left;">
-1062.5 (123.7)
-</td>
-<td style="text-align:left;">
-1556.2 (191.1)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:left;">
-434.4 (125.2)
-</td>
-<td style="text-align:left;">
-362.5 (70.0)
-</td>
-<td style="text-align:left;">
-1096.9 (118.8)
-</td>
-<td style="text-align:left;">
-1018.8 (117.5)
-</td>
-<td style="text-align:left;">
-1331.2 (98.2)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:left;">
-387.5 (91.9)
-</td>
-<td style="text-align:left;">
-343.8 (71.8)
-</td>
-<td style="text-align:left;">
-1015.6 (105.3)
-</td>
-<td style="text-align:left;">
-981.2 (143.4)
-</td>
-<td style="text-align:left;">
-1053.1 (48.3)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 Mean QMD (cm)
 </td>
 <td style="text-align:left;">
@@ -914,6 +822,98 @@ Height (m)
 </tr>
 <tr>
 <td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+1590.6 (418.0)
+</td>
+<td style="text-align:left;">
+1693.8 (181.0)
+</td>
+<td style="text-align:left;">
+1628.1 (160.2)
+</td>
+<td style="text-align:left;">
+1775.0 (120.3)
+</td>
+<td style="text-align:left;">
+1556.2 (191.1)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+496.9 (121.8)
+</td>
+<td style="text-align:left;">
+415.6 (56.2)
+</td>
+<td style="text-align:left;">
+1275.0 (127.9)
+</td>
+<td style="text-align:left;">
+1062.5 (123.7)
+</td>
+<td style="text-align:left;">
+1556.2 (191.1)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+434.4 (125.2)
+</td>
+<td style="text-align:left;">
+362.5 (70.0)
+</td>
+<td style="text-align:left;">
+1096.9 (118.8)
+</td>
+<td style="text-align:left;">
+1018.8 (117.5)
+</td>
+<td style="text-align:left;">
+1331.2 (98.2)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+387.5 (91.9)
+</td>
+<td style="text-align:left;">
+343.8 (71.8)
+</td>
+<td style="text-align:left;">
+1015.6 (105.3)
+</td>
+<td style="text-align:left;">
+981.2 (143.4)
+</td>
+<td style="text-align:left;">
+1053.1 (48.3)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Basal area (m<sup>2</sup>/ha)
 </td>
 <td style="text-align:left;">
@@ -1051,98 +1051,6 @@ Control
 </tr>
 </thead>
 <tbody>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-515.6 (314.6)
-</td>
-<td style="text-align:left;">
-365.6 (133.2)
-</td>
-<td style="text-align:left;">
-571.9 (175.4)
-</td>
-<td style="text-align:left;">
-415.6 (256.0)
-</td>
-<td style="text-align:left;">
-237.5 (72.9)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:left;">
-237.5 (121.2)
-</td>
-<td style="text-align:left;">
-146.9 (25.8)
-</td>
-<td style="text-align:left;">
-490.6 (138.6)
-</td>
-<td style="text-align:left;">
-309.4 (173.3)
-</td>
-<td style="text-align:left;">
-237.5 (72.9)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:left;">
-206.2 (113.0)
-</td>
-<td style="text-align:left;">
-109.4 (41.3)
-</td>
-<td style="text-align:left;">
-468.8 (130.9)
-</td>
-<td style="text-align:left;">
-303.1 (161.8)
-</td>
-<td style="text-align:left;">
-231.2 (61.7)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:left;">
-184.4 (123.9)
-</td>
-<td style="text-align:left;">
-96.9 (41.3)
-</td>
-<td style="text-align:left;">
-462.5 (127.1)
-</td>
-<td style="text-align:left;">
-303.1 (161.8)
-</td>
-<td style="text-align:left;">
-228.1 (56.2)
-</td>
-</tr>
 <tr>
 <td style="text-align:left;">
 Mean QMD (cm)
@@ -1329,6 +1237,98 @@ Height (m)
 </tr>
 <tr>
 <td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+515.6 (314.6)
+</td>
+<td style="text-align:left;">
+365.6 (133.2)
+</td>
+<td style="text-align:left;">
+571.9 (175.4)
+</td>
+<td style="text-align:left;">
+415.6 (256.0)
+</td>
+<td style="text-align:left;">
+237.5 (72.9)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+237.5 (121.2)
+</td>
+<td style="text-align:left;">
+146.9 (25.8)
+</td>
+<td style="text-align:left;">
+490.6 (138.6)
+</td>
+<td style="text-align:left;">
+309.4 (173.3)
+</td>
+<td style="text-align:left;">
+237.5 (72.9)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+206.2 (113.0)
+</td>
+<td style="text-align:left;">
+109.4 (41.3)
+</td>
+<td style="text-align:left;">
+468.8 (130.9)
+</td>
+<td style="text-align:left;">
+303.1 (161.8)
+</td>
+<td style="text-align:left;">
+231.2 (61.7)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+184.4 (123.9)
+</td>
+<td style="text-align:left;">
+96.9 (41.3)
+</td>
+<td style="text-align:left;">
+462.5 (127.1)
+</td>
+<td style="text-align:left;">
+303.1 (161.8)
+</td>
+<td style="text-align:left;">
+228.1 (56.2)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
 Basal area (m<sup>2</sup>/ha)
 </td>
 <td style="text-align:left;">
@@ -1466,98 +1466,6 @@ Control
 </tr>
 </thead>
 <tbody>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-1037.5 (400.5)
-</td>
-<td style="text-align:left;">
-1278.1 (92.6)
-</td>
-<td style="text-align:left;">
-968.8 (235.7)
-</td>
-<td style="text-align:left;">
-1312.5 (332.6)
-</td>
-<td style="text-align:left;">
-1212.5 (264.4)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:left;">
-250.0 (126.7)
-</td>
-<td style="text-align:left;">
-256.2 (46.2)
-</td>
-<td style="text-align:left;">
-725.0 (161.4)
-</td>
-<td style="text-align:left;">
-728.1 (246.3)
-</td>
-<td style="text-align:left;">
-1212.5 (264.4)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:left;">
-218.8 (123.1)
-</td>
-<td style="text-align:left;">
-240.6 (47.2)
-</td>
-<td style="text-align:left;">
-575.0 (133.9)
-</td>
-<td style="text-align:left;">
-693.8 (225.8)
-</td>
-<td style="text-align:left;">
-996.9 (153.6)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:left;">
-196.9 (100.2)
-</td>
-<td style="text-align:left;">
-234.4 (43.8)
-</td>
-<td style="text-align:left;">
-503.1 (95.4)
-</td>
-<td style="text-align:left;">
-656.2 (231.5)
-</td>
-<td style="text-align:left;">
-740.6 (90.9)
-</td>
-</tr>
 <tr>
 <td style="text-align:left;">
 Mean QMD (cm)
@@ -1740,6 +1648,98 @@ Height (m)
 </td>
 <td style="text-align:left;">
 25.5 (0.9)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+1037.5 (400.5)
+</td>
+<td style="text-align:left;">
+1278.1 (92.6)
+</td>
+<td style="text-align:left;">
+968.8 (235.7)
+</td>
+<td style="text-align:left;">
+1312.5 (332.6)
+</td>
+<td style="text-align:left;">
+1212.5 (264.4)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+250.0 (126.7)
+</td>
+<td style="text-align:left;">
+256.2 (46.2)
+</td>
+<td style="text-align:left;">
+725.0 (161.4)
+</td>
+<td style="text-align:left;">
+728.1 (246.3)
+</td>
+<td style="text-align:left;">
+1212.5 (264.4)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+218.8 (123.1)
+</td>
+<td style="text-align:left;">
+240.6 (47.2)
+</td>
+<td style="text-align:left;">
+575.0 (133.9)
+</td>
+<td style="text-align:left;">
+693.8 (225.8)
+</td>
+<td style="text-align:left;">
+996.9 (153.6)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+196.9 (100.2)
+</td>
+<td style="text-align:left;">
+234.4 (43.8)
+</td>
+<td style="text-align:left;">
+503.1 (95.4)
+</td>
+<td style="text-align:left;">
+656.2 (231.5)
+</td>
+<td style="text-align:left;">
+740.6 (90.9)
 </td>
 </tr>
 <tr>

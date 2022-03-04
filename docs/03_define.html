@@ -365,9 +365,9 @@ d_l &lt;- d_l %&gt;%
 # this does not work with missing values currently.
 
 # confidence interval for average treatment estimate
-ci_lb &lt;- function(x) {
-  LB &lt;- function (x) mean(x) - 2 * sd(x) / sqrt(length(x) - 1)
-  UB &lt;- function (x) mean(x) + 2 * sd(x) / sqrt(length(x) - 1)
+ci &lt;- function(x) {
+  LB &lt;- mean(x) - 2 * sd(x) / sqrt(length(x) - 1)
+  UB &lt;- mean(x) + 2 * sd(x) / sqrt(length(x) - 1)
   c(LB, UB)
 }
 
@@ -379,12 +379,16 @@ calc_sci &lt;- function(data, metric) {
     )
 }
 
-
 summary_sci &lt;- function(data) {
   data %&gt;%
   calc_sci(dbh) %&gt;%
   summarise(across(starts_with(&quot;sci&quot;), first)) %&gt;%
-  summarise(across(starts_with(&quot;sci&quot;), list(avg = mean, ci = ci)))
+  summarise(
+    across(
+      starts_with(&quot;sci&quot;),
+      list(avg = mean, ci_lb = ~ ci(.x)[1], ci_ub = ~ ci(.x)[2])
+    )
+  )
 }</code></pre>
 </div>
 <div id="standardize-crown-ratio" class="section level2">
