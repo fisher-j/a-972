@@ -31,7 +31,8 @@ sci_d <- d_l %>%
 
 ```{r}
 
-summary_sci(sci_d)
+summary_sci(sci_d) %>%
+  kbl2(caption = "Summary of SCI_dbh_ for all plots/years")
 
 ```
 
