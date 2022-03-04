@@ -575,150 +575,826 @@ test_sum &lt;- function(.x) {
 <p><img src="07_initial_conditions_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <p>In addition to anova and t-tests, I’ll also use Kruskal-Wallis rank-sum tests and the Dunn and M-W-Wilcoxon post-hoc tests. I don’t think anovas and t-tests are reliable with only 4 data points.</p>
 <pre class="r"><code>plot_sum(d_l, years = &quot;init&quot;) %&gt;% 
-  test_sum()</code></pre>
-<pre><code>## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties</code></pre>
-<pre><code>## # A tibble: 4 x 7
-## # Rowwise:  year, measure
-##   year  measure   aov_p Tukey               KW_p Dunn          Wilcox       
-##   &lt;ord&gt; &lt;chr&gt;     &lt;dbl&gt; &lt;list&gt;             &lt;dbl&gt; &lt;list&gt;        &lt;list&gt;       
-## 1 init  ba      0.641   &lt;tibble [10 x 3]&gt; 0.471  &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;
-## 2 init  density 0.713   &lt;tibble [10 x 3]&gt; 0.533  &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;
-## 3 init  ht      0.00526 &lt;tibble [10 x 3]&gt; 0.0156 &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;
-## 4 init  qmd     0.423   &lt;tibble [10 x 3]&gt; 0.452  &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;</code></pre>
+  test_sum() %&gt;% kbl2(caption = &quot;omnibus test, both species&quot;)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+omnibus test, both species
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:left;">
+measure
+</th>
+<th style="text-align:right;">
+aov_p
+</th>
+<th style="text-align:left;">
+Tukey
+</th>
+<th style="text-align:right;">
+KW_p
+</th>
+<th style="text-align:left;">
+Dunn
+</th>
+<th style="text-align:left;">
+Wilcox
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ba
+</td>
+<td style="text-align:right;">
+0.6413462
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 9.88310623247051 , 8.66539220614209 , 6.60678538931157 , 3.32887321657262 , -1.21771402632842, -3.27632084315894, -6.55423301589789, -2.05860681683052, -5.33651898956947, -3.27791217273895, 0.645268509309209, 0.743205773627887, 0.882290789813829, 0.989261726724405, 0.999785512013126, 0.989884604997147, 0.885187517666689, 0.998302777420701, 0.941345276991191, 0.989866125036962
+</td>
+<td style="text-align:right;">
+0.4713918
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80, H40 - L40, H40 - L80, H80 - L40, H80 - L80, L40 - L80, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 1 , 1 , 0.571428571428571, 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+density
+</td>
+<td style="text-align:right;">
+0.7131442
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 34.3750000000002 , 71.8750000000002 , 137.5 , 218.75 , 37.5 , 103.125 , 184.375 , 65.625 , 146.875 , 81.2500000000002 , 0.999566681110352, 0.992365129013062, 0.921709939521652, 0.696553662832257, 0.999389131544648, 0.970978806462434, 0.807029595760208, 0.994600876474428, 0.902998887162036, 0.987887207122777
+</td>
+<td style="text-align:right;">
+0.5330506
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80 , H40 - L40 , H40 - L80 , H80 - L40 , H80 - L80 , L40 - L80 , 1 , 1 , 1 , 0.827338268246288, 1 , 1 , 1 , 1 , 1 , 1
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40, L40-H40, L80-H40, L40-H80, L80-H80, L80-L40, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:right;">
+0.0052571
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 0.472570233139738 , -1.33164929281653 , 1.56783353038629 , -0.938663229805986 , -1.80421952595627 , 1.09526329724655 , -1.41123346294572 , 2.89948282320282 , 0.392986063010543 , -2.50649676019228 , 0.954815971754362 , 0.332885196081726 , 0.19810770996463 , 0.650097021715091 , 0.110842819189926 , 0.515108601227868 , 0.28175765369424 , 0.00530632111593976, 0.976541748591397 , 0.0162380015047268
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80 , H40 - L40 , H40 - L80 , H80 - L40 , H80 - L80 , L40 - L80 , 1 , 1 , 1 , 1 , 0.364698303560265 , 1 , 0.42164931253363 , 0.0497284999726158, 1 , 0.0597726809246343
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 1 , 0.571428571428571, 0.571428571428571, 1 , 1 , 1 , 0.571428571428571, 0.285714285714286, 1 , 0.285714285714286
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+qmd
+</td>
+<td style="text-align:right;">
+0.4234122
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 1.69659381907606 , 0.923970376717481 , 0.185726144419835 , -1.0071411247663 , -0.772623442358579, -1.51086767465623 , -2.70373494384236 , -0.738244232297646, -1.93111150148378 , -1.19286726918614 , 0.752409464647487 , 0.963493406131681 , 0.999924761217591 , 0.950680441608446 , 0.980830002408842 , 0.820175024442595 , 0.353984090896865 , 0.983785586308668 , 0.658133960298015 , 0.912995243088672
+</td>
+<td style="text-align:right;">
+0.4522951
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80 , H40 - L40 , H40 - L80 , H80 - L40 , H80 - L80 , L40 - L80 , 1 , 1 , 1 , 1 , 1 , 1 , 0.729980454301155, 1 , 1 , 1
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40, L40-H40, L80-H40, L40-H80, L80-H80, L80-L40, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code>plot_sum(d_l, years = &quot;init&quot;) %&gt;% 
   test_sum() %&gt;%
   filter(KW_p &lt; .05) %&gt;%
   select(-c(aov_p)) %&gt;%
-  unnest(c(Tukey, Dunn, Wilcox))</code></pre>
-<pre><code>## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties</code></pre>
-<pre><code>## # A tibble: 10 x 10
-## # Groups:   year, measure [1]
-##    year  measure T_compare T_estimate T_pvalue   KW_p D_compare D_pvalue
-##    &lt;ord&gt; &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;        &lt;dbl&gt;
-##  1 init  ht      H40-C          0.473  0.955   0.0156 C - H40     1     
-##  2 init  ht      H80-C         -1.33   0.333   0.0156 C - H80     1     
-##  3 init  ht      L40-C          1.57   0.198   0.0156 C - L40     1     
-##  4 init  ht      L80-C         -0.939  0.650   0.0156 C - L80     1     
-##  5 init  ht      H80-H40       -1.80   0.111   0.0156 H40 - H80   0.365 
-##  6 init  ht      L40-H40        1.10   0.515   0.0156 H40 - L40   1     
-##  7 init  ht      L80-H40       -1.41   0.282   0.0156 H40 - L80   0.422 
-##  8 init  ht      L40-H80        2.90   0.00531 0.0156 H80 - L40   0.0497
-##  9 init  ht      L80-H80        0.393  0.977   0.0156 H80 - L80   1     
-## 10 init  ht      L80-L40       -2.51   0.0162  0.0156 L40 - L80   0.0598
-## # ... with 2 more variables: W_compare &lt;chr&gt;, W_pvalue &lt;dbl&gt;</code></pre>
+  unnest(c(Tukey, Dunn, Wilcox)) %&gt;% kbl2(caption = &quot;Post-hoc tests, both species&quot;)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+Post-hoc tests, both species
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:left;">
+measure
+</th>
+<th style="text-align:left;">
+T_compare
+</th>
+<th style="text-align:right;">
+T_estimate
+</th>
+<th style="text-align:right;">
+T_pvalue
+</th>
+<th style="text-align:right;">
+KW_p
+</th>
+<th style="text-align:left;">
+D_compare
+</th>
+<th style="text-align:right;">
+D_pvalue
+</th>
+<th style="text-align:left;">
+W_compare
+</th>
+<th style="text-align:right;">
+W_pvalue
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+H40-C
+</td>
+<td style="text-align:right;">
+0.4725702
+</td>
+<td style="text-align:right;">
+0.9548160
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+C - H40
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:left;">
+H40-C
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+H80-C
+</td>
+<td style="text-align:right;">
+-1.3316493
+</td>
+<td style="text-align:right;">
+0.3328852
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+C - H80
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:left;">
+H80-C
+</td>
+<td style="text-align:right;">
+0.5714286
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+L40-C
+</td>
+<td style="text-align:right;">
+1.5678335
+</td>
+<td style="text-align:right;">
+0.1981077
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+C - L40
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:left;">
+L40-C
+</td>
+<td style="text-align:right;">
+0.5714286
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+L80-C
+</td>
+<td style="text-align:right;">
+-0.9386632
+</td>
+<td style="text-align:right;">
+0.6500970
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+C - L80
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:left;">
+L80-C
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+H80-H40
+</td>
+<td style="text-align:right;">
+-1.8042195
+</td>
+<td style="text-align:right;">
+0.1108428
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+H40 - H80
+</td>
+<td style="text-align:right;">
+0.3646983
+</td>
+<td style="text-align:left;">
+H80-H40
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+L40-H40
+</td>
+<td style="text-align:right;">
+1.0952633
+</td>
+<td style="text-align:right;">
+0.5151086
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+H40 - L40
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:left;">
+L40-H40
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+L80-H40
+</td>
+<td style="text-align:right;">
+-1.4112335
+</td>
+<td style="text-align:right;">
+0.2817577
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+H40 - L80
+</td>
+<td style="text-align:right;">
+0.4216493
+</td>
+<td style="text-align:left;">
+L80-H40
+</td>
+<td style="text-align:right;">
+0.5714286
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+L40-H80
+</td>
+<td style="text-align:right;">
+2.8994828
+</td>
+<td style="text-align:right;">
+0.0053063
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+H80 - L40
+</td>
+<td style="text-align:right;">
+0.0497285
+</td>
+<td style="text-align:left;">
+L40-H80
+</td>
+<td style="text-align:right;">
+0.2857143
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+L80-H80
+</td>
+<td style="text-align:right;">
+0.3929861
+</td>
+<td style="text-align:right;">
+0.9765417
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+H80 - L80
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+<td style="text-align:left;">
+L80-H80
+</td>
+<td style="text-align:right;">
+1.0000000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+L80-L40
+</td>
+<td style="text-align:right;">
+-2.5064968
+</td>
+<td style="text-align:right;">
+0.0162380
+</td>
+<td style="text-align:right;">
+0.0156338
+</td>
+<td style="text-align:left;">
+L40 - L80
+</td>
+<td style="text-align:right;">
+0.0597727
+</td>
+<td style="text-align:left;">
+L80-L40
+</td>
+<td style="text-align:right;">
+0.2857143
+</td>
+</tr>
+</tbody>
+</table>
 <p>only ht has significant differences between treatments: L40 plots(pre-treatment) are on average about 3 m taller than H80. and L40 are about 2.5 m taller than L80. The Dunn test also found these contrasts significant, but the Bonferonni adjusted wilcoxcon rank-sum test didn’t detect any significance.</p>
 <p>How about for redwood:</p>
 <p>there are no significant differences.</p>
 <pre class="r"><code>plot_sum(d_l, years = &quot;init&quot;, species = &quot;SESE3&quot;) %&gt;% 
-  test_sum()</code></pre>
-<pre><code>## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties</code></pre>
-<pre><code>## # A tibble: 4 x 7
-## # Rowwise:  year, measure
-##   year  measure aov_p Tukey              KW_p Dunn          Wilcox       
-##   &lt;ord&gt; &lt;chr&gt;   &lt;dbl&gt; &lt;list&gt;            &lt;dbl&gt; &lt;list&gt;        &lt;list&gt;       
-## 1 init  ba      0.443 &lt;tibble [10 x 3]&gt; 0.484 &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;
-## 2 init  density 0.234 &lt;tibble [10 x 3]&gt; 0.233 &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;
-## 3 init  ht      0.239 &lt;tibble [10 x 3]&gt; 0.199 &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;
-## 4 init  qmd     0.742 &lt;tibble [10 x 3]&gt; 0.948 &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;</code></pre>
+  test_sum() %&gt;% kbl2(caption = &quot;Omnibus tests, redwood&quot;)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+Omnibus tests, redwood
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:left;">
+measure
+</th>
+<th style="text-align:right;">
+aov_p
+</th>
+<th style="text-align:left;">
+Tukey
+</th>
+<th style="text-align:right;">
+KW_p
+</th>
+<th style="text-align:left;">
+Dunn
+</th>
+<th style="text-align:left;">
+Wilcox
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ba
+</td>
+<td style="text-align:right;">
+0.4433559
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 15.8976900310698 , 12.7973202007633 , 1.30662284888115 , 5.56173694339894 , -3.10036983030644, -14.5910671821886, -10.3359530876708, -11.4906973518822, -7.23558325736438, 4.25511409451779 , 0.521550540964839, 0.703914387854184, 0.999924714418684, 0.979139982408335, 0.997722290693709, 0.598457359749792, 0.834108997753611, 0.776286833480447, 0.946965814622764, 0.99230860790357
+</td>
+<td style="text-align:right;">
+0.4844247
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80, H40 - L40, H40 - L80, H80 - L40, H80 - L80, L40 - L80, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40, L40-H40, L80-H40, L40-H80, L80-H80, L80-L40, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+density
+</td>
+<td style="text-align:right;">
+0.2337894
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 278.125 , 334.375 , 128.125 , 178.125 , 56.2499999999998 , -150 , -100 , -206.25 , -156.25 , 50.0000000000001 , 0.367327370064305, 0.210471821555724, 0.904533532805462, 0.748506271666818, 0.995047436868073, 0.844576527594702, 0.958523416262776, 0.639416521017439, 0.824852162154425, 0.996853250654816
+</td>
+<td style="text-align:right;">
+0.2333623
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80 , H40 - L40 , H40 - L80 , H80 - L40 , H80 - L80 , L40 - L80 , 0.827338268246288, 0.248590875387928, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 1 , 0.408331258612995, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:right;">
+0.2394289
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 1.79248263673744 , 0.071903171287186 , 1.82057478232425 , -0.217552892373664, -1.72057946545025 , 0.0280921455868075, -2.0100355291111 , 1.74867161103706 , -0.28945606366085 , -2.03812767469791 , 0.552689702049059 , 0.999996243207578 , 0.538566089390657 , 0.999690903773902 , 0.589118100539623 , 0.999999912300452 , 0.446316464772012 , 0.574849707141107 , 0.999046571505954 , 0.433235227194716
+</td>
+<td style="text-align:right;">
+0.1991483
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80 , H40 - L40 , H40 - L80 , H80 - L40 , H80 - L80 , L40 - L80 , 1 , 1 , 1 , 1 , 1 , 1 , 0.830811869664739, 1 , 1 , 0.558292946392401
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40, L40-H40, L80-H40, L40-H80, L80-H80, L80-L40, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+qmd
+</td>
+<td style="text-align:right;">
+0.7420638
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , -0.920659027249805, -2.66126513737664 , -3.10551554163048 , -3.32737901734152 , -1.74060611012683 , -2.18485651438068 , -2.40671999009172 , -0.444250404253843, -0.666113879964886, -0.221863475711043, 0.997715262335415 , 0.892280631782511 , 0.827942942661924 , 0.790757117868805 , 0.974685283956715 , 0.943693790698277 , 0.922128337020077 , 0.999870616380411 , 0.999356773009122 , 0.999991870657686
+</td>
+<td style="text-align:right;">
+0.9477593
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80, H40 - L40, H40 - L80, H80 - L40, H80 - L80, L40 - L80, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40, L40-H40, L80-H40, L40-H80, L80-H80, L80-L40, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code>plot_sum(d_l, years = &quot;init&quot;, species = &quot;SESE3&quot;) %&gt;% 
   test_sum() %&gt;%
   filter(KW_p &lt; .05) %&gt;%
   select(-c(aov_p)) %&gt;%
-  unnest(c(Tukey, Dunn, Wilcox))</code></pre>
-<pre><code>## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties</code></pre>
-<pre><code>## # A tibble: 0 x 6
-## # Groups:   year, measure [0]
-## # ... with 6 variables: year &lt;ord&gt;, measure &lt;chr&gt;, Tukey &lt;???&gt;, KW_p &lt;dbl&gt;,
-## #   Dunn &lt;???&gt;, Wilcox &lt;???&gt;</code></pre>
+  unnest(c(Tukey, Dunn, Wilcox)) %&gt;% kbl2(caption = &quot;post-hoc tests, redwood&quot;)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+post-hoc tests, redwood
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:left;">
+measure
+</th>
+<th style="text-align:left;">
+Tukey
+</th>
+<th style="text-align:right;">
+KW_p
+</th>
+<th style="text-align:left;">
+Dunn
+</th>
+<th style="text-align:left;">
+Wilcox
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+</tr>
+</tbody>
+</table>
 <p>And for Douglas-fir?</p>
 <p>Differences follow the same pattern as for all trees, which makes sense because there were no differences among redwoods, but now the Kruskal-Wallis test doesn’t detect any significant effect, and neither do post-hoc tests.</p>
 <pre class="r"><code>plot_sum(d_l, years = &quot;init&quot;, species = &quot;PSMEM&quot;) %&gt;% 
-  test_sum()</code></pre>
-<pre><code>## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties</code></pre>
-<pre><code>## # A tibble: 4 x 7
-## # Rowwise:  year, measure
-##   year  measure  aov_p Tukey               KW_p Dunn          Wilcox       
-##   &lt;ord&gt; &lt;chr&gt;    &lt;dbl&gt; &lt;list&gt;             &lt;dbl&gt; &lt;list&gt;        &lt;list&gt;       
-## 1 init  ba      0.0621 &lt;tibble [10 x 3]&gt; 0.0964 &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;
-## 2 init  density 0.380  &lt;tibble [10 x 3]&gt; 0.298  &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;
-## 3 init  ht      0.0305 &lt;tibble [10 x 3]&gt; 0.0775 &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;
-## 4 init  qmd     0.510  &lt;tibble [10 x 3]&gt; 0.518  &lt;df [10 x 2]&gt; &lt;df [10 x 2]&gt;</code></pre>
+  test_sum() %&gt;% kbl2(caption = &quot;Omnibus tests, Douglas-fir&quot;)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+Omnibus tests, Douglas-fir
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:left;">
+measure
+</th>
+<th style="text-align:right;">
+aov_p
+</th>
+<th style="text-align:left;">
+Tukey
+</th>
+<th style="text-align:right;">
+KW_p
+</th>
+<th style="text-align:left;">
+Dunn
+</th>
+<th style="text-align:left;">
+Wilcox
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ba
+</td>
+<td style="text-align:right;">
+0.0620930
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , -4.9628332526888 , -6.61889580585791, 6.3519289209496 , -1.36688403387755, -1.65606255316911, 11.3147621736384 , 3.59594921881125 , 12.9708247268075 , 5.25201177198036 , -7.71881295482715, 0.767627996976583, 0.54229850166157 , 0.579248175943325, 0.997394562255456, 0.994541832809839, 0.107083723126262, 0.911202901031029, 0.052867158563363, 0.730329664153575, 0.398673174990495
+</td>
+<td style="text-align:right;">
+0.0964031
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80 , H40 - L40 , H40 - L80 , H80 - L40 , H80 - L80 , L40 - L80 , 1 , 1 , 1 , 1 , 1 , 0.364698303560265 , 1 , 0.0855097923712533, 1 , 1
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 1 , 1 , 1 , 1 , 1 , 0.285714285714286, 1 , 0.285714285714286, 1 , 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+density
+</td>
+<td style="text-align:right;">
+0.3796860
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , -175 , -243.75 , 65.625 , 100 , -68.7499999999999, 240.625 , 275 , 309.375 , 343.75 , 34.375 , 0.903655047561073, 0.745368124287644, 0.997273162066077, 0.986437926749214, 0.996735175038432, 0.7538623193813 , 0.656669191250258, 0.555936300293084, 0.458363393525247, 0.999785247684342
+</td>
+<td style="text-align:right;">
+0.2984002
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80 , H40 - L40 , H40 - L80 , H80 - L40 , H80 - L80 , L40 - L80 , 1 , 1 , 1 , 1 , 1 , 0.995253822634235, 1 , 0.823864707532537, 1 , 1
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 0.571428571428571, 1 , 1
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:right;">
+0.0305357
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 0.421761695006257 , -0.794381545972371, 1.37109777596313 , -0.918482640468422, -1.21614324097863 , 0.949336080956876 , -1.34024433547468 , 2.1654793219355 , -0.124101094496051, -2.28958041643155 , 0.972815449970049 , 0.787881231274735 , 0.333485584745969 , 0.690484370598389 , 0.445042173180217 , 0.664943515393253 , 0.354220781234237 , 0.0503253850243907, 0.999753887175741 , 0.0361112150594844
+</td>
+<td style="text-align:right;">
+0.0775284
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80 , H40 - L40 , H40 - L80 , H80 - L40 , H80 - L80 , L40 - L80 , 1 , 1 , 1 , 1 , 1 , 1 , 0.942643068412103, 0.231509519852464, 1 , 0.142769489529345
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 0.571428571428571, 1 , 0.571428571428571
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+qmd
+</td>
+<td style="text-align:right;">
+0.5099199
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40 , L40-H40 , L80-H40 , L40-H80 , L80-H80 , L80-L40 , 0.96374246628498 , 1.0455549946951 , 0.769650781501497 , -1.05647883843804 , 0.081812528410115 , -0.194091684783483, -2.02022130472302 , -0.275904213193598, -2.10203383313314 , -1.82612961993954 , 0.950116904901631 , 0.934185359015525 , 0.977531981172516 , 0.931853434979778 , 0.999996549032135 , 0.999891772517916 , 0.580168114886424 , 0.999563525991713 , 0.544585012918599 , 0.664935594356193
+</td>
+<td style="text-align:right;">
+0.5180367
+</td>
+<td style="text-align:left;">
+C - H40 , C - H80 , C - L40 , C - L80 , H40 - H80, H40 - L40, H40 - L80, H80 - L40, H80 - L80, L40 - L80, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+<td style="text-align:left;">
+H40-C , H80-C , L40-C , L80-C , H80-H40, L40-H40, L80-H40, L40-H80, L80-H80, L80-L40, 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1 , 1
+</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code>plot_sum(d_l, years = &quot;init&quot;, species = &quot;PSMEM&quot;) %&gt;% 
   test_sum() %&gt;%
   filter(KW_p &lt; .05) %&gt;%
   select(-c(aov_p)) %&gt;%
-  unnest(c(Tukey, Dunn, Wilcox))</code></pre>
-<pre><code>## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties
-
-## Warning in wilcox.test.default(xi, xj, paired = paired, ...): cannot compute
-## exact p-value with ties</code></pre>
-<pre><code>## # A tibble: 0 x 6
-## # Groups:   year, measure [0]
-## # ... with 6 variables: year &lt;ord&gt;, measure &lt;chr&gt;, Tukey &lt;???&gt;, KW_p &lt;dbl&gt;,
-## #   Dunn &lt;???&gt;, Wilcox &lt;???&gt;</code></pre>
+  unnest(c(Tukey, Dunn, Wilcox)) %&gt;% kbl2(caption = &quot;post-hoc tests, redwood&quot;)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+post-hoc tests, redwood
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:left;">
+measure
+</th>
+<th style="text-align:left;">
+Tukey
+</th>
+<th style="text-align:right;">
+KW_p
+</th>
+<th style="text-align:left;">
+Dunn
+</th>
+<th style="text-align:left;">
+Wilcox
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+</tr>
+</tbody>
+</table>
 </div>
 
 

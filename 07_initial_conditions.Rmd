@@ -3,7 +3,7 @@ title: Comparing initial conditions
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 
@@ -162,13 +162,13 @@ In addition to anova and t-tests, I'll also use Kruskal-Wallis rank-sum tests an
 ```{r}
 
 plot_sum(d_l, years = "init") %>% 
-  test_sum()
+  test_sum() %>% kbl2(caption = "omnibus test, both species")
 
 plot_sum(d_l, years = "init") %>% 
   test_sum() %>%
   filter(KW_p < .05) %>%
   select(-c(aov_p)) %>%
-  unnest(c(Tukey, Dunn, Wilcox))
+  unnest(c(Tukey, Dunn, Wilcox)) %>% kbl2(caption = "Post-hoc tests, both species")
 
 ```
 
@@ -181,13 +181,13 @@ there are no significant differences.
 ```{r}
 
 plot_sum(d_l, years = "init", species = "SESE3") %>% 
-  test_sum()
+  test_sum() %>% kbl2(caption = "Omnibus tests, redwood")
 
 plot_sum(d_l, years = "init", species = "SESE3") %>% 
   test_sum() %>%
   filter(KW_p < .05) %>%
   select(-c(aov_p)) %>%
-  unnest(c(Tukey, Dunn, Wilcox))
+  unnest(c(Tukey, Dunn, Wilcox)) %>% kbl2(caption = "post-hoc tests, redwood")
 
 ```
 
@@ -198,12 +198,12 @@ Differences follow the same pattern as for all trees, which makes sense because 
 ```{r}
 
 plot_sum(d_l, years = "init", species = "PSMEM") %>% 
-  test_sum()
+  test_sum() %>% kbl2(caption = "Omnibus tests, Douglas-fir")
 
 plot_sum(d_l, years = "init", species = "PSMEM") %>% 
   test_sum() %>%
   filter(KW_p < .05) %>%
   select(-c(aov_p)) %>%
-  unnest(c(Tukey, Dunn, Wilcox))
+  unnest(c(Tukey, Dunn, Wilcox)) %>% kbl2(caption = "post-hoc tests, redwood")
 
 ```
