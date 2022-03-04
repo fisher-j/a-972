@@ -266,7 +266,10 @@ $(document).ready(function () {
   <a href="06_summary.html">Data summaries and figures</a>
 </li>
 <li>
-  <a href="07_variability.html">Variability</a>
+  <a href="07_initial_conditions.html">Initial conditons</a>
+</li>
+<li>
+  <a href="08_variability.html">Variability</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -305,6 +308,7 @@ $(document).ready(function () {
 <li><a href="#compare-to-teraoka-2016">Compare to Teraoka (2016)</a></li>
 </ul></li>
 <li><a href="#sdi">SDI</a></li>
+<li><a href="#density-of-dominant">Density of dominant</a></li>
 </ul></li>
 <li><a href="#initial-summary-tables">Initial summary tables</a>
 <ul>
@@ -378,7 +382,7 @@ measures &lt;- list()</code></pre>
 </div>
 <div id="qmd" class="section level2">
 <h2>Qmd</h2>
-<p>Dbh will be calculated based on all live trees, including those broken above dbh and with broken and dead tops (most of these are SESE and assumed to be alive).</p>
+<p>DBH is actually QMD here. It will be calculated based on all live trees, including those broken above dbh and with broken and dead tops (most of these are SESE and assumed to be alive).</p>
 <pre class="r"><code>measures$dbh &lt;- function(data, species) {
   if(is.null(species)) species &lt;- unique(data$spp)
   data %&gt;%
@@ -397,7 +401,7 @@ measures$dom_dbh &lt;- function(data, species) {
   data %&gt;%
     filter(live | status %in% c(15, 16)) %&gt;%
     group_by(plot, year) %&gt;%
-    slice_max(order_by = dbh, n = 4, with_ties = FALSE) %&gt;%
+    slice_max(order_by = dbh, n = 8, with_ties = FALSE) %&gt;%
     filter(spp %in% species) %&gt;%
     group_by(treatment, year) %&gt;%
     summarise(
@@ -445,7 +449,7 @@ measures$dom_ht &lt;- function(data, species) {
       tree_id %in% ht_id_2018
     ) %&gt;%
     group_by(plot, year) %&gt;%
-    slice_max(order_by = ht_p, n = 4, with_ties = FALSE) %&gt;%
+    slice_max(order_by = ht_p, n = 8, with_ties = FALSE) %&gt;%
     filter(spp %in% species) %&gt;%
     group_by(treatment, year) %&gt;%
     summarise(
@@ -582,51 +586,12 @@ any(nrow(filter(d_l, status %in% c(1, 2, 3, 15, 16), is.na(dbh))))</code></pre>
     )
 }</code></pre>
 </div>
+<div id="density-of-dominant" class="section level2">
+<h2>Density of dominant</h2>
+</div>
 </div>
 <div id="initial-summary-tables" class="section level1">
 <h1>Initial summary tables</h1>
-<p>I want to be able to define the order of my measures and treatments in tables and graphs</p>
-<pre class="r"><code>my_sort &lt;- function(data, items = c(&quot;treatment&quot;, &quot;measure&quot;), fig = FALSE) {
-  if(&quot;treatment&quot; %in% items) {
-    data &lt;- mutate(data,
-      treatment = factor(treatment,
-        levels = c(&quot;H40&quot;, &quot;L40&quot;, &quot;H80&quot;, &quot;L80&quot;, &quot;C&quot;),
-        labels = c(&quot;C40&quot;, &quot;L40&quot;, &quot;C80&quot;, &quot;L80&quot;, &quot;Control&quot;)
-      )
-    )
-  }
-  if(&quot;measure&quot; %in% items) {
-    if(fig) {
-      data &lt;- mutate(data,
-        measure = recode_factor(measure,
-          dbh = &quot;Mean~QMD~(cm)&quot;,
-          ht_p = &quot;Height~(m)&quot;,
-          density = &quot;Stems%.%ha^-1&quot;,
-          ba = &quot;BA~(m^2~ha^-1)&quot;,
-          ba_inc2 = &quot;BAI&quot;,
-          mort = &quot;New~mortality~(tph)&quot;,
-          dom_dbh = &quot;Dominant~dbh~(cm)&quot;,
-          dom_ht = &quot;Tallest~trees~(m)&quot;,
-          sdi = &quot;SDI&quot;
-        )
-      )
-    } else {
-      data &lt;- mutate(data,
-        measure = recode_factor(measure,
-          dbh = &quot;Mean QMD (cm)&quot;,
-          ht_p = &quot;Height (m)&quot;,
-          density = &quot;Density (stems ha^-1^)&quot;,
-          ba = &quot;Basal area (m^2^/ha)&quot;,
-          mort = &quot;New mortality (tph)&quot;,
-          dom_dbh = &quot;Dominant dbh (cm)&quot;,
-          dom_ht = &quot;Dominant height (m)&quot;,
-          sdi = &quot;SDI&quot;
-        )
-      )
-    }
-  }
-  data %&gt;% arrange(measure, year, treatment)
-}</code></pre>
 <div id="all-species" class="section level2">
 <h2>All species</h2>
 <pre class="r"><code>get_measures(d_l) %&gt;%
@@ -671,6 +636,98 @@ Control
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+1590.6 (418.0)
+</td>
+<td style="text-align:left;">
+1693.8 (181.0)
+</td>
+<td style="text-align:left;">
+1628.1 (160.2)
+</td>
+<td style="text-align:left;">
+1775.0 (120.3)
+</td>
+<td style="text-align:left;">
+1556.2 (191.1)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+496.9 (121.8)
+</td>
+<td style="text-align:left;">
+415.6 (56.2)
+</td>
+<td style="text-align:left;">
+1275.0 (127.9)
+</td>
+<td style="text-align:left;">
+1062.5 (123.7)
+</td>
+<td style="text-align:left;">
+1556.2 (191.1)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+434.4 (125.2)
+</td>
+<td style="text-align:left;">
+362.5 (70.0)
+</td>
+<td style="text-align:left;">
+1096.9 (118.8)
+</td>
+<td style="text-align:left;">
+1018.8 (117.5)
+</td>
+<td style="text-align:left;">
+1331.2 (98.2)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+387.5 (91.9)
+</td>
+<td style="text-align:left;">
+343.8 (71.8)
+</td>
+<td style="text-align:left;">
+1015.6 (105.3)
+</td>
+<td style="text-align:left;">
+981.2 (143.4)
+</td>
+<td style="text-align:left;">
+1053.1 (48.3)
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Mean QMD (cm)
@@ -857,98 +914,6 @@ Height (m)
 </tr>
 <tr>
 <td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-1590.6 (418.0)
-</td>
-<td style="text-align:left;">
-1693.8 (181.0)
-</td>
-<td style="text-align:left;">
-1628.1 (160.2)
-</td>
-<td style="text-align:left;">
-1775.0 (120.3)
-</td>
-<td style="text-align:left;">
-1556.2 (191.1)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:left;">
-496.9 (121.8)
-</td>
-<td style="text-align:left;">
-415.6 (56.2)
-</td>
-<td style="text-align:left;">
-1275.0 (127.9)
-</td>
-<td style="text-align:left;">
-1062.5 (123.7)
-</td>
-<td style="text-align:left;">
-1556.2 (191.1)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:left;">
-434.4 (125.2)
-</td>
-<td style="text-align:left;">
-362.5 (70.0)
-</td>
-<td style="text-align:left;">
-1096.9 (118.8)
-</td>
-<td style="text-align:left;">
-1018.8 (117.5)
-</td>
-<td style="text-align:left;">
-1331.2 (98.2)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:left;">
-387.5 (91.9)
-</td>
-<td style="text-align:left;">
-343.8 (71.8)
-</td>
-<td style="text-align:left;">
-1015.6 (105.3)
-</td>
-<td style="text-align:left;">
-981.2 (143.4)
-</td>
-<td style="text-align:left;">
-1053.1 (48.3)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 Basal area (m<sup>2</sup>/ha)
 </td>
 <td style="text-align:left;">
@@ -1086,6 +1051,98 @@ Control
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+515.6 (314.6)
+</td>
+<td style="text-align:left;">
+365.6 (133.2)
+</td>
+<td style="text-align:left;">
+571.9 (175.4)
+</td>
+<td style="text-align:left;">
+415.6 (256.0)
+</td>
+<td style="text-align:left;">
+237.5 (72.9)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+237.5 (121.2)
+</td>
+<td style="text-align:left;">
+146.9 (25.8)
+</td>
+<td style="text-align:left;">
+490.6 (138.6)
+</td>
+<td style="text-align:left;">
+309.4 (173.3)
+</td>
+<td style="text-align:left;">
+237.5 (72.9)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+206.2 (113.0)
+</td>
+<td style="text-align:left;">
+109.4 (41.3)
+</td>
+<td style="text-align:left;">
+468.8 (130.9)
+</td>
+<td style="text-align:left;">
+303.1 (161.8)
+</td>
+<td style="text-align:left;">
+231.2 (61.7)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+184.4 (123.9)
+</td>
+<td style="text-align:left;">
+96.9 (41.3)
+</td>
+<td style="text-align:left;">
+462.5 (127.1)
+</td>
+<td style="text-align:left;">
+303.1 (161.8)
+</td>
+<td style="text-align:left;">
+228.1 (56.2)
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Mean QMD (cm)
@@ -1272,98 +1329,6 @@ Height (m)
 </tr>
 <tr>
 <td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-515.6 (314.6)
-</td>
-<td style="text-align:left;">
-365.6 (133.2)
-</td>
-<td style="text-align:left;">
-571.9 (175.4)
-</td>
-<td style="text-align:left;">
-415.6 (256.0)
-</td>
-<td style="text-align:left;">
-237.5 (72.9)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:left;">
-237.5 (121.2)
-</td>
-<td style="text-align:left;">
-146.9 (25.8)
-</td>
-<td style="text-align:left;">
-490.6 (138.6)
-</td>
-<td style="text-align:left;">
-309.4 (173.3)
-</td>
-<td style="text-align:left;">
-237.5 (72.9)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:left;">
-206.2 (113.0)
-</td>
-<td style="text-align:left;">
-109.4 (41.3)
-</td>
-<td style="text-align:left;">
-468.8 (130.9)
-</td>
-<td style="text-align:left;">
-303.1 (161.8)
-</td>
-<td style="text-align:left;">
-231.2 (61.7)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:left;">
-184.4 (123.9)
-</td>
-<td style="text-align:left;">
-96.9 (41.3)
-</td>
-<td style="text-align:left;">
-462.5 (127.1)
-</td>
-<td style="text-align:left;">
-303.1 (161.8)
-</td>
-<td style="text-align:left;">
-228.1 (56.2)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 Basal area (m<sup>2</sup>/ha)
 </td>
 <td style="text-align:left;">
@@ -1501,6 +1466,98 @@ Control
 </tr>
 </thead>
 <tbody>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+1037.5 (400.5)
+</td>
+<td style="text-align:left;">
+1278.1 (92.6)
+</td>
+<td style="text-align:left;">
+968.8 (235.7)
+</td>
+<td style="text-align:left;">
+1312.5 (332.6)
+</td>
+<td style="text-align:left;">
+1212.5 (264.4)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+250.0 (126.7)
+</td>
+<td style="text-align:left;">
+256.2 (46.2)
+</td>
+<td style="text-align:left;">
+725.0 (161.4)
+</td>
+<td style="text-align:left;">
+728.1 (246.3)
+</td>
+<td style="text-align:left;">
+1212.5 (264.4)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+218.8 (123.1)
+</td>
+<td style="text-align:left;">
+240.6 (47.2)
+</td>
+<td style="text-align:left;">
+575.0 (133.9)
+</td>
+<td style="text-align:left;">
+693.8 (225.8)
+</td>
+<td style="text-align:left;">
+996.9 (153.6)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Density (stems ha<sup>-1</sup>)
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+196.9 (100.2)
+</td>
+<td style="text-align:left;">
+234.4 (43.8)
+</td>
+<td style="text-align:left;">
+503.1 (95.4)
+</td>
+<td style="text-align:left;">
+656.2 (231.5)
+</td>
+<td style="text-align:left;">
+740.6 (90.9)
+</td>
+</tr>
 <tr>
 <td style="text-align:left;">
 Mean QMD (cm)
@@ -1687,98 +1744,6 @@ Height (m)
 </tr>
 <tr>
 <td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-1037.5 (400.5)
-</td>
-<td style="text-align:left;">
-1278.1 (92.6)
-</td>
-<td style="text-align:left;">
-968.8 (235.7)
-</td>
-<td style="text-align:left;">
-1312.5 (332.6)
-</td>
-<td style="text-align:left;">
-1212.5 (264.4)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:left;">
-250.0 (126.7)
-</td>
-<td style="text-align:left;">
-256.2 (46.2)
-</td>
-<td style="text-align:left;">
-725.0 (161.4)
-</td>
-<td style="text-align:left;">
-728.1 (246.3)
-</td>
-<td style="text-align:left;">
-1212.5 (264.4)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:left;">
-218.8 (123.1)
-</td>
-<td style="text-align:left;">
-240.6 (47.2)
-</td>
-<td style="text-align:left;">
-575.0 (133.9)
-</td>
-<td style="text-align:left;">
-693.8 (225.8)
-</td>
-<td style="text-align:left;">
-996.9 (153.6)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Density (stems ha<sup>-1</sup>)
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:left;">
-196.9 (100.2)
-</td>
-<td style="text-align:left;">
-234.4 (43.8)
-</td>
-<td style="text-align:left;">
-503.1 (95.4)
-</td>
-<td style="text-align:left;">
-656.2 (231.5)
-</td>
-<td style="text-align:left;">
-740.6 (90.9)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 Basal area (m<sup>2</sup>/ha)
 </td>
 <td style="text-align:left;">
@@ -1934,7 +1899,7 @@ spp_dom_pct &lt;- function(...) {
 
 make_dominance_fig &lt;- function(...) {
   spp_dom_pct(...) %&gt;%
-    my_sort(items = &quot;treatment&quot;) %&gt;%
+    relevel_treatment() %&gt;%
     mutate(measure = factor(measure, levels = c(&quot;dbh&quot;, &quot;ht_p&quot;, &quot;ba_inc2&quot;))) %&gt;%
     ggplot(aes(year, freq, fill = spp)) +
       geom_bar(position = &quot;stack&quot;, stat = &quot;identity&quot;) +
@@ -1961,7 +1926,7 @@ make_dominance_fig &lt;- function(...) {
        values = c(SESE3 = &quot;black&quot;, PSMEM = &quot;#a0a0a0&quot;),
        labels = c(&quot;redwood&quot;, &quot;Douglas-fir&quot;)
       ) +
-      labs(y = &quot;Proportion of highest ranking trees&quot;, x = &quot;Year&quot;)
+      labs(y = &quot;Proportion&quot;, x = &quot;Year&quot;)
 }
 
 make_dominance_fig(years = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;))</code></pre>
@@ -2033,6 +1998,8 @@ non_para_dom_test &lt;- function(metric) {
     arrange(desc(diff)) %&gt;%
     filter(diff &gt; 0) %&gt;%
     transmute(treat.a = a$treatment, treat.b = b$treatment)
+  
+  print(paste0(&quot;Test for &quot;, metric, &quot;:&quot;))
 
   apply(combos, 1, function(x) {
     wilout &lt;- wilcox.test(W[[ x[1] ]], W[[ x[2] ]], alternative = &quot;g&quot;)
@@ -2040,32 +2007,9 @@ non_para_dom_test &lt;- function(metric) {
     list(test = paste(x[1], &quot;&gt;&quot;, x[2]), Wilcox.P = wilout$p.value, Perm.P = permout)  
   }) %&gt;%
     bind_rows()
-}
-
-non_para_dom_test(&quot;dbh&quot;)</code></pre>
-<pre><code>## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties</code></pre>
+}</code></pre>
+<pre class="r"><code>non_para_dom_test(&quot;dbh&quot;)</code></pre>
+<pre><code>## [1] &quot;Test for dbh:&quot;</code></pre>
 <pre><code>## # A tibble: 8 x 3
 ##   test      Wilcox.P Perm.P
 ##   &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;
@@ -2078,32 +2022,7 @@ non_para_dom_test(&quot;dbh&quot;)</code></pre>
 ## 7 L80 &gt; C     0.321   0.499
 ## 8 L80 &gt; H40   0.304   0.498</code></pre>
 <pre class="r"><code>non_para_dom_test(&quot;ba_inc2&quot;)</code></pre>
-<pre><code>## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties
-
-## Warning in wilcox.test.default(W[[x[1]]], W[[x[2]]], alternative = &quot;g&quot;): cannot
-## compute exact p-value with ties</code></pre>
+<pre><code>## [1] &quot;Test for ba_inc2:&quot;</code></pre>
 <pre><code>## # A tibble: 9 x 3
 ##   test      Wilcox.P Perm.P
 ##   &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;
@@ -2117,27 +2036,7 @@ non_para_dom_test(&quot;dbh&quot;)</code></pre>
 ## 8 C &gt; H80     0.304  0.500 
 ## 9 L80 &gt; H80   0.437  0.499</code></pre>
 <pre class="r"><code>non_para_dom_test(&quot;ht&quot;)</code></pre>
-<pre><code>## Warning in spp_dom_raw(...): Measures missing values (entries removed): ht
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties
-
-## Warning in spp_dom_raw(...): cannot compute exact p-value with ties</code></pre>
+<pre><code>## [1] &quot;Test for ht:&quot;</code></pre>
 <pre><code>## # A tibble: 10 x 3
 ##    test      Wilcox.P Perm.P
 ##    &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;

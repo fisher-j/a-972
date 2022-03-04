@@ -1,0 +1,96 @@
+---
+title: "Variability"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+```
+
+```{r}
+library(rgl)
+setupKnitr()
+```
+
+# Structural complexity index
+
+SCI measures the spatial variability in a given tree attribute such as DBH or height. It is driven by differences between neighboring trees. We can calculate SCI based on residual trees only, or include ingrowth. The latter would be expected to increase the SCI, but it is unclear whether or not this kind of structural diversity is of significant importance.
+
+It is important to keep in mind that SCI, for our study, refers to heterogeneity on the within-patch scale: at the .08 ha scale. Larger plots would be needed if we are to characterize structural variability at greater scales.
+
+First I'll identify trees of interest as live residual trees only: no ingrowth.
+
+```{r}
+
+sci_d <- d_l %>%
+  filter(live)
+
+```
+
+# SCI summarized by treatment
+
+```{r}
+
+summary_sci(sci_d)
+
+```
+
+# Fun visual of SCI
+
+Here I visualize the SCI_dbh_ for a random plot from each treatment
+
+```{r, fig.width=8, fig.height=10}
+
+sci_plots_d <- sci_d %>% select(x, y, z = dbh, plot, year) %>% split(~ plot + year)
+
+
+visualize_plot_sdi <- function(data1) {
+  x <- data1$x - min(data1$x)
+  y <- data1$y - min(data1$y)
+  z <- data1$z
+  dup <- paste(x, y)
+  if (anyDuplicated(dup)) {
+    rem <- which(duplicated(dup))
+    x <- x[-rem]
+    y <- y[-rem]
+    z <- z[-rem]
+  }
+  col <- cm.colors(20)[1 + round(19*(z - min(z))/diff(range(z)))]
+  dxy <- interp::tri.mesh(x, y, duplicate = "remove")
+  persp3d(dxy, z, col = col, meshColor = "vertices")
+  title3d(main = paste(data1$plot[[1]], data1$year[[1]]), edge = "x--")
+  axes3d(xlen = 0, ylen = 0)
+}
+
+# visualize_plot_sdi(sci_plots_d[[30]])
+
+open3d()
+mfrow3d(nr = 5, nc = 2, sharedMouse = FALSE) 
+
+for (i in sample(1:length(sci_plots_d), 10)) {
+  next3d()
+  visualize_plot_sdi(sci_plots_d[[i]])
+}
+
+rglwidget()
+
+```
+
+I can use the function described in `?rgl::persp3d.triSht` which uses the output of either package tripack or interp
+
+Here are boxplots showing the variability in 2018 of some potentially important variables.
+
+```{r}
+p_h %>%
+  filter(year == "18") %>%
+  select(treatment, spp, dbh, ht, cr, ht_inc2) %>%
+  pivot_longer(
+    !c(treatment, spp),
+    names_to = "measure",
+    values_to = "value"
+  ) %>%
+  ggplot(aes(treatment, value)) +
+    geom_boxplot() +
+    facet_wrap(~ measure, scales = "free_y")
+```
+

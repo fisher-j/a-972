@@ -77,6 +77,14 @@ I also confirmed that the SCI function works the same regardless of whether coor
 ```{r}
 # calculate within plot coordinates, plot center = origin
 # this does not work with missing values currently.
+
+# confidence interval for average treatment estimate
+ci <- function(x) {
+  LB <- mean(x) - 2 * sd(x) / sqrt(length(x) - 1)
+  UB <- mean(x) + 2 * sd(x) / sqrt(length(x) - 1)
+  c(LB, UB)
+}
+
 calc_sci <- function(data, metric) {
   data %>%
     group_by(treatment, year, plot) %>%
@@ -85,16 +93,16 @@ calc_sci <- function(data, metric) {
     )
 }
 
-ci <- function(x) {
-  LB <- mean(x) - sd(x) / sqrt(length(x) - 1)
-  UB <- mean(x) + sd(x) / sqrt(length(x) - 1)
-  data.frame(LB = LB, UB = UB)
-}
 summary_sci <- function(data) {
   data %>%
   calc_sci(dbh) %>%
   summarise(across(starts_with("sci"), first)) %>%
-  summarise(across(starts_with("sci"), list(mean, ci)))
+  summarise(
+    across(
+      starts_with("sci"),
+      list(avg = mean, ci_lb = ~ ci(.x)[1], ci_ub = ~ ci(.x)[2])
+    )
+  )
 }
 ```
 

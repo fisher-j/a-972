@@ -72,7 +72,7 @@ measures$mort <- function(data, species) {
 
 ## Qmd
 
-Dbh will be calculated based on all live trees, including those broken above dbh and with broken and dead tops (most of these are SESE and assumed to be alive).
+DBH is actually QMD here. It will be calculated based on all live trees, including those broken above dbh and with broken and dead tops (most of these are SESE and assumed to be alive).
 
 ```{r}
 measures$dbh <- function(data, species) {
@@ -93,7 +93,7 @@ measures$dom_dbh <- function(data, species) {
   data %>%
     filter(live | status %in% c(15, 16)) %>%
     group_by(plot, year) %>%
-    slice_max(order_by = dbh, n = 4, with_ties = FALSE) %>%
+    slice_max(order_by = dbh, n = 8, with_ties = FALSE) %>%
     filter(spp %in% species) %>%
     group_by(treatment, year) %>%
     summarise(
@@ -147,7 +147,7 @@ measures$dom_ht <- function(data, species) {
       tree_id %in% ht_id_2018
     ) %>%
     group_by(plot, year) %>%
-    slice_max(order_by = ht_p, n = 4, with_ties = FALSE) %>%
+    slice_max(order_by = dbh, n = 8, with_ties = FALSE) %>%
     filter(spp %in% species) %>%
     group_by(treatment, year) %>%
     summarise(
@@ -280,54 +280,14 @@ measures$sdi <- function(data, species) {
 
 ```
 
-# Initial summary tables
-
-I want to be able to define the order of my measures and treatments in tables and graphs
+## Density of dominant
 
 ```{r}
 
-my_sort <- function(data, items = c("treatment", "measure"), fig = FALSE) {
-  if("treatment" %in% items) {
-    data <- mutate(data,
-      treatment = factor(treatment,
-        levels = c("H40", "L40", "H80", "L80", "C"),
-        labels = c("C40", "L40", "C80", "L80", "Control")
-      )
-    )
-  }
-  if("measure" %in% items) {
-    if(fig) {
-      data <- mutate(data,
-        measure = recode_factor(measure,
-          dbh = "Mean~QMD~(cm)",
-          ht_p = "Height~(m)",
-          density = "Stems%.%ha^-1",
-          ba = "BA~(m^2~ha^-1)",
-          ba_inc2 = "BAI",
-          mort = "New~mortality~(tph)",
-          dom_dbh = "Dominant~dbh~(cm)",
-          dom_ht = "Tallest~trees~(m)",
-          sdi = "SDI"
-        )
-      )
-    } else {
-      data <- mutate(data,
-        measure = recode_factor(measure,
-          dbh = "Mean QMD (cm)",
-          ht_p = "Height (m)",
-          density = "Density (stems ha^-1^)",
-          ba = "Basal area (m^2^/ha)",
-          mort = "New mortality (tph)",
-          dom_dbh = "Dominant dbh (cm)",
-          dom_ht = "Dominant height (m)",
-          sdi = "SDI"
-        )
-      )
-    }
-  }
-  data %>% arrange(measure, year, treatment)
-}
 ```
+
+
+# Initial summary tables
 
 ## All species
 
@@ -346,7 +306,8 @@ get_measures <- function(data = d_l, species = NULL) {
 make_summary <- function(data, measures = c("dbh", "ht_p", "density", "ba")) {
   data %>%
   filter(measure %in% measures) %>%
-  my_sort() %>%
+  relevel_treatment() %>%
+  relabel_measure() %>%
   relocate(measure) %>%
   mutate(across(where(is.double), ~ sprintf("%.1f", .x))) %>%
   mutate(mean = paste0(mean, " (", std, ")")) %>%
@@ -416,7 +377,8 @@ make_fig <- function(data = fig_data) {
   yr_breaks <- c(2008, 2013, 2018)
   data %>%
     filter(measure %in% fig_include_vars, year != "init") %>%
-    my_sort(fig = TRUE) %>%
+    relevel_treatment() %>%
+    relabel_measure(fig = TRUE) %>%
     mutate(year = fix_year(year)) %>%
     ggplot(aes(year, mean, color = spp, shape = spp)) +
       geom_line(position = position_dodge(width = .5)) +
@@ -540,7 +502,7 @@ dominance_labels <- as_labeller(
 
 make_dominance_fig <- function(...) {
   spp_dom_pct(...) %>%
-    my_sort(items = "treatment") %>%
+    relevel_treatment() %>%
     mutate(measure = factor(measure, levels = c("dbh", "ht_p", "ba_inc2"))) %>%
     ggplot(aes(year, freq, fill = spp)) +
       geom_bar(position = "stack", stat = "identity") +
@@ -567,7 +529,7 @@ make_dominance_fig <- function(...) {
        values = c(SESE3 = "black", PSMEM = "#a0a0a0"),
        labels = c("redwood", "Douglas-fir")
       ) +
-      labs(y = "Proportion of highest ranking trees", x = "Year")
+      labs(y = "Proportion", x = "Year")
 }
 
 make_dominance_fig(years = c("init", "08", "13", "18"))
@@ -646,6 +608,8 @@ non_para_dom_test <- function(metric) {
     arrange(desc(diff)) %>%
     filter(diff > 0) %>%
     transmute(treat.a = a$treatment, treat.b = b$treatment)
+  
+  print(paste0("Test for ", metric, ":"))
 
   apply(combos, 1, function(x) {
     wilout <- wilcox.test(W[[ x[1] ]], W[[ x[2] ]], alternative = "g")
@@ -654,7 +618,10 @@ non_para_dom_test <- function(metric) {
   }) %>%
     bind_rows()
 }
+```
 
+
+```{r, warning=FALSE}
 non_para_dom_test("dbh")
 non_para_dom_test("ba_inc2")
 non_para_dom_test("ht")

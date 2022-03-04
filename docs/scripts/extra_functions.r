@@ -209,3 +209,49 @@ update_no_simplify.default <- function (object, formula., ..., evaluate = TRUE) 
     eval(call, parent.frame())
   else call
 }
+
+
+# here is a function to relevel and relabel treatments and relabel measures
+# for tables and figures data for the publication
+
+relevel_treatment <- function(data, treatment = treatment) {
+  mutate(data,
+    "{{treatment}}" := factor({{ treatment }},
+      levels = c("H40", "L40", "H80", "L80", "C"),
+      labels = c("C40", "L40", "C80", "L80", "Control")
+    )
+  )   
+}
+
+relabel_measure <- function(data, measure = measure, fig = FALSE) {
+  if(fig) {
+    mutate(data,
+      "{{measure}}" := recode_factor({{ measure }},
+        dbh = "Mean~QMD~(cm)",
+        ht_p = "Height~(m)",
+        density = "Stems%.%ha^-1",
+        ba = "BA~(m^2~ha^-1)",
+        ba_inc2 = "BAI",
+        mort = "New~mortality~(tph)",
+        dom_dbh = "Dominant~dbh~(cm)",
+        dom_ht = "Tallest~trees~(m)",
+        sdi = "SDI"
+      )
+    ) %>%
+    arrange({{ measure }})
+  } else {
+    data <- mutate(data,
+      "{{measure}}" := recode_factor({{ measure }},
+        dbh = "Mean QMD (cm)",
+        ht_p = "Height (m)",
+        density = "Density (stems ha^-1^)",
+        ba = "Basal area (m^2^/ha)",
+        mort = "New mortality (tph)",
+        dom_dbh = "Dominant dbh (cm)",
+        dom_ht = "Dominant height (m)",
+        sdi = "SDI"
+      )
+    ) %>%
+    arrange({{ measure }})
+  }
+}

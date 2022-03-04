@@ -266,7 +266,10 @@ $(document).ready(function () {
   <a href="06_summary.html">Data summaries and figures</a>
 </li>
 <li>
-  <a href="07_variability.html">Variability</a>
+  <a href="07_initial_conditions.html">Initial conditons</a>
+</li>
+<li>
+  <a href="08_variability.html">Variability</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -358,7 +361,7 @@ library(patchwork)</code></pre>
     treat_method = str_extract(treatment, &quot;C|H|L&quot;),
     treat_density = str_extract(treatment, &quot;C|40|80&quot;),
     treat_status = if_else(str_detect(treatment, &quot;C&quot;), &quot;unthinned&quot;, &quot;thinned&quot;),
-    year = as.character(year),
+    year = factor(year, ordered = FALSE),
     cr = cr / 100
   ) %&gt;%
   select(-c(h_dist, azi, rot, cc, x, y, live)) %&gt;%
@@ -3446,16 +3449,16 @@ test_d %&gt;%
 ## # Groups:   treatment [5]
 ##    treatment estimate parameter p.value
 ##    &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
-##  1 C             11.5      524.  0.0142
-##  2 C             14.6      524.  0.0142
-##  3 H40           32.2      176.  0.0530
-##  4 H40           40.4      176.  0.0530
-##  5 H80           16.2      517.  0.609 
-##  6 H80           17.0      517.  0.609 
-##  7 L40           40.9      149.  0.0451
-##  8 L40           47.1      149.  0.0451
-##  9 L80           15.6      516.  0.305 
-## 10 L80           17.1      516.  0.305</code></pre>
+##  1 C             14.6      524.  0.0142
+##  2 C             11.5      524.  0.0142
+##  3 H40           40.4      176.  0.0530
+##  4 H40           32.2      176.  0.0530
+##  5 H80           17.0      517.  0.609 
+##  6 H80           16.2      517.  0.609 
+##  7 L40           47.1      149.  0.0451
+##  8 L40           40.9      149.  0.0451
+##  9 L80           17.1      516.  0.305 
+## 10 L80           15.6      516.  0.305</code></pre>
 <div id="basic-model-forms" class="section level2">
 <h2>Basic model forms</h2>
 <p>Basal area increment is expected to vary by dbh and crown ratio. We hope to see a treatment effect. Because of the interaction with year, I will try to model for the most recent increment period only.</p>
@@ -3618,28 +3621,28 @@ summary(ba_inc_lmm)</code></pre>
 ## 
 ## Fixed effects:
 ##              Estimate Std. Error t value
-## (Intercept)  -2.06670    0.11912 -17.350
+## (Intercept)  -2.42383    0.12226 -19.824
 ## log(dbh)      1.48775    0.03912  38.031
 ## treatmentH40  0.54634    0.04639  11.777
 ## treatmentH80  0.17968    0.03261   5.510
 ## treatmentL40  0.53983    0.04900  11.017
 ## treatmentL80  0.16577    0.03193   5.191
-## cr            0.83279    0.18242   4.565
-## year13       -0.35713    0.04610  -7.747
+## cr            1.97811    0.17911  11.044
+## year08        0.35713    0.04610   7.747
 ## sppSESE3      0.23746    0.02934   8.094
-## cr:year13     1.14532    0.21669   5.286
+## cr:year08    -1.14532    0.21669  -5.286
 ## 
 ## Correlation of Fixed Effects:
-##             (Intr) lg(db) trtH40 trtH80 trtL40 trtL80 cr     year13 sSESE3
-## log(dbh)    -0.932                                                        
-## treatmntH40  0.038 -0.108                                                 
-## treatmntH80 -0.088 -0.038  0.326                                          
-## treatmntL40  0.177 -0.246  0.240  0.290                                   
-## treatmntL80 -0.041 -0.081  0.324  0.459  0.310                            
-## cr          -0.065 -0.251 -0.021  0.057 -0.018  0.025                     
-## year13      -0.124 -0.102  0.032  0.016  0.032 -0.013  0.662              
-## sppSESE3    -0.276  0.282 -0.133 -0.211 -0.063 -0.098 -0.136 -0.040       
-## cr:year13    0.208 -0.009 -0.032 -0.016 -0.020  0.014 -0.609 -0.951 -0.007</code></pre>
+##             (Intr) lg(db) trtH40 trtH80 trtL40 trtL80 cr     year08 sSESE3
+## log(dbh)    -0.947                                                        
+## treatmntH40  0.049 -0.108                                                 
+## treatmntH80 -0.080 -0.038  0.326                                          
+## treatmntL40  0.185 -0.246  0.240  0.290                                   
+## treatmntL80 -0.045 -0.081  0.324  0.459  0.310                            
+## cr           0.001 -0.267 -0.060  0.039 -0.043  0.043                     
+## year08      -0.256  0.102 -0.032 -0.016 -0.032  0.013  0.476              
+## sppSESE3    -0.284  0.282 -0.133 -0.211 -0.063 -0.098 -0.147  0.040       
+## cr:year08    0.156  0.009  0.032  0.016  0.020 -0.014 -0.589 -0.951  0.007</code></pre>
 <pre class="r"><code>residual_plot &lt;- function(mod, val = 1) {
   resid &lt;- resid(mod, type = &quot;deviance&quot;)
   plot(
@@ -3702,28 +3705,28 @@ summary(ba_inc_mod)</code></pre>
 ## 
 ## Fixed effects:
 ##              Estimate Std. Error t value
-## (Intercept)  -2.06670    0.11912 -17.350
+## (Intercept)  -2.42383    0.12226 -19.824
 ## log(dbh)      1.48775    0.03912  38.031
 ## treatmentH40  0.54634    0.04639  11.777
 ## treatmentH80  0.17968    0.03261   5.510
 ## treatmentL40  0.53983    0.04900  11.017
 ## treatmentL80  0.16577    0.03193   5.191
-## cr            0.83279    0.18242   4.565
-## year13       -0.35713    0.04610  -7.747
+## cr            1.97811    0.17911  11.044
+## year08        0.35713    0.04610   7.747
 ## sppSESE3      0.23746    0.02934   8.094
-## cr:year13     1.14532    0.21669   5.286
+## cr:year08    -1.14532    0.21669  -5.286
 ## 
 ## Correlation of Fixed Effects:
-##             (Intr) lg(db) trtH40 trtH80 trtL40 trtL80 cr     year13 sSESE3
-## log(dbh)    -0.932                                                        
-## treatmntH40  0.038 -0.108                                                 
-## treatmntH80 -0.088 -0.038  0.326                                          
-## treatmntL40  0.177 -0.246  0.240  0.290                                   
-## treatmntL80 -0.041 -0.081  0.324  0.459  0.310                            
-## cr          -0.065 -0.251 -0.021  0.057 -0.018  0.025                     
-## year13      -0.124 -0.102  0.032  0.016  0.032 -0.013  0.662              
-## sppSESE3    -0.276  0.282 -0.133 -0.211 -0.063 -0.098 -0.136 -0.040       
-## cr:year13    0.208 -0.009 -0.032 -0.016 -0.020  0.014 -0.609 -0.951 -0.007</code></pre>
+##             (Intr) lg(db) trtH40 trtH80 trtL40 trtL80 cr     year08 sSESE3
+## log(dbh)    -0.947                                                        
+## treatmntH40  0.049 -0.108                                                 
+## treatmntH80 -0.080 -0.038  0.326                                          
+## treatmntL40  0.185 -0.246  0.240  0.290                                   
+## treatmntL80 -0.045 -0.081  0.324  0.459  0.310                            
+## cr           0.001 -0.267 -0.060  0.039 -0.043  0.043                     
+## year08      -0.256  0.102 -0.032 -0.016 -0.032  0.013  0.476              
+## sppSESE3    -0.284  0.282 -0.133 -0.211 -0.063 -0.098 -0.147  0.040       
+## cr:year08    0.156  0.009  0.032  0.016  0.020 -0.014 -0.589 -0.951  0.007</code></pre>
 <pre class="r"><code>sjPlot::tab_model(ba_inc_mod,
   dv.labels = &quot;BA increment&quot;,
   show.ci = FALSE,
@@ -3758,7 +3761,7 @@ p
 (Intercept)
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
--2.07
+-2.42
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.12
@@ -3842,7 +3845,7 @@ treatment [L80]
 cr
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.83
+1.98
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.18
@@ -3853,10 +3856,10 @@ cr
 </tr>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
-year [13]
+year [08]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
--0.36
+0.36
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.05
@@ -3881,10 +3884,10 @@ spp [SESE3]
 </tr>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
-cr * year [13]
+cr * year [08]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.15
+-1.15
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.22
@@ -3969,6 +3972,14 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 ## Degrees-of-freedom method: kenward-roger 
 ## P value adjustment: tukey method for comparing a family of 5 estimates 
 ## Tests are performed on the log scale</code></pre>
+<pre class="r"><code>ref_grid(ba_inc_mod)</code></pre>
+<pre><code>## &#39;emmGrid&#39; object with variables:
+##     dbh = 24.779
+##     treatment = C, H40, H80, L40, L80
+##     cr = 0.20135
+##     year = 13, 08
+##     spp = PSMEM, SESE3
+## Transformation: &quot;log(mu + 6.68525791547394)&quot;</code></pre>
 <p>Here I plot the expected response by species and dbh, averaged over the effect of year.</p>
 <pre class="r"><code>library(patchwork)
 
@@ -3981,10 +3992,8 @@ a &lt;- emmip(
   at = list(dbh = seq(10, 60, 2)),
   type = &quot;response&quot;
 ) %&gt;%
+  relevel_treatment() %&gt;%
   mutate(
-    treatment = recode_factor(treatment,
-      H40 = &quot;H40&quot;, L40 = &quot;L40&quot;, H80 = &quot;C80&quot;, L80 = &quot;L80&quot;, C = &quot;Control&quot;
-    ),
     spp = recode(spp, SESE3 = &quot;redwood&quot;, PSMEM = &quot;Douglas-fir&quot;)
   ) %&gt;%
   ggplot(aes(dbh, yvar, color = spp)) +
@@ -3992,7 +4001,11 @@ a &lt;- emmip(
     facet_wrap(~ treatment ) +
     geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = spp), alpha = .2) +
     theme_bw() +
-    theme(legend.position = c(0.1, 0.85), legend.background = element_blank()) +
+    theme(
+      legend.position = c(0.1, 0.85),
+      legend.background = element_blank(),
+      legend.title = element_blank()
+    ) +
     scale_color_manual(
       values = c(&quot;#969696&quot;, &quot;black&quot;),
       aesthetics = c(&quot;color&quot;, &quot;fill&quot;)
@@ -4017,14 +4030,18 @@ a &lt;- emmip(
     # facet_wrap(~ treatment ) +
     geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = year), alpha = .2) +
     theme_bw() +
-    theme(legend.position = c(0.35, 0.75), legend.background = element_blank()) +
+    theme(
+      legend.position = c(0.35, 0.75),
+      legend.background = element_blank(),
+      legend.title = element_blank()
+    ) +
     scale_color_manual(
       values = c(&quot;#969696&quot;, &quot;black&quot;),
       aesthetics = c(&quot;color&quot;, &quot;fill&quot;)
     ) +
     labs(
       x = &quot;Crown ratio&quot;,
-      y = &quot;BA increment&quot;
+      y = &quot;BAI&quot;
       # title = &quot;Effect of interaction of year and crown-ratio on BA increment&quot;
     )</code></pre>
 <p>Can I put these different plots together?</p>

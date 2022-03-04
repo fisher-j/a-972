@@ -17,8 +17,10 @@ navbar:
       href: 05_analyzing_ba_increment.html
     - text: "Data summaries and figures"
       href: 06_summary.html
+    - text: "Initial conditons"
+      href: 07_initial_conditions.html
     - text: "Variability"
-      href: 07_variability.html
+      href: 08_variability.html
 output:
   html_document:
     toc: true

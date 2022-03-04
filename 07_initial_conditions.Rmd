@@ -1,0 +1,209 @@
+---
+title: Comparing initial conditions
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+```
+
+
+It has come up several times, the question as to whether or not the average treatment conditions can be considered equivalent for various metrics in their initial conditions. This should be apparent in some of the summary data for initial conditions, such as TPH, QMD and HT.
+
+First, here is the summary table with just the initial conditions. These do not look substantially different.
+
+```{r}
+
+kbl2 <- function(data, caption) {
+  data %>%
+  kableExtra::kbl(caption = caption) %>%
+  kableExtra::kable_styling()
+}
+
+d_l %>%
+  filter(year == "init") %>%
+  get_measures() %>%
+  make_summary(measures = c("dbh", "ht_p", "density", "ba", "dom_dbh")) %>%
+  kbl2(caption = "Initial summmary for all species")
+
+```
+
+How about when we do it by species of interest?
+
+```{r}
+
+sum_rw <- d_l %>%
+  filter(year == "init") %>%
+  get_measures(species = "SESE3") %>%
+  make_summary() %>%
+  kbl2(caption = "Initial summmary data for redwood")
+
+sum_df <- d_l %>%
+  filter(year == "init") %>%
+  get_measures(species = "PSMEM") %>%
+  make_summary() %>%
+  kbl2(caption = "Initial summmary data for Douglas-fir")
+
+```
+
+We can see that basal area of redwood in the L40 and Control treatments seems to be much lower than in the others, although there is quite a bit of variability. Also, the variability between treatments is not consistent.
+
+I'll run some anovas to test if there are significant differences in initial data, for all species and for redwood and df separately, and these can be followed up with pairwise t-tests, with a Tukey adjustment.
+
+```{r}
+
+# I need to get plot height data seperately, otherwise, get plot statistics
+# for each measure of interest
+
+plot_sum <- function(data, species = unique(data$spp),
+                     years = unique(data$year)) 
+{
+  a <- data %>%
+    filter(
+      spp %in% species,
+      live | status %in% c(15, 16),
+      year %in% years
+    ) %>%
+    group_by(treatment, year, plot) %>%
+    summarise(
+      # I'm calculating BA (m^2/ha) by plot
+      ba = sum(dbh^2 * pi / 40000, na.rm = TRUE) * 12.5,
+      qmd = sqrt(mean(dbh^2)),
+      density = n() * 12.5
+    )
+  b <- data %>%
+    filter(
+      spp %in% species,
+      live | status %in% c(15, 16),
+      !get_cond(c(2, 3)),
+      tree_id %in% ht_id_2018,
+      !is.na(ht_p),
+      year %in% years
+    ) %>%
+  group_by(treatment, year, plot) %>%
+  summarise(ht = mean(ht_p))
+  left_join(a, b) %>%
+  ungroup() %>%
+  pivot_longer(c(ba, qmd, density, ht), names_to = "measure")
+}
+
+# Run Dunn test and sort contrast the same as a Tukey test
+
+my_dunn <- function(data) {
+  dunn_dat <- invisible(dunn.test::dunn.test(
+      data$value,
+      data$treatment,
+      table = FALSE,
+      method = "bonferroni",
+      altp = TRUE
+  ))
+  dunn_dat <- as.data.frame(dunn_dat[c("comparisons", "altP.adjusted")])
+  Tu <- tidy(TukeyHSD(aov(value ~ treatment, data = data)))[["contrast"]]
+  Du <- gsub(" ", "", dunn_dat$comparisons)
+  Tu <- str_split(Tu, "-")
+  Du <- str_split(Du, "-")
+  O <- map_dbl(Tu, function(x) which(map_lgl(Du, function(y) all(x %in% y))))
+  dunn_dat[O, ] %>% rename(D_compare = comparisons, D_pvalue = altP.adjusted)
+}
+
+# coercion from matrix to table, and table to dataframe results in pair-wise
+# list
+
+my_pairwise_w_test <- function(data) {
+  w_dat <- pairwise.wilcox.test(
+    data$value,
+    data$treatment,
+    p.adjust.method = "bonf")
+  w_dat <- w_dat$p.value
+  subset(as.data.frame(as.table(w_dat)), !is.na(Freq)) %>%
+    mutate(comparisons = paste(Var1, Var2, sep = "-")) %>%
+    select(W_compare = comparisons, W_pvalue = Freq)
+}
+
+test_sum <- function(.x) {
+  capture.output(
+    test_df <- .x %>%
+      nest_by(year, measure) %>%
+      mutate(
+        aov_mod = list(aov(value ~ treatment, data = data)),
+        aov_p = summary(aov_mod)[[1]][1, 5],
+        Tukey = list(
+          select(tidy(TukeyHSD(aov_mod)),
+            T_compare = contrast, 
+            T_estimate = estimate, 
+            T_pvalue = adj.p.value
+          )
+        ),
+        KW_p = kruskal.test(value ~ treatment, data = data)[["p.value"]],
+        Dunn = list(my_dunn(data)),
+        Wilcox = list(my_pairwise_w_test(data))
+      ) %>%
+      select(-c(data, aov_mod))
+  )
+  return(test_df)
+}
+
+```
+
+# Assumptions
+
+The assumption with t-tests is that that data are normally distributed. I'm not sure I'm able to confirm this assumption with only 4 replications per treatment. It might be important to perform non-parametric significance tests. 
+
+```{r}
+
+plot_sum(d_l, years = "init") %>%
+  ggplot(aes(value)) +
+    geom_histogram(bins = 5) +
+    facet_wrap(~measure, scales = "free")
+
+```
+
+In addition to anova and t-tests, I'll also use Kruskal-Wallis rank-sum tests and the Dunn and M-W-Wilcoxon post-hoc tests. I don't think anovas and t-tests are reliable with only 4 data points.
+
+```{r}
+
+plot_sum(d_l, years = "init") %>% 
+  test_sum()
+
+plot_sum(d_l, years = "init") %>% 
+  test_sum() %>%
+  filter(KW_p < .05) %>%
+  select(-c(aov_p)) %>%
+  unnest(c(Tukey, Dunn, Wilcox))
+
+```
+
+only ht has significant differences between treatments: L40 plots(pre-treatment) are on average about 3 m taller than H80. and L40 are about 2.5 m taller than L80. The Dunn test also found these contrasts significant, but the Bonferonni adjusted wilcoxcon rank-sum test didn't detect any significance.
+
+How about for redwood:
+
+there are no significant differences.
+
+```{r}
+
+plot_sum(d_l, years = "init", species = "SESE3") %>% 
+  test_sum()
+
+plot_sum(d_l, years = "init", species = "SESE3") %>% 
+  test_sum() %>%
+  filter(KW_p < .05) %>%
+  select(-c(aov_p)) %>%
+  unnest(c(Tukey, Dunn, Wilcox))
+
+```
+
+And for Douglas-fir?
+
+Differences follow the same pattern as for all trees, which makes sense because there were no differences among redwoods, but now the Kruskal-Wallis test doesn't detect any significant effect, and neither do post-hoc tests.
+
+```{r}
+
+plot_sum(d_l, years = "init", species = "PSMEM") %>% 
+  test_sum()
+
+plot_sum(d_l, years = "init", species = "PSMEM") %>% 
+  test_sum() %>%
+  filter(KW_p < .05) %>%
+  select(-c(aov_p)) %>%
+  unnest(c(Tukey, Dunn, Wilcox))
+
+```

@@ -264,7 +264,10 @@ $(document).ready(function () {
   <a href="06_summary.html">Data summaries and figures</a>
 </li>
 <li>
-  <a href="07_variability.html">Variability</a>
+  <a href="07_initial_conditions.html">Initial conditons</a>
+</li>
+<li>
+  <a href="08_variability.html">Variability</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -360,6 +363,14 @@ d_l &lt;- d_l %&gt;%
 <p>I also confirmed that the SCI function works the same regardless of whether coordinates are plot coordinates or UTM coordinates.</p>
 <pre class="r"><code># calculate within plot coordinates, plot center = origin
 # this does not work with missing values currently.
+
+# confidence interval for average treatment estimate
+ci_lb &lt;- function(x) {
+  LB &lt;- function (x) mean(x) - 2 * sd(x) / sqrt(length(x) - 1)
+  UB &lt;- function (x) mean(x) + 2 * sd(x) / sqrt(length(x) - 1)
+  c(LB, UB)
+}
+
 calc_sci &lt;- function(data, metric) {
   data %&gt;%
     group_by(treatment, year, plot) %&gt;%
@@ -368,16 +379,12 @@ calc_sci &lt;- function(data, metric) {
     )
 }
 
-ci &lt;- function(x) {
-  LB &lt;- mean(x) - sd(x) / sqrt(length(x) - 1)
-  UB &lt;- mean(x) + sd(x) / sqrt(length(x) - 1)
-  data.frame(LB = LB, UB = UB)
-}
+
 summary_sci &lt;- function(data) {
   data %&gt;%
   calc_sci(dbh) %&gt;%
   summarise(across(starts_with(&quot;sci&quot;), first)) %&gt;%
-  summarise(across(starts_with(&quot;sci&quot;), list(mean, ci)))
+  summarise(across(starts_with(&quot;sci&quot;), list(avg = mean, ci = ci)))
 }</code></pre>
 </div>
 <div id="standardize-crown-ratio" class="section level2">

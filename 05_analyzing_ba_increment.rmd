@@ -49,7 +49,7 @@ test_d <- d_l %>%
     treat_method = str_extract(treatment, "C|H|L"),
     treat_density = str_extract(treatment, "C|40|80"),
     treat_status = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
-    year = as.character(year),
+    year = factor(year, ordered = FALSE),
     cr = cr / 100
   ) %>%
   select(-c(h_dist, azi, rot, cc, x, y, live)) %>%
@@ -582,6 +582,7 @@ Here I get the marginal estimates and pairwise comparisons for the selected mode
 
 emmeans(ba_inc_mod, pairwise ~ treatment, type = "response")
 
+ref_grid(ba_inc_mod)
 ```
 
 Here I plot the expected response by species and dbh, averaged over the effect of year.
@@ -598,10 +599,8 @@ a <- emmip(
   at = list(dbh = seq(10, 60, 2)),
   type = "response"
 ) %>%
+  relevel_treatment() %>%
   mutate(
-    treatment = recode_factor(treatment,
-      H40 = "H40", L40 = "L40", H80 = "C80", L80 = "L80", C = "Control"
-    ),
     spp = recode(spp, SESE3 = "redwood", PSMEM = "Douglas-fir")
   ) %>%
   ggplot(aes(dbh, yvar, color = spp)) +
@@ -609,7 +608,11 @@ a <- emmip(
     facet_wrap(~ treatment ) +
     geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = spp), alpha = .2) +
     theme_bw() +
-    theme(legend.position = c(0.1, 0.85), legend.background = element_blank()) +
+    theme(
+      legend.position = c(0.1, 0.85),
+      legend.background = element_blank(),
+      legend.title = element_blank()
+    ) +
     scale_color_manual(
       values = c("#969696", "black"),
       aesthetics = c("color", "fill")
@@ -639,14 +642,18 @@ b <- emmip(
     # facet_wrap(~ treatment ) +
     geom_ribbon(aes(ymin = LCL, ymax = UCL, color = NULL, fill = year), alpha = .2) +
     theme_bw() +
-    theme(legend.position = c(0.35, 0.75), legend.background = element_blank()) +
+    theme(
+      legend.position = c(0.35, 0.75),
+      legend.background = element_blank(),
+      legend.title = element_blank()
+    ) +
     scale_color_manual(
       values = c("#969696", "black"),
       aesthetics = c("color", "fill")
     ) +
     labs(
       x = "Crown ratio",
-      y = "BA increment"
+      y = "BAI"
       # title = "Effect of interaction of year and crown-ratio on BA increment"
     )
 

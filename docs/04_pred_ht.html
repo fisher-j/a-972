@@ -266,7 +266,10 @@ $(document).ready(function () {
   <a href="06_summary.html">Data summaries and figures</a>
 </li>
 <li>
-  <a href="07_variability.html">Variability</a>
+  <a href="07_initial_conditions.html">Initial conditons</a>
+</li>
+<li>
+  <a href="08_variability.html">Variability</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -316,8 +319,14 @@ $(document).ready(function () {
 </ul>
 </div>
 
-<pre class="r"><code>library(lme4)
-library(emmeans)
+<pre class="r"><code>library(lme4)</code></pre>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## 
+## Attaching package: &#39;Matrix&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
+## 
+##     expand, pack, unpack</code></pre>
+<pre class="r"><code>library(emmeans)
 library(MuMIn)
 palette(&quot;Tableau 10&quot;)
 library(broom.mixed)</code></pre>
