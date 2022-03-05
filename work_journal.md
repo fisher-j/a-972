@@ -1,6 +1,8 @@
 ## 03/04/2022
 
 * added visualization of SCI to website
+* Added more emmeans output for BAI model
+* created bar chart showing compact letter display of significantly different estimates
 
 ## 03/03/2022
 
