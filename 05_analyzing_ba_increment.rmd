@@ -576,27 +576,54 @@ sjPlot::tab_model(ba_inc_mod,
 
 ```
 
-Here I get the marginal estimates and pairwise comparisons for the selected model. If interaction with species and treatment was not included in the model, than we can't compare redwood and douglas-fir response in each treatment.
+Here I get the marginal estimates and pairwise comparisons for the selected model. First I do a pairwise comparison on treatments.
 
 ```{r}
 
-emmeans(ba_inc_mod, pairwise ~ treatment, type = "response")
+ba_inc_ref <- ref_grid(ba_inc_mod)
 
-ref_grid(ba_inc_mod)
+emmeans(ba_inc_ref, pairwise ~ treatment, type = "response")
 ```
 
-Here I plot the expected response by species and dbh, averaged over the effect of year.
+Then I compare our two species of interest
 
 ```{r}
+
+emmeans(ba_inc_ref, pairwise ~ spp, type = "response")
+
+```
+
+This visualization shows that most pairwise comparisons of species and treatment are significantly different.
+
+```{r}
+
+emmeans(ba_inc_ref, ~ treatment + spp) %>% pwpp(type = "response")
+
+emmeans(ba_inc_ref, ~ treatment + spp, type = "response")
+
+```
+
+Here I plot the expected response by species and dbh, averaged over the effect of year and add an inset for the interaction effect of crown ratio and year. For this I define two more reference grids, one with a range of dbh to include and one with a range of cr to include
+
+```{r, fig.width=7.16, fig.height=5.91}
+
 library(patchwork)
 
+ba_inc_ref_dbh <- ref_grid(
+  ba_inc_mod,
+  at = list(dbh = seq(10, 60, 2))
+)
+
+ba_inc_ref_cr <- ref_grid(
+  ba_inc_mod,
+  at = list(cr = seq(.05, .65, .1))
+)
 
 a <- emmip(
-  ba_inc_mod,
+  ba_inc_ref_dbh,
   spp ~ dbh | treatment,
   CIs = TRUE,
   plotit = FALSE,
-  at = list(dbh = seq(10, 60, 2)),
   type = "response"
 ) %>%
   relevel_treatment() %>%
@@ -623,17 +650,11 @@ a <- emmip(
     # title = "back transformed from log-log model, averaged over year"
     )
 
-```
-
-Here is the expected response resulting from the interaction of year and crown ratio.
-
-```{r}
 b <- emmip(
-  ba_inc_mod,
+  ba_inc_ref_cr,
   year ~ cr,
   CIs = TRUE,
   plotit = FALSE,
-  at = list(cr = seq(.05, .65, .1)),
   type = "response"
 ) %>%
   mutate(year = fct_recode(year, "2008 - 2013" = "08", "2013 - 2018" = "13")) %>%
@@ -657,20 +678,37 @@ b <- emmip(
       # title = "Effect of interaction of year and crown-ratio on BA increment"
     )
 
-```
-
-Can I put these different plots together?
-
-```{r, fig.width=7.16, fig.height=5.91}
-
+    
 layout <- c(
-  area(1, 1, 200, 300),
-  area(119, 219, 200, 299)
+  patchwork::area(1, 1, 200, 300),
+  patchwork::area(119, 219, 200, 299)
 )
 
 a + b + plot_layout(design = layout)
+
 ```
 
+There has been interest in a bar graph that shows the BAI of each species-treatment pair and identifies significant differences between them.
+
+```{r}
+library(ggplot2)
+
+dodge <- position_dodge(width = 0.9)
+
+emmeans(ba_inc_ref, ~ treatment + spp, type = "response") %>% 
+  multcomp::cld(Letters = LETTERS) %>%
+  mutate(.group = gsub(" +", "", .group)) %>%
+  ggplot(aes(treatment, response, fill = spp)) +
+    geom_errorbar(
+      aes(ymin = response, ymax = upper.CL),
+      position = dodge,
+      width = 0.2
+    ) +
+    geom_col(position = dodge) +
+    scale_fill_manual(values = c("#969696", "black")) + 
+    geom_text(aes(label = .group), position = dodge, vjust = -4)
+
+```
 
 # Model validation
 

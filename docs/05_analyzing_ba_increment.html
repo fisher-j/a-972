@@ -3940,8 +3940,10 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 </td>
 </tr>
 </table>
-<p>Here I get the marginal estimates and pairwise comparisons for the selected model. If interaction with species and treatment was not included in the model, than we can’t compare redwood and douglas-fir response in each treatment.</p>
-<pre class="r"><code>emmeans(ba_inc_mod, pairwise ~ treatment, type = &quot;response&quot;)</code></pre>
+<p>Here I get the marginal estimates and pairwise comparisons for the selected model. First I do a pairwise comparison on treatments.</p>
+<pre class="r"><code>ba_inc_ref &lt;- ref_grid(ba_inc_mod)
+
+emmeans(ba_inc_ref, pairwise ~ treatment, type = &quot;response&quot;)</code></pre>
 <pre><code>## $emmeans
 ##  treatment response    SE   df lower.CL upper.CL
 ##  C             12.1 0.459 1153     11.2     13.0
@@ -3972,24 +3974,63 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 ## Degrees-of-freedom method: kenward-roger 
 ## P value adjustment: tukey method for comparing a family of 5 estimates 
 ## Tests are performed on the log scale</code></pre>
-<pre class="r"><code>ref_grid(ba_inc_mod)</code></pre>
-<pre><code>## &#39;emmGrid&#39; object with variables:
-##     dbh = 24.779
-##     treatment = C, H40, H80, L40, L80
-##     cr = 0.20135
-##     year = 13, 08
-##     spp = PSMEM, SESE3
-## Transformation: &quot;log(mu + 6.68525791547394)&quot;</code></pre>
-<p>Here I plot the expected response by species and dbh, averaged over the effect of year.</p>
+<p>Then I compare our two species of interest</p>
+<pre class="r"><code>emmeans(ba_inc_ref, pairwise ~ spp, type = &quot;response&quot;)</code></pre>
+<pre><code>## $emmeans
+##  spp   response    SE   df lower.CL upper.CL
+##  PSMEM     15.5 0.354 1113     14.8     16.2
+##  SESE3     21.5 0.734 1219     20.1     22.9
+## 
+## Results are averaged over the levels of: treatment, year 
+## Degrees-of-freedom method: kenward-roger 
+## Confidence level used: 0.95 
+## Intervals are back-transformed from the log(mu + 6.685) scale 
+## 
+## $contrasts
+##  contrast      ratio     SE   df null t.ratio p.value
+##  PSMEM / SESE3 0.789 0.0231 1199    1  -8.093  &lt;.0001
+## 
+## Results are averaged over the levels of: treatment, year 
+## Degrees-of-freedom method: kenward-roger 
+## Tests are performed on the log scale</code></pre>
+<p>This visualization shows that most pairwise comparisons of species and treatment are significantly different.</p>
+<pre class="r"><code>emmeans(ba_inc_ref, ~ treatment + spp) %&gt;% pwpp(type = &quot;response&quot;)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<pre class="r"><code>emmeans(ba_inc_ref, ~ treatment + spp, type = &quot;response&quot;)</code></pre>
+<pre><code>##  treatment spp   response    SE   df lower.CL upper.CL
+##  C         PSMEM     9.98 0.368 1154     9.28     10.7
+##  H40       PSMEM    22.10 1.198 1117    19.84     24.5
+##  H80       PSMEM    13.26 0.524 1139    12.26     14.3
+##  L40       PSMEM    21.91 1.244 1118    19.57     24.5
+##  L80       PSMEM    12.99 0.483 1114    12.06     14.0
+##  C         SESE3    14.45 0.713 1170    13.09     15.9
+##  H40       SESE3    29.81 1.641 1171    26.73     33.2
+##  H80       SESE3    18.61 0.775 1164    17.13     20.2
+##  L40       SESE3    29.57 1.763 1166    26.27     33.2
+##  L80       SESE3    18.26 0.816 1165    16.71     19.9
+## 
+## Results are averaged over the levels of: year 
+## Degrees-of-freedom method: kenward-roger 
+## Confidence level used: 0.95 
+## Intervals are back-transformed from the log(mu + 6.685) scale</code></pre>
+<p>Here I plot the expected response by species and dbh, averaged over the effect of year and add an inset for the interaction effect of crown ratio and year. For this I define two more reference grids, one with a range of dbh to include and one with a range of cr to include</p>
 <pre class="r"><code>library(patchwork)
 
+ba_inc_ref_dbh &lt;- ref_grid(
+  ba_inc_mod,
+  at = list(dbh = seq(10, 60, 2))
+)
+
+ba_inc_ref_cr &lt;- ref_grid(
+  ba_inc_mod,
+  at = list(cr = seq(.05, .65, .1))
+)
 
 a &lt;- emmip(
-  ba_inc_mod,
+  ba_inc_ref_dbh,
   spp ~ dbh | treatment,
   CIs = TRUE,
   plotit = FALSE,
-  at = list(dbh = seq(10, 60, 2)),
   type = &quot;response&quot;
 ) %&gt;%
   relevel_treatment() %&gt;%
@@ -4014,14 +4055,13 @@ a &lt;- emmip(
       x = &quot;Dbh (cm)&quot;,
       y = expression(Basal ~ area ~ increment ~ (cm^2 ~ year^-1)) 
     # title = &quot;back transformed from log-log model, averaged over year&quot;
-    )</code></pre>
-<p>Here is the expected response resulting from the interaction of year and crown ratio.</p>
-<pre class="r"><code>b &lt;- emmip(
-  ba_inc_mod,
+    )
+
+b &lt;- emmip(
+  ba_inc_ref_cr,
   year ~ cr,
   CIs = TRUE,
   plotit = FALSE,
-  at = list(cr = seq(.05, .65, .1)),
   type = &quot;response&quot;
 ) %&gt;%
   mutate(year = fct_recode(year, &quot;2008 - 2013&quot; = &quot;08&quot;, &quot;2013 - 2018&quot; = &quot;13&quot;)) %&gt;%
@@ -4043,15 +4083,34 @@ a &lt;- emmip(
       x = &quot;Crown ratio&quot;,
       y = &quot;BAI&quot;
       # title = &quot;Effect of interaction of year and crown-ratio on BA increment&quot;
-    )</code></pre>
-<p>Can I put these different plots together?</p>
-<pre class="r"><code>layout &lt;- c(
-  area(1, 1, 200, 300),
-  area(119, 219, 200, 299)
+    )
+
+    
+layout &lt;- c(
+  patchwork::area(1, 1, 200, 300),
+  patchwork::area(119, 219, 200, 299)
 )
 
 a + b + plot_layout(design = layout)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-30-1.png" width="687.36" /></p>
+<p>There has been interest in a bar graph that shows the BAI of each species-treatment pair and identifies significant differences between them.</p>
+<pre class="r"><code>library(ggplot2)
+
+dodge &lt;- position_dodge(width = 0.9)
+
+emmeans(ba_inc_ref, ~ treatment + spp, type = &quot;response&quot;) %&gt;% 
+  multcomp::cld(Letters = LETTERS) %&gt;%
+  mutate(.group = gsub(&quot; +&quot;, &quot;&quot;, .group)) %&gt;%
+  ggplot(aes(treatment, response, fill = spp)) +
+    geom_errorbar(
+      aes(ymin = response, ymax = upper.CL),
+      position = dodge,
+      width = 0.2
+    ) +
+    geom_col(position = dodge) +
+    scale_fill_manual(values = c(&quot;#969696&quot;, &quot;black&quot;)) + 
+    geom_text(aes(label = .group), position = dodge, vjust = -4)</code></pre>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-31-1.png" width="672" /></p>
 </div>
 <div id="model-validation" class="section level1">
 <h1>Model validation</h1>
@@ -4080,7 +4139,7 @@ ba_inc_d &lt;- augment1(test_d, ba_inc_mod)</code></pre>
   col = as.factor(treatment)
 )
 abline(0,0)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
 <pre class="r"><code>plot(
   resid ~ log(dbh),
   data = ba_inc_d,
@@ -4091,7 +4150,7 @@ abline(0,0)</code></pre>
   pch = 16
 )
 abline(0,0)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-32-2.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-2.png" width="672" /></p>
 <pre class="r"><code>plot(
   resid ~ cr,
   data = ba_inc_d,
@@ -4102,7 +4161,7 @@ abline(0,0)</code></pre>
   pch = 16
 )
 abline(0,0)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-32-3.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-3.png" width="672" /></p>
 </div>
 <div id="homogeneity-of-random-group-residuals" class="section level2">
 <h2>Homogeneity of random group residuals</h2>
@@ -4116,14 +4175,14 @@ abline(0,0)</code></pre>
   xlab = &quot;Fitted values&quot;,
   ylab = &quot;Standardised residuals&quot;
 )</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
 </div>
 <div id="normality-of-residuals" class="section level2">
 <h2>Normality of residuals</h2>
 <p>It seems we are violating the assumption of normality of residuals here.</p>
 <pre class="r"><code>qqnorm(resid(ba_inc_mod, type = &quot;pearson&quot;), pch=16, col = 1,  main = &quot;QQplot for pearosn residuals&quot;)
 qqline(resid(ba_inc_mod, type = &quot;pearson&quot;))</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-34-1.png" width="960" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-35-1.png" width="960" /></p>
 </div>
 <div id="leverage-and-cooks-distance" class="section level2">
 <h2>Leverage and Cooks distance</h2>
@@ -4142,20 +4201,20 @@ plot(
 )
 
 points(resid ~ lev, data = filter(ba_inc_d, cooks &gt; 6 * mean(cooks)), pch = 16, col =3)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-35-1.png" width="960" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-36-1.png" width="960" /></p>
 <pre class="r"><code>plot(ba_inc_d$lev,pch=16,col=&quot;red&quot;,ylim=c(0,1.2),las=1,ylab=&quot;Leverage/Cook&#39;s distance value&quot;)
 points(ba_inc_d$cooks,pch=17,col=&quot;blue&quot;)
 points(x=1650,y=1,pch=16,col=&quot;red&quot;)
 points(x=1650,y=0.8,pch=17,col=&quot;blue&quot;)
 text(x=1650,y=1,&quot;Leverage&quot;,adj=c(0,0.5))
 text(x=1650,y=0.8,&quot;Cook&#39;s distance&quot;,adj=c(0,0.5))</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-35-2.png" width="960" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-36-2.png" width="960" /></p>
 </div>
 <div id="random-effects-distribution" class="section level2">
 <h2>Random effects distribution</h2>
 <p>The distribution of random effects (plots) should be roughly normal. Here our distribution is skewed, <a href="" title="https://stats.stackexchange.com/a/366500">from what I’ve read</a>, this should not be a problem for estimates or their std’s.</p>
 <pre class="r"><code>hist(as.vector(unlist(ranef(ba_inc_mod)$tree_id)), col = 1)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-37-1.png" width="672" /></p>
 </div>
 </div>
 <div id="is-a-glm-going-to-work" class="section level1">
