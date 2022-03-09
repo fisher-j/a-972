@@ -44,7 +44,7 @@ tree_2008 <- read.csv(
 tree_2013 <- read.csv(
   "./original/tblA972_TreeData2013.txt",
   na.strings = ""
-  ) %>% 
+  ) %>%
   select(
     tree_id = TreeID,
     dbh = DBH,
@@ -70,7 +70,7 @@ tree_2018 <- read.csv(
     ht = HTt,
     cr = CR,
     status = Status,
-    ConCode.A:ConCode.E, 
+    ConCode.A:ConCode.E,
     bear = BearDmg,
     notes = Notes
   ) %>%

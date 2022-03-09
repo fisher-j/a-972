@@ -379,7 +379,9 @@ make_fig <- function(data = fig_data) {
     filter(measure %in% fig_include_vars, year != "init") %>%
     relevel_treatment() %>%
     relabel_measure(fig = TRUE) %>%
-    mutate(year = fix_year(year)) %>%
+    mutate(
+      year = fix_year(year),
+      spp = recode(spp, SESE3 = "Redwood", PSMEM = "Douglas-fir")) %>%
     ggplot(aes(year, mean, color = spp, shape = spp)) +
       geom_line(position = position_dodge(width = .5)) +
       geom_point(position = position_dodge(width = .5)) +
@@ -408,9 +410,12 @@ make_fig <- function(data = fig_data) {
       ) +
       scale_x_continuous(breaks = yr_breaks) +
       # scale_y_continuous(breaks = scales::breaks_extended(4)) +
-      scale_color_manual("spp", values = c(SESE3 = "black", PSMEM = "#969696")) +
-      scale_shape_manual("spp", values = c(SESE3 = 16, PSMEM = 17)) +
-      scale_linetype_manual("spp", values = c(SESE3 = 2, PSMEM = 1)) +
+      scale_color_manual("spp",
+        values = c(Redwood = "black", "Douglas-fir" = "#969696")
+      ) +
+      scale_shape_manual("spp",
+        values = c(Redwood = 16, "Douglas-fir" = 17)
+      ) +
       labs(y = NULL, x = "Year")
 }
 
@@ -494,7 +499,7 @@ spp_dom_pct <- function(...) {
 dominance_labels <- as_labeller(
   c(
     ba_inc2 = "BAI",
-    dbh = "dbh",
+    dbh = "DBH",
     ht_p = "Height"
   ),
   label_parsed
@@ -503,9 +508,19 @@ dominance_labels <- as_labeller(
 make_dominance_fig <- function(...) {
   spp_dom_pct(...) %>%
     relevel_treatment() %>%
-    mutate(measure = factor(measure, levels = c("dbh", "ht_p", "ba_inc2"))) %>%
+    mutate(
+      measure = factor(measure, levels = c("dbh", "ht_p", "ba_inc2")),
+      year = case_when(
+        year == 13 & measure == "ba_inc2" ~2010.5,
+        year == 18 & measure == "ba_inc2" ~2015.5,
+        year == "init" ~2003,
+        year == "08" ~2008,
+        year == "13" ~2013,
+        year == "18" ~2018
+      )
+    ) %>%
     ggplot(aes(year, freq, fill = spp)) +
-      geom_bar(position = "stack", stat = "identity") +
+      geom_bar(position = "stack", stat = "identity", width = 4.5) +
       facet_grid(
         vars(measure),
         vars(treatment),
@@ -525,9 +540,12 @@ make_dominance_fig <- function(...) {
       ) +
       # scale_x_continuous(breaks = yr_breaks) +
       scale_y_continuous(breaks = c(0, .5, 1)) +
+      scale_x_continuous(
+        breaks = c(2003, 2008, 2013, 2018),
+        labels = c("init", "2008", "2013", "2018")) +
       scale_fill_manual("spp",
        values = c(SESE3 = "black", PSMEM = "#a0a0a0"),
-       labels = c("redwood", "Douglas-fir")
+       labels = c("Redwood", "Douglas-fir")
       ) +
       labs(y = "Proportion", x = "Year")
 }
@@ -538,14 +556,14 @@ ggsave(
   filename = "figs/dominance_fig.pdf",
   device = cairo_pdf,
   width = 8.84,
-  height = 8,
+  height = 9,
   units = "cm"
 )
 
 ggsave(
   filename = "figs/dominance_fig.jpg",
   width = 8.84,
-  height = 8,
+  height = 9,
   units = "cm"
 )
 ```

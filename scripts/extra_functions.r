@@ -150,6 +150,13 @@ formula_aic <- function(form, data, method = "lmm"){
   if(method == "lmm") {
     mod <- lmer(form, data = data, REML = FALSE)
     rmse <- sqrt(mean(resid(mod, type = "pearson")^2))
+    r2 <- round(unlist(performance::r2_nakagawa(mod)), 2)
+    return(list(
+    formula = deparse1(form),
+    aicc = AICc(mod),
+    rmse = rmse,
+    r2 = paste(r2[[2]], r2[[1]], sep = " / ")
+    ))
   }
   if(method == "glm") {
     mod <- glmer(form, data = data, family = Gamma(link = "log"))
@@ -227,13 +234,13 @@ relabel_measure <- function(data, measure = measure, fig = FALSE) {
   if(fig) {
     mutate(data,
       "{{measure}}" := recode_factor({{ measure }},
-        dbh = "Mean~QMD~(cm)",
+        dbh = "QMD~(cm)",
         ht_p = "Height~(m)",
         density = "Stems%.%ha^-1",
         ba = "BA~(m^2~ha^-1)",
         ba_inc2 = "BAI",
         mort = "New~mortality~(tph)",
-        dom_dbh = "Dominant~dbh~(cm)",
+        dom_dbh = "Dominant~DBH~(cm)",
         dom_ht = "Tallest~trees~(m)",
         sdi = "SDI"
       )
@@ -242,16 +249,25 @@ relabel_measure <- function(data, measure = measure, fig = FALSE) {
   } else {
     data <- mutate(data,
       "{{measure}}" := recode_factor({{ measure }},
-        dbh = "Mean QMD (cm)",
+        dbh = "QMD (cm)",
         ht_p = "Height (m)",
         density = "Density (stems ha^-1^)",
         ba = "Basal area (m^2^/ha)",
         mort = "New mortality (tph)",
-        dom_dbh = "Dominant dbh (cm)",
+        dom_dbh = "Dominant DBH (cm)",
         dom_ht = "Dominant height (m)",
         sdi = "SDI"
       )
     ) %>%
     arrange({{ measure }})
   }
+}
+
+
+# Convenience function for printing tables
+
+kbl2 <- function(.x, caption = NULL) {
+  .x %>% 
+    kableExtra::kbl(caption = caption) %>%
+    kableExtra::kable_styling(full_width = FALSE)
 }

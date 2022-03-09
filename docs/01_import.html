@@ -337,7 +337,7 @@ library(kableExtra)</code></pre>
 tree_2013 &lt;- read.csv(
   &quot;./original/tblA972_TreeData2013.txt&quot;,
   na.strings = &quot;&quot;
-  ) %&gt;% 
+  ) %&gt;%
   select(
     tree_id = TreeID,
     dbh = DBH,
@@ -363,7 +363,7 @@ tree_2018 &lt;- read.csv(
     ht = HTt,
     cr = CR,
     status = Status,
-    ConCode.A:ConCode.E, 
+    ConCode.A:ConCode.E,
     bear = BearDmg,
     notes = Notes
   ) %&gt;%

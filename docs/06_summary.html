@@ -638,7 +638,7 @@ Control
 <tbody>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 init
@@ -661,7 +661,7 @@ init
 </tr>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 08
@@ -684,7 +684,7 @@ Mean QMD (cm)
 </tr>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 13
@@ -707,7 +707,7 @@ Mean QMD (cm)
 </tr>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 18
@@ -1053,7 +1053,7 @@ Control
 <tbody>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 init
@@ -1076,7 +1076,7 @@ init
 </tr>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 08
@@ -1099,7 +1099,7 @@ Mean QMD (cm)
 </tr>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 13
@@ -1122,7 +1122,7 @@ Mean QMD (cm)
 </tr>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 18
@@ -1468,7 +1468,7 @@ Control
 <tbody>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 init
@@ -1491,7 +1491,7 @@ init
 </tr>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 08
@@ -1514,7 +1514,7 @@ Mean QMD (cm)
 </tr>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 13
@@ -1537,7 +1537,7 @@ Mean QMD (cm)
 </tr>
 <tr>
 <td style="text-align:left;">
-Mean QMD (cm)
+QMD (cm)
 </td>
 <td style="text-align:left;">
 18
@@ -1891,7 +1891,7 @@ spp_dom_pct &lt;- function(...) {
 <pre class="r"><code>dominance_labels &lt;- as_labeller(
   c(
     ba_inc2 = &quot;BAI&quot;,
-    dbh = &quot;dbh&quot;,
+    dbh = &quot;DBH&quot;,
     ht_p = &quot;Height&quot;
   ),
   label_parsed
@@ -1900,9 +1900,19 @@ spp_dom_pct &lt;- function(...) {
 make_dominance_fig &lt;- function(...) {
   spp_dom_pct(...) %&gt;%
     relevel_treatment() %&gt;%
-    mutate(measure = factor(measure, levels = c(&quot;dbh&quot;, &quot;ht_p&quot;, &quot;ba_inc2&quot;))) %&gt;%
+    mutate(
+      measure = factor(measure, levels = c(&quot;dbh&quot;, &quot;ht_p&quot;, &quot;ba_inc2&quot;)),
+      year = case_when(
+        year == 13 &amp; measure == &quot;ba_inc2&quot; ~2010.5,
+        year == 18 &amp; measure == &quot;ba_inc2&quot; ~2015.5,
+        year == &quot;init&quot; ~2003,
+        year == &quot;08&quot; ~2008,
+        year == &quot;13&quot; ~2013,
+        year == &quot;18&quot; ~2018
+      )
+    ) %&gt;%
     ggplot(aes(year, freq, fill = spp)) +
-      geom_bar(position = &quot;stack&quot;, stat = &quot;identity&quot;) +
+      geom_bar(position = &quot;stack&quot;, stat = &quot;identity&quot;, width = 4.5) +
       facet_grid(
         vars(measure),
         vars(treatment),
@@ -1922,9 +1932,12 @@ make_dominance_fig &lt;- function(...) {
       ) +
       # scale_x_continuous(breaks = yr_breaks) +
       scale_y_continuous(breaks = c(0, .5, 1)) +
+      scale_x_continuous(
+        breaks = c(2003, 2008, 2013, 2018),
+        labels = c(&quot;init&quot;, &quot;2008&quot;, &quot;2013&quot;, &quot;2018&quot;)) +
       scale_fill_manual(&quot;spp&quot;,
        values = c(SESE3 = &quot;black&quot;, PSMEM = &quot;#a0a0a0&quot;),
-       labels = c(&quot;redwood&quot;, &quot;Douglas-fir&quot;)
+       labels = c(&quot;Redwood&quot;, &quot;Douglas-fir&quot;)
       ) +
       labs(y = &quot;Proportion&quot;, x = &quot;Year&quot;)
 }
@@ -1937,14 +1950,14 @@ make_dominance_fig(years = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &
   filename = &quot;figs/dominance_fig.pdf&quot;,
   device = cairo_pdf,
   width = 8.84,
-  height = 8,
+  height = 9,
   units = &quot;cm&quot;
 )</code></pre>
 <pre><code>## Warning: Removed 20 rows containing missing values (position_stack).</code></pre>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/dominance_fig.jpg&quot;,
   width = 8.84,
-  height = 8,
+  height = 9,
   units = &quot;cm&quot;
 )</code></pre>
 <pre><code>## Warning: Removed 20 rows containing missing values (position_stack).</code></pre>

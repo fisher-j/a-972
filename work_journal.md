@@ -1,3 +1,11 @@
+## 03/08/2022
+
+* Made BAI model table with AICc, Delta AIC, AIC weights, RMSE, and R^2^
+* Fixed figures:
+  - summary fig: legend and axis lables
+  - dominance fig: legend, scale, and axis labels, adjusted BAI bars
+  - BAI predicted means: legend and axis labels, rescaled inset (to try it out) 
+
 ## 03/04/2022
 
 * added visualization of SCI to website
