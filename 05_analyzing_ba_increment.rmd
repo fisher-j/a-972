@@ -472,28 +472,38 @@ Including plot in the random effects results in a singular fit and no random int
 ```{r}
 
 fl1 <- list(
-  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) * treatment + (1 | tree_id),
-  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + (1 | tree_id),
-  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + (1 | tree_id),
-  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + (1 | tree_id),
-  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) * treatment + spp + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + spp + (1 | tree_id),
-  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + spp + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp * treatment + (1 | tree_id),
-  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr * year + spp + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp * treatment + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + year:spp +(1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + spp + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment * year * spp + cr + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + (1 | tree_id),
   log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp + (1 | tree_id),
-  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + treatment:spp + (1 | tree_id),
-  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr:year + cr:spp + spp + (1 | tree_id)
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp * treatment + (1 | tree_id),
+  log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + treatment:spp + (1 | tree_id)
 )
 
-get_aic(fl1, data = test_d, method = "lmm")
+aic_weights(fl1, data = test_d, method = "lmm", delta_max = Inf) %>%
+  transmute(
+    Formula = formula,
+    AICc = round(aicc, 1),
+    RMSE = round(rmse, 3),
+    "Delta AIC" = round(delta, 1),
+    "AIC weight" = round(wi, 3),
+    "Marginal/conditional R^2^" = r2,
+  ) %>%
+  kbl2()
 
 ```
 
