@@ -1,5 +1,5 @@
 ---
-title: "Variability"
+title: Variability
 ---
 
 ```{r setup, include=FALSE}
@@ -22,8 +22,11 @@ First I'll identify trees of interest as live residual trees only: no ingrowth.
 
 ```{r}
 
+ingrowth <- define_xy(ingrowth)
+
 sci_d <- d_l %>%
-  filter(live)
+  filter(live) %>%
+  bind_rows(ingrowth, .id = "cohort")
 
 ```
 
@@ -32,9 +35,40 @@ sci_d <- d_l %>%
 ```{r}
 
 summary_sci(sci_d) %>%
-  kbl2(caption = "Summary of SCI_dbh_ for all plots/years")
+  filter(year %in% c("init", "08", "18")) %>%
+  group_by(treatment) %>%
+  color_groups(digits = 2, caption = "Average SCI and confidence interval for all live trees including ingrowth")
 
 ```
+
+```{r}
+
+make_sci_fig <- function(data = summary_sci(sci_d)) {
+  yr_breaks <- c(2008, 2013, 2018)
+  data %>%
+    # filter(myear != "init") %>%
+    relevel_treatment() %>%
+    mutate(year = fix_year(year)) %>%
+    ggplot(aes(year, sci_dbh_avg, color = treatment)) +
+      geom_line(size = 1.2) +
+      geom_point() +
+    geom_ribbon(aes(ymin = sci_dbh_ci_lb, ymax = sci_dbh_ci_ub, fill = treatment), alpha = 0.2, color = NA) +
+      # geom_errorbar(
+      #   aes(ymin = sci_dbh_ci_lb, ymax = sci_dbh_ci_ub),
+      #   width = .75,
+      #   position = position_dodge(.5)
+      # ) +
+      # facet_wrap(~ treatment) +
+      theme_bw() +
+      scale_x_continuous(breaks = yr_breaks) +
+      labs(y = NULL, x = "Year")
+}
+
+
+make_sci_fig()
+```
+
+Some of these trajectories look interesting, but They don't look totally unique, given the error bars.
 
 # Fun visual of SCI
 

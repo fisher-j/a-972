@@ -1,3 +1,10 @@
+
+## 03/09/2022
+
+* Added [summary table](06_summary.html#dominance-figure) of average values associated with the dominant redwood and Douglas-fir
+* Made adjustments to mean BAI comparisons bar graph: axes, letters, error bars, legend
+* Started working on SCI, graphing trajectories, and simplifying table
+
 ## 03/08/2022
 
 * Made BAI model table with AICc, Delta AIC, AIC weights, RMSE, and R^2^

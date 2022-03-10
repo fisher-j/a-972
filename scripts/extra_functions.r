@@ -11,7 +11,7 @@ group_vars <- function(by_species = FALSE) {
 
 # color table by groups function, only works if table is
 # properly arranged. 
-color_groups <- function(x, caption = "", background = "#EEE9E9") {
+color_groups <- function(x, caption = "", background = "#EEE9E9", digits = 3) {
   even_groups <- x %>%
     rownames_to_column() %>%
     mutate(rowname = as.numeric(rowname), first_row = first(rowname)) %>%
@@ -20,7 +20,7 @@ color_groups <- function(x, caption = "", background = "#EEE9E9") {
     filter(group_id %% 2 == 0) %>%
     pull(rowname)
   x %>%
-    kableExtra::kbl(caption = caption) %>%
+    kableExtra::kbl(caption = caption, digits = digits) %>%
     kableExtra::kable_styling(full_width = FALSE) %>%
     kableExtra::row_spec(even_groups, background = background)
 }
@@ -266,8 +266,50 @@ relabel_measure <- function(data, measure = measure, fig = FALSE) {
 
 # Convenience function for printing tables
 
-kbl2 <- function(.x, caption = NULL) {
+kbl2 <- function(.x, caption = NULL, digits = getOption("digits")) {
   .x %>% 
-    kableExtra::kbl(caption = caption) %>%
+    kableExtra::kbl(caption = caption, digits = digits) %>%
     kableExtra::kable_styling(full_width = FALSE)
 }
+
+# Update _site.yml based on numbered rmd files in project folder
+# and the titles of each file
+
+update_yml <- function() {
+  files <- list.files(pattern = "^\\d+.*rmd$")
+
+  get_file_title <- function(x) {
+    frnt <- readLines(x, n = 10)
+    match_title <- grepl("title: ", frnt)
+    if(!any(match_title)) {
+      title <- sub("(.*)\\..*$", "\\1", x[1])
+    } else {
+      title <- frnt[match_title][1]
+      title <- gsub("title: (.*)", "\\1", title)
+      title <- gsub("\\\"", "", title)
+    }
+    title
+  }
+
+  navbar_entries <- sapply(files, get_file_title)
+
+  navbar <- c(
+    "navbar: ",
+    "  title: A-972 10-year Study",
+    "  left: ",
+    rbind(
+      paste("    - text:", navbar_entries),
+      paste("      href:", names(navbar_entries))
+    )
+  )
+
+  cur_yml <- readLines("_site.yml", warn = FALSE)
+  
+  new_yml <- c(
+    cur_yml[1:grep("navbar:", cur_yml) - 1],
+    navbar
+  )
+
+  cat(new_yml, file = "_site.yml", sep = "\n")
+}
+

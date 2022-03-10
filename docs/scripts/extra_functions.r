@@ -266,8 +266,8 @@ relabel_measure <- function(data, measure = measure, fig = FALSE) {
 
 # Convenience function for printing tables
 
-kbl2 <- function(.x, caption = NULL) {
+kbl2 <- function(.x, caption = NULL, digits = getOption("digits")) {
   .x %>% 
-    kableExtra::kbl(caption = caption) %>%
+    kableExtra::kbl(caption = caption, digits = digits) %>%
     kableExtra::kable_styling(full_width = FALSE)
 }

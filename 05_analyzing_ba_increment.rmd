@@ -1,5 +1,5 @@
 ---
-title: "Modeling BA increment"
+title: "BAI modeling"
 ---
 
 ```{r setup, include=FALSE}
@@ -496,6 +496,7 @@ fl1 <- list(
 
 aic_weights(fl1, data = test_d, method = "lmm", delta_max = Inf) %>%
   transmute(
+    Row = row,
     Formula = formula,
     AICc = round(aicc, 1),
     RMSE = round(rmse, 3),
@@ -510,7 +511,7 @@ aic_weights(fl1, data = test_d, method = "lmm", delta_max = Inf) %>%
 Here I'll look at the top model, plot labels refer to diameter increment (cm/year). Unfortunately the residuals do not appear to be evenly distributed. I'm not sure that I can use this model.
 
 ```{r}
-ba_inc_lmm <- lmer(fl1[[17]], data = test_d, REML = TRUE)
+ba_inc_lmm <- lmer(fl1[[18]], data = test_d, REML = TRUE)
 
 summary(ba_inc_lmm)
 
@@ -593,6 +594,7 @@ Here I get the marginal estimates and pairwise comparisons for the selected mode
 ba_inc_ref <- ref_grid(ba_inc_mod)
 
 emmeans(ba_inc_ref, pairwise ~ treatment, type = "response")
+
 ```
 
 Then I compare our two species of interest
@@ -603,13 +605,13 @@ emmeans(ba_inc_ref, pairwise ~ spp, type = "response")
 
 ```
 
-This visualization shows that most pairwise comparisons of species and treatment are significantly different.
+This visualization shows that most pairwise comparisons of species and treatment combinations are significantly different.
 
 ```{r}
 
 emmeans(ba_inc_ref, ~ treatment + spp) %>% pwpp(type = "response")
 
-emmeans(ba_inc_ref, ~ treatment + spp, type = "response")
+emmeans(ba_inc_ref, pairwise ~ treatment + spp, type = "response")
 
 ```
 
@@ -716,25 +718,54 @@ ggsave(
 
 ```
 
-There has been interest in a bar graph that shows the BAI of each species-treatment pair and identifies significant differences between them.
+Now we show the estimated mean BAI response of a tree of average size, with average CR and for an average year, and identify which species/treatment combinations vary significantly from each other.
 
 ```{r}
-library(ggplot2)
 
 dodge <- position_dodge(width = 0.9)
 
 emmeans(ba_inc_ref, ~ treatment + spp, type = "response") %>% 
-  multcomp::cld(Letters = LETTERS) %>%
+  multcomp::cld(Letters = letters, decreasing = TRUE) %>%
   mutate(.group = gsub(" +", "", .group)) %>%
+  relevel_treatment() %>%
   ggplot(aes(treatment, response, fill = spp)) +
     geom_errorbar(
-      aes(ymin = response, ymax = upper.CL),
+      aes(ymin = lower.CL, ymax = upper.CL),
       position = dodge,
       width = 0.2
     ) +
     geom_col(position = dodge) +
-    scale_fill_manual(values = c("#969696", "black")) + 
-    geom_text(aes(label = .group), position = dodge, vjust = -4)
+    theme_bw() +
+    theme(
+      legend.position = c(0.8, 0.8),
+      legend.background = element_blank()
+    ) +
+    scale_fill_manual(
+      values = c("#969696", "black"),
+      labels = c("Douglas-fir", "Redwood")
+    ) + 
+    geom_text(
+      aes(y = upper.CL, label = .group),
+      position = dodge,
+      vjust = -0.5
+    ) +
+    scale_y_continuous(expand = c(0.0, 0, 0.08, 0)) +
+    labs(y = expression(BAI ~ (cm^2 ~ year^-1)), x = "Treatment", fill = NULL)
+
+ggsave(
+  filename = "figs/bai_mean_compare.pdf",
+  device = cairo_pdf,
+  width = 8.84,
+  height = 9,
+  units = "cm"
+)
+
+ggsave(
+  filename = "figs/bai_mean_compare.jpg",
+  width = 8.84,
+  height = 9,
+  units = "cm"
+)
 
 ```
 

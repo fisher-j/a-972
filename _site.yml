@@ -2,28 +2,26 @@ name: "A-972 10-year Study"
 output_dir: docs
 include: 
 exclude: ["original", "reference", "working", "*.txt", "*.old"]
-navbar:
-  title: "A-972 10-year Study"
-  left:
-    - text: "Data import"
-      href: 01_import.html
-    - text: "Data cleaning"
-      href: 02_data_cleaning.html
-    - text: "Define new variables"
-      href: 03_define.html
-    - text: "Predicting missing heights"
-      href: 04_pred_ht.html
-    - text: "Analyzing Ba increment"
-      href: 05_analyzing_ba_increment.html
-    - text: "Data summaries and figures"
-      href: 06_summary.html
-    - text: "Initial conditons"
-      href: 07_initial_conditions.html
-    - text: "Variability"
-      href: 08_variability.html
 output:
   html_document:
     toc: true
     highlight: textmate
     code_folding: hide
     df_print: default
+navbar: 
+  title: A-972 10-year Study
+  left: 
+    - text: Import data
+      href: 01_import.rmd
+    - text: Detailed data cleaning
+      href: 02_data_cleaning.rmd
+    - text: Define new data
+      href: 03_define.rmd
+    - text: Height increment model
+      href: 04_pred_ht.rmd
+    - text: BAI modeling
+      href: 05_analyzing_ba_increment.rmd
+    - text: Summary statistics
+      href: 06_summary.rmd
+    - text: Variability
+      href: 08_variability.rmd

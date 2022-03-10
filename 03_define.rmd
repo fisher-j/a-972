@@ -60,12 +60,18 @@ d_l <- d_l %>%
 ## Define UTM coordinates for each tree
 
 ```{r}
-d_l <- d_l %>%
+
+define_xy <- function(data) {
+  data %>%
   left_join(plot_info[, c("plot", "utm_x", "utm_y")], by = "plot") %>%
   mutate(
     circular2xy(h_dist, azi, center.x = utm_x, center.y = utm_y)
   ) %>%
   select(-c(utm_x, utm_y))
+}
+
+d_l <- define_xy(d_l)
+
 ```
 
 ## Structural diversity SCI

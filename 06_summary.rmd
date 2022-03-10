@@ -1,5 +1,5 @@
 ---
-title: "Calculate summary statistics"
+title: "Summary statistics"
 ---
 
 ```{r setup, include=FALSE}
@@ -494,7 +494,7 @@ spp_dom_pct <- function(...) {
 
 ## Dominance figure
 
-```{r, fig.height=2.75, fig.width=3.48}
+```{r, fig.height=3.5, fig.width=3.5}
 
 dominance_labels <- as_labeller(
   c(
@@ -571,6 +571,16 @@ ggsave(
 Now I need to display the average values for these dominant species, perhaps along with their standard deviations. I think I'll just do this for each treatment in the most recent measurement period.
 
 ```{r}
+
+spp_dom_raw() %>%
+  group_by(year, treatment, measure) %>%
+  summarise(average = mean(value)) %>%
+  arrange(measure, treatment, year) %>%
+  pivot_wider(names_from = treatment, values_from = average) %>%
+  relocate(measure) %>%
+  kbl2(
+    caption = "Average metrics for top 100 TPH (ranked by the respective metric)",
+    digits = 2)
 
 ```
 
