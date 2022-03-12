@@ -80,6 +80,39 @@ After some experimentation, I determined that ingrowth does have an effect on SC
 
 I also confirmed that the SCI function works the same regardless of whether coordinates are plot coordinates or UTM coordinates.
 
+First, here is my code for defining SCI. The area of a triangle is equal to 1/2 the magnitude of the cross product of two vectors representing sides of a triangle. The magnitude of a vector is the square root of the the sum of its values squared. This is also known as the norm and is denoted with single or double vertical bars.
+
+```{r}
+
+cross_product <- function(a, b) {
+  if(length(a)!=3 || length(b)!=3){
+        stop("Cross product is only defined for 3D vectors.")
+    }
+  i1 <- c(2, 3, 1)
+  i2 <- c(3, 1, 2)
+  a[i1] * b[i2] - a[i2] * b[i1]
+}
+
+# area is the magnitude of two vectors
+tri_area <- function(tri, points) {
+  apply(tri, 1, function(point) {
+    AB <- points[point[2], ] - points[point[1], ]
+    AC <- points[point[3], ] - points[point[1], ]
+    0.5 * sqrt(sum(cross_product(AB, AC)^2))
+  })
+}
+
+sci_metric <- function(x, y, z) {
+  points <- as.matrix(cbind(x, y, z))
+  deln_obj <- geometry::delaunayn(points[, 1:2], output.options = "Fa")
+  area3d <- sum(tri_area(deln_obj$tri, points))
+  area2d <- sum(deln_obj$areas)
+  area3d / area2d
+}
+```
+
+Next, these functions calculate plot averages for SCI
+
 ```{r}
 # calculate within plot coordinates, plot center = origin
 # this does not work with missing values currently.
@@ -99,16 +132,20 @@ calc_sci <- function(data, metric) {
     )
 }
 
-summary_sci <- function(data) {
-  data %>%
+summary_sci <- function(data, level = treatment) {
+  plot_level <- data %>%
   calc_sci(dbh) %>%
-  summarise(across(starts_with("sci"), first)) %>%
-  summarise(
-    across(
-      starts_with("sci"),
-      list(avg = mean, ci_lb = ~ ci(.x)[1], ci_ub = ~ ci(.x)[2])
+  summarise(across(starts_with("sci"), first))
+  if(level == plot) {
+    plot_level
+  } else {
+    plot_level %>% summarise(
+      across(
+        starts_with("sci"),
+        list(avg = mean, ci_lb = ~ ci(.x)[1], ci_ub = ~ ci(.x)[2])
+      )
     )
-  )
+  }
 }
 ```
 

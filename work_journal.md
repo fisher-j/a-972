@@ -1,3 +1,6 @@
+## 03/11/2022
+
+I realized there was an error in my calculation of SCI. Unfortunately the new values are half of what I had calculated previously which makes differences between treatments even smaller than before.
 
 ## 03/09/2022
 
