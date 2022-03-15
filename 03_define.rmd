@@ -6,7 +6,7 @@ title: "Define new data"
 knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
 ```
 
-## Defining live/dead trees
+# Defining live/dead trees
 
 Status and condition codes provided do not necessarily define mortality, because a broken tree, depending on species may still be alive or dead. I'll define dead trees as:
 
@@ -36,7 +36,7 @@ nrow(filter(group_by(d_l, tree_id), any(!live & lead(live))))
 
 ```
 
-## Define diameter, basal area, and height increment
+# Define diameter, basal area, and height increment
 
 Here I will add annual height, diameter and basal area increments to the dataset. Increment will be defined on the observation level, meaning that it must apply to either the first or second measurement. This is significant for modeling, as I will be predicting an increment based on one period's dbh observation. I'll add increment data to both the beginning and ending observations to facilitate modeling based on either observation. *_inc1 will be assigned to the first measurement (refers to subsequent measurement) and *_inc2 will be assigned to the second (refers to previous measurement).
 
@@ -57,7 +57,7 @@ d_l <- d_l %>%
 ```
 
 
-## Define UTM coordinates for each tree
+# Define UTM coordinates for each tree
 
 ```{r}
 
@@ -73,6 +73,8 @@ define_xy <- function(data) {
 d_l <- define_xy(d_l)
 
 ```
+
+# Diversity measures
 
 ## Structural diversity SCI
 
@@ -102,7 +104,8 @@ tri_area <- function(tri, points) {
   })
 }
 
-sci_metric <- function(x, y, z) {
+# Calculates plot average SCI
+calc_sci <- function(x, y, z) {
   points <- as.matrix(cbind(x, y, z))
   deln_obj <- geometry::delaunayn(points[, 1:2], output.options = "Fa")
   area3d <- sum(tri_area(deln_obj$tri, points))
@@ -119,37 +122,82 @@ Next, these functions calculate plot averages for SCI
 
 # confidence interval for average treatment estimate
 ci <- function(x) {
-  LB <- mean(x) - 2 * sd(x) / sqrt(length(x) - 1)
-  UB <- mean(x) + 2 * sd(x) / sqrt(length(x) - 1)
+  t_crit <- qt(0.975, length(x)
+  LB <- mean(x) - t_crit * sd(x) / sqrt(length(x) - 1)
+  UB <- mean(x) + t_crit * sd(x) / sqrt(length(x) - 1)
   c(LB, UB)
 }
 
-calc_sci <- function(data, metric) {
-  data %>%
-    group_by(treatment, year, plot) %>%
-    mutate(
-      "sci_{{metric}}" := sci_metric(x, y, {{metric}}),
-    )
+```
+
+## Calculate the Shannon-Weaver Index
+
+```{r}
+
+
+calc_sh <- function(x, type = "n") {
+    count(spp) %>%
+    mutate(p_spp = n / sum(n)) %>%
+    summarize(sh_n = -sum(p_spp * log(p_spp)))
 }
 
-summary_sci <- function(data, level = treatment) {
-  plot_level <- data %>%
-  calc_sci(dbh) %>%
-  summarise(across(starts_with("sci"), first))
-  if(level == plot) {
-    plot_level
-  } else {
-    plot_level %>% summarise(
+summary_sh <- function(data, measure = "sh") {
+  calc_sh(data) %>%
+    summarise(
       across(
-        starts_with("sci"),
+        starts_with(measure),
         list(avg = mean, ci_lb = ~ ci(.x)[1], ci_ub = ~ ci(.x)[2])
       )
     )
-  }
 }
+
 ```
 
-## Standardize crown ratio
+# Mean directional index
+
+Mean directional index is described slightly differently by (Corral-Rivas et al. 2010) and (Pommerening and Stoyan 2008) but I believe that they are equivalent representations. I'm using the latter with four :
+
+$$\sqrt{ \left ( \sum_{j=1}^{4} \cos{a_{ij}} \right )^2 + \left ( \sum_{j=1}^{4} \sin{a_{ij}} \right )^2 } $$
+
+```{r}
+
+# calculate MDI for one tree based on coordinats of neighbors
+mdi_tree <- function(focus, neighbors) {
+  x <- neighbors[["x"]] - focus[["x"]]
+  y <- neighbors[["y"]] - focus[["y"]]
+  hypot <- sqrt(x^2 + y^2)
+  sin_theta <- x / hypot
+  cos_theta <- y / hypot
+  sqrt(sum(sin_theta)^2 + sum(cos_theta)^2)
+}
+
+# Given x and y coordinates, find k nearest neighbors of, and calcualte
+# MDI for each.
+calc_mdi <- function(x, y) {
+  trees <- data.frame(x = x, y = y)
+  # get matrix of distances
+  distances <- dist(trees) %>% as.matrix()
+  # get index of 4 nearest for each row (excluding self)
+  idx <- apply(distances, 1, function(x) order(x)[2:5])
+  sapply(1:nrow(trees), function(x) mdi_tree(trees[x, ], trees[idx[, x], ]))
+}
+
+```
+
+# Calculate plot SDI
+
+For "live" trees only
+
+```{r}
+
+d_l <- d_l %>%
+  group_by(plot) %>%
+  mutate(sdi_plot = sum(12.5 * (dbh * live / 25.4)^1.605, na.rm = TRUE)) %>%
+  ungroup()
+
+```
+
+# Standardize crown ratio
 
 ```{r}
 d_l <- d_l %>%
@@ -165,19 +213,6 @@ d_l <- d_l %>%
       TRUE                 ~ cr
     )
   )
-```
-
-## Calculate plot SDI
-
-For "live" trees only
-
-```{r}
-
-d_l <- d_l %>%
-  group_by(plot) %>%
-  mutate(sdi_plot = sum(12.5 * (dbh * live / 25.4)^1.605, na.rm = TRUE)) %>%
-  ungroup()
-
 ```
 
 ## Update post-harvest data
