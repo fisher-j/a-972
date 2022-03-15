@@ -146,6 +146,7 @@ tree_2018[bad_windthrow_18, "status"] <- as.numeric(new_status_18)
 ```
 
 ## Cut trees
+
 The 2008 data needs to be broken into initial and post cut conditions. To separate these I'll use the Status column ("15" and "16" indicate cut). Initial conditions will include cut and uncut trees. I'll make sure tree_2008 doesn't have any remaining cut trees, then I'll check subsequent measurement periods to make sure there are no more remaining cut trees. Finally, I'll remove harvested trees from tree_list_all.
 
 While ids (with a "C") don't indicate any unexpected cut trees in subsequent years, year 2013 has two cut trees indicated by status 16. One of these, 2L80.3731 is listed as windthrown prior to harvest in 2008, this tree should be omitted as it is not representative of treatment effects. Tree 3H40.3195 was listed as alive in 2008 and then as cut in 2013, I'm going to assume it was actually cut in 2008 (when it was 5.5 inches).
@@ -188,6 +189,7 @@ tree_list <- tree_list_all[!tree_list_all$tree_id %in% cut_ids, ]
 ```
 
 ## Bear/rot column
+
 Covert bear damage and rot to TRUE/FALSE, rather than Y/N or 1/(missing)
 
 ```{r}
@@ -238,7 +240,7 @@ d_l <- d_l %>%
 
 ## Ingrowth
 
-Ingrowth is important for metrics such as structural diversity, understory diversity and others, but might skew metrics relating to the growth of dominant trees of interest. Here I remove ingrowth from the main dataset. Also, one ingrowth tree is missing locations. I'll put it in some random place in the plot.
+Ingrowth is important for metrics such as structural diversity, under story diversity and others, but might skew metrics relating to the growth of dominant trees of interest. Here I remove ingrowth from the main dataset. Also, one ingrowth tree is missing locations. I'll put it in some random place in the plot.
 
 ```{r}
 no_loc <- is.na(d_l$h_dist) | is.na(d_l$azi)
