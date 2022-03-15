@@ -246,28 +246,25 @@ $(document).ready(function () {
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="01_import.html">Data import</a>
+  <a href="01_import.rmd">Import data</a>
 </li>
 <li>
-  <a href="02_data_cleaning.html">Data cleaning</a>
+  <a href="02_data_cleaning.rmd">Detailed data cleaning</a>
 </li>
 <li>
-  <a href="03_define.html">Define new variables</a>
+  <a href="03_define.rmd">Define new data</a>
 </li>
 <li>
-  <a href="04_pred_ht.html">Predicting missing heights</a>
+  <a href="04_pred_ht.rmd">Height increment model</a>
 </li>
 <li>
-  <a href="05_analyzing_ba_increment.html">Analyzing Ba increment</a>
+  <a href="05_analyzing_ba_increment.rmd">BAI modeling</a>
 </li>
 <li>
-  <a href="06_summary.html">Data summaries and figures</a>
+  <a href="06_summary.rmd">Summary statistics</a>
 </li>
 <li>
-  <a href="07_initial_conditions.html">Initial conditons</a>
-</li>
-<li>
-  <a href="08_variability.html">Variability</a>
+  <a href="08_variability.rmd">Variability</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -527,7 +524,7 @@ d_l &lt;- d_l %&gt;%
 </div>
 <div id="ingrowth" class="section level2">
 <h2>Ingrowth</h2>
-<p>Ingrowth is important for metrics such as structural diversity, understory diversity and others, but might skew metrics relating to the growth of dominant trees of interest. Here I remove ingrowth from the main dataset. Also, one ingrowth tree is missing locations. I’ll put it in some random place in the plot.</p>
+<p>Ingrowth is important for metrics such as structural diversity, under story diversity and others, but might skew metrics relating to the growth of dominant trees of interest. Here I remove ingrowth from the main dataset. Also, one ingrowth tree is missing locations. I’ll put it in some random place in the plot.</p>
 <pre class="r"><code>no_loc &lt;- is.na(d_l$h_dist) | is.na(d_l$azi)
 no_loc &lt;- unique(d_l[no_loc, ]$tree_id)
 

@@ -112,43 +112,18 @@ calc_sci <- function(x, y, z) {
   area2d <- sum(deln_obj$areas)
   area3d / area2d
 }
-```
-
-Next, these functions calculate plot averages for SCI
-
-```{r}
-# calculate within plot coordinates, plot center = origin
-# this does not work with missing values currently.
-
-# confidence interval for average treatment estimate
-ci <- function(x) {
-  t_crit <- qt(0.975, length(x)
-  LB <- mean(x) - t_crit * sd(x) / sqrt(length(x) - 1)
-  UB <- mean(x) + t_crit * sd(x) / sqrt(length(x) - 1)
-  c(LB, UB)
-}
 
 ```
+
 
 ## Calculate the Shannon-Weaver Index
 
 ```{r}
 
-
-calc_sh <- function(x, type = "n") {
-    count(spp) %>%
-    mutate(p_spp = n / sum(n)) %>%
-    summarize(sh_n = -sum(p_spp * log(p_spp)))
-}
-
-summary_sh <- function(data, measure = "sh") {
-  calc_sh(data) %>%
-    summarise(
-      across(
-        starts_with(measure),
-        list(avg = mean, ci_lb = ~ ci(.x)[1], ci_ub = ~ ci(.x)[2])
-      )
-    )
+calc_sh <- function(spp, val = 1) {
+  d <- data.frame(spp = spp, val = val)
+  pro <- aggregate(val ~ spp, data = d, function(x) sum(x) / sum(d$val))[[2]]
+  -sum(pro * log(pro))
 }
 
 ```
@@ -174,6 +149,12 @@ mdi_tree <- function(focus, neighbors) {
 # Given x and y coordinates, find k nearest neighbors of, and calcualte
 # MDI for each.
 calc_mdi <- function(x, y) {
+  dup <- paste(x, y)
+  if (anyDuplicated(dup)) {
+    rem <- which(duplicated(dup))
+    x <- x[-rem]
+    y <- y[-rem]
+  }
   trees <- data.frame(x = x, y = y)
   # get matrix of distances
   distances <- dist(trees) %>% as.matrix()

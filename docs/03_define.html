@@ -246,28 +246,25 @@ $(document).ready(function () {
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="01_import.html">Data import</a>
+  <a href="01_import.rmd">Import data</a>
 </li>
 <li>
-  <a href="02_data_cleaning.html">Data cleaning</a>
+  <a href="02_data_cleaning.rmd">Detailed data cleaning</a>
 </li>
 <li>
-  <a href="03_define.html">Define new variables</a>
+  <a href="03_define.rmd">Define new data</a>
 </li>
 <li>
-  <a href="04_pred_ht.html">Predicting missing heights</a>
+  <a href="04_pred_ht.rmd">Height increment model</a>
 </li>
 <li>
-  <a href="05_analyzing_ba_increment.html">Analyzing Ba increment</a>
+  <a href="05_analyzing_ba_increment.rmd">BAI modeling</a>
 </li>
 <li>
-  <a href="06_summary.html">Data summaries and figures</a>
+  <a href="06_summary.rmd">Summary statistics</a>
 </li>
 <li>
-  <a href="07_initial_conditions.html">Initial conditons</a>
-</li>
-<li>
-  <a href="08_variability.html">Variability</a>
+  <a href="08_variability.rmd">Variability</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -298,15 +295,22 @@ $(document).ready(function () {
 <li><a href="#defining-livedead-trees">Defining live/dead trees</a></li>
 <li><a href="#define-diameter-basal-area-and-height-increment">Define diameter, basal area, and height increment</a></li>
 <li><a href="#define-utm-coordinates-for-each-tree">Define UTM coordinates for each tree</a></li>
+<li><a href="#diversity-measures">Diversity measures</a>
+<ul>
 <li><a href="#structural-diversity-sci">Structural diversity SCI</a></li>
-<li><a href="#standardize-crown-ratio">Standardize crown ratio</a></li>
+<li><a href="#calculate-the-shannon-weaver-index">Calculate the Shannon-Weaver Index</a></li>
+</ul></li>
+<li><a href="#mean-directional-index">Mean directional index</a></li>
 <li><a href="#calculate-plot-sdi">Calculate plot SDI</a></li>
+<li><a href="#standardize-crown-ratio">Standardize crown ratio</a>
+<ul>
 <li><a href="#update-post-harvest-data">Update post-harvest data</a></li>
+</ul></li>
 </ul>
 </div>
 
-<div id="defining-livedead-trees" class="section level2">
-<h2>Defining live/dead trees</h2>
+<div id="defining-livedead-trees" class="section level1">
+<h1>Defining live/dead trees</h1>
 <p>Status and condition codes provided do not necessarily define mortality, because a broken tree, depending on species may still be alive or dead. I’ll define dead trees as:</p>
 <ol style="list-style-type: decimal">
 <li>snags or down snags (status -9 to -5, and 5 to 9)</li>
@@ -331,8 +335,8 @@ $(document).ready(function () {
 nrow(filter(group_by(d_l, tree_id), any(!live &amp; lead(live))))</code></pre>
 <pre><code>## [1] 0</code></pre>
 </div>
-<div id="define-diameter-basal-area-and-height-increment" class="section level2">
-<h2>Define diameter, basal area, and height increment</h2>
+<div id="define-diameter-basal-area-and-height-increment" class="section level1">
+<h1>Define diameter, basal area, and height increment</h1>
 <p>Here I will add annual height, diameter and basal area increments to the dataset. Increment will be defined on the observation level, meaning that it must apply to either the first or second measurement. This is significant for modeling, as I will be predicting an increment based on one period’s dbh observation. I’ll add increment data to both the beginning and ending observations to facilitate modeling based on either observation. *_inc1 will be assigned to the first measurement (refers to subsequent measurement) and *_inc2 will be assigned to the second (refers to previous measurement).</p>
 <pre class="r"><code># Add diameter increment data and update post-harvest data
 d_l &lt;- d_l %&gt;%
@@ -348,51 +352,98 @@ d_l &lt;- d_l %&gt;%
   ) %&gt;%
   ungroup()</code></pre>
 </div>
-<div id="define-utm-coordinates-for-each-tree" class="section level2">
-<h2>Define UTM coordinates for each tree</h2>
-<pre class="r"><code>d_l &lt;- d_l %&gt;%
+<div id="define-utm-coordinates-for-each-tree" class="section level1">
+<h1>Define UTM coordinates for each tree</h1>
+<pre class="r"><code>define_xy &lt;- function(data) {
+  data %&gt;%
   left_join(plot_info[, c(&quot;plot&quot;, &quot;utm_x&quot;, &quot;utm_y&quot;)], by = &quot;plot&quot;) %&gt;%
   mutate(
     circular2xy(h_dist, azi, center.x = utm_x, center.y = utm_y)
   ) %&gt;%
-  select(-c(utm_x, utm_y))</code></pre>
+  select(-c(utm_x, utm_y))
+}
+
+d_l &lt;- define_xy(d_l)</code></pre>
 </div>
+<div id="diversity-measures" class="section level1">
+<h1>Diversity measures</h1>
 <div id="structural-diversity-sci" class="section level2">
 <h2>Structural diversity SCI</h2>
 <p>After some experimentation, I determined that ingrowth does have an effect on SCI, especially for the more intense thinnings, supposedly because they let in more light and encourage more understory initiation.</p>
 <p>I also confirmed that the SCI function works the same regardless of whether coordinates are plot coordinates or UTM coordinates.</p>
-<pre class="r"><code># calculate within plot coordinates, plot center = origin
-# this does not work with missing values currently.
-
-# confidence interval for average treatment estimate
-ci &lt;- function(x) {
-  LB &lt;- mean(x) - 2 * sd(x) / sqrt(length(x) - 1)
-  UB &lt;- mean(x) + 2 * sd(x) / sqrt(length(x) - 1)
-  c(LB, UB)
+<p>First, here is my code for defining SCI. The area of a triangle is equal to 1/2 the magnitude of the cross product of two vectors representing sides of a triangle. The magnitude of a vector is the square root of the the sum of its values squared. This is also known as the norm and is denoted with single or double vertical bars.</p>
+<pre class="r"><code>cross_product &lt;- function(a, b) {
+  if(length(a)!=3 || length(b)!=3){
+        stop(&quot;Cross product is only defined for 3D vectors.&quot;)
+    }
+  i1 &lt;- c(2, 3, 1)
+  i2 &lt;- c(3, 1, 2)
+  a[i1] * b[i2] - a[i2] * b[i1]
 }
 
-calc_sci &lt;- function(data, metric) {
-  data %&gt;%
-    group_by(treatment, year, plot) %&gt;%
-    mutate(
-      &quot;sci_{{metric}}&quot; := sci_metric(x, y, {{metric}}),
-    )
+# area is the magnitude of two vectors
+tri_area &lt;- function(tri, points) {
+  apply(tri, 1, function(point) {
+    AB &lt;- points[point[2], ] - points[point[1], ]
+    AC &lt;- points[point[3], ] - points[point[1], ]
+    0.5 * sqrt(sum(cross_product(AB, AC)^2))
+  })
 }
 
-summary_sci &lt;- function(data) {
-  data %&gt;%
-  calc_sci(dbh) %&gt;%
-  summarise(across(starts_with(&quot;sci&quot;), first)) %&gt;%
-  summarise(
-    across(
-      starts_with(&quot;sci&quot;),
-      list(avg = mean, ci_lb = ~ ci(.x)[1], ci_ub = ~ ci(.x)[2])
-    )
-  )
+# Calculates plot average SCI
+calc_sci &lt;- function(x, y, z) {
+  points &lt;- as.matrix(cbind(x, y, z))
+  deln_obj &lt;- geometry::delaunayn(points[, 1:2], output.options = &quot;Fa&quot;)
+  area3d &lt;- sum(tri_area(deln_obj$tri, points))
+  area2d &lt;- sum(deln_obj$areas)
+  area3d / area2d
 }</code></pre>
 </div>
-<div id="standardize-crown-ratio" class="section level2">
-<h2>Standardize crown ratio</h2>
+<div id="calculate-the-shannon-weaver-index" class="section level2">
+<h2>Calculate the Shannon-Weaver Index</h2>
+<pre class="r"><code>calc_sh &lt;- function(x, type = &quot;n&quot;) {
+    
+    count(spp) %&gt;%
+    mutate(p_spp = n / sum(n)) %&gt;%
+    summarize(sh_n = -sum(p_spp * log(p_spp)))
+}</code></pre>
+</div>
+</div>
+<div id="mean-directional-index" class="section level1">
+<h1>Mean directional index</h1>
+<p>Mean directional index is described slightly differently by (Corral-Rivas et al. 2010) and (Pommerening and Stoyan 2008) but I believe that they are equivalent representations. I’m using the latter with four :</p>
+<p><span class="math display">\[\sqrt{ \left ( \sum_{j=1}^{4} \cos{a_{ij}} \right )^2 + \left ( \sum_{j=1}^{4} \sin{a_{ij}} \right )^2 } \]</span></p>
+<pre class="r"><code># calculate MDI for one tree based on coordinats of neighbors
+mdi_tree &lt;- function(focus, neighbors) {
+  x &lt;- neighbors[[&quot;x&quot;]] - focus[[&quot;x&quot;]]
+  y &lt;- neighbors[[&quot;y&quot;]] - focus[[&quot;y&quot;]]
+  hypot &lt;- sqrt(x^2 + y^2)
+  sin_theta &lt;- x / hypot
+  cos_theta &lt;- y / hypot
+  sqrt(sum(sin_theta)^2 + sum(cos_theta)^2)
+}
+
+# Given x and y coordinates, find k nearest neighbors of, and calcualte
+# MDI for each.
+calc_mdi &lt;- function(x, y) {
+  trees &lt;- data.frame(x = x, y = y)
+  # get matrix of distances
+  distances &lt;- dist(trees) %&gt;% as.matrix()
+  # get index of 4 nearest for each row (excluding self)
+  idx &lt;- apply(distances, 1, function(x) order(x)[2:5])
+  sapply(1:nrow(trees), function(x) mdi_tree(trees[x, ], trees[idx[, x], ]))
+}</code></pre>
+</div>
+<div id="calculate-plot-sdi" class="section level1">
+<h1>Calculate plot SDI</h1>
+<p>For “live” trees only</p>
+<pre class="r"><code>d_l &lt;- d_l %&gt;%
+  group_by(plot) %&gt;%
+  mutate(sdi_plot = sum(12.5 * (dbh * live / 25.4)^1.605, na.rm = TRUE)) %&gt;%
+  ungroup()</code></pre>
+</div>
+<div id="standardize-crown-ratio" class="section level1">
+<h1>Standardize crown ratio</h1>
 <pre class="r"><code>d_l &lt;- d_l %&gt;%
   mutate(
     cr = case_when(
@@ -406,19 +457,11 @@ summary_sci &lt;- function(data) {
       TRUE                 ~ cr
     )
   )</code></pre>
-</div>
-<div id="calculate-plot-sdi" class="section level2">
-<h2>Calculate plot SDI</h2>
-<p>For “live” trees only</p>
-<pre class="r"><code>d_l &lt;- d_l %&gt;%
-  group_by(plot) %&gt;%
-  mutate(sdi_plot = sum(12.5 * (dbh * live / 25.4)^1.605, na.rm = TRUE)) %&gt;%
-  ungroup()</code></pre>
-</div>
 <div id="update-post-harvest-data" class="section level2">
 <h2>Update post-harvest data</h2>
 <p>Make sure that this is the last step</p>
 <pre class="r"><code>p_h &lt;- filter(d_l, year &gt; &quot;init&quot;)</code></pre>
+</div>
 </div>
 
 

@@ -293,3 +293,12 @@ random_plot <- function(data) {
   plot_year <- paste(data$plot, data$year)
   subset(data, plot_year == sample(plot_year))
 }
+
+
+# Confidence interval for average treatment estimate
+ci <- function(x) {
+  t_crit <- qt(0.975, length(x))
+  LB <- mean(x) - t_crit * sd(x) / sqrt(length(x) - 1)
+  UB <- mean(x) + t_crit * sd(x) / sqrt(length(x) - 1)
+  data.frame(LB = LB, UB = UB)
+}

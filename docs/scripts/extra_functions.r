@@ -1,3 +1,5 @@
+require(magrittr)
+require(dplyr)
 # Functions to add to their own file
 
 # Tell summary functions to group by species or not
@@ -116,33 +118,7 @@ npc <- function(dat, x) {
   x * range + low
 }
 
-# These are the functions for calculating the SCI metric
-# for structural heterogeity
-cross_product <- function(a, b) {
-  if(length(a)!=3 || length(b)!=3){
-        stop("Cross product is only defined for 3D vectors.")
-    }
-  i1 <- c(2, 3, 1)
-  i2 <- c(3, 1, 2)
-  a[i1] * b[i2] - a[i2] * b[i1]
-}
 
-# area is the magnitude of two vectors
-tri_area <- function(tri, points) {
-  apply(tri, 1, function(point) {
-    AB <- points[point[2], ] - points[point[1], ]
-    AC <- points[point[3], ] - points[point[1], ]
-    sqrt(sum(cross_product(AB, AC)^2))
-  })
-}
-
-sci_metric <- function(x, y, z) {
-  points <- as.matrix(cbind(x, y, z))
-  deln_obj <- geometry::delaunayn(points[, 1:2], output.options = "Fa")
-  area3d <- sum(tri_area(deln_obj$tri, points))
-  area2d <- sum(deln_obj$areas)
-  area3d / area2d
-}
 
 # here is a function to to get a an AIC from a formula
 # optionally split by species
@@ -313,3 +289,16 @@ update_yml <- function() {
   cat(new_yml, file = "_site.yml", sep = "\n")
 }
 
+random_plot <- function(data) {
+  plot_year <- paste(data$plot, data$year)
+  subset(data, plot_year == sample(plot_year))
+}
+
+
+# Confidence interval for average treatment estimate
+ci <- function(x) {
+  t_crit <- qt(0.975, length(x))
+  LB <- mean(x) - t_crit * sd(x) / sqrt(length(x) - 1)
+  UB <- mean(x) + t_crit * sd(x) / sqrt(length(x) - 1)
+  data.frame(LB = LB, UB = UB)
+}
