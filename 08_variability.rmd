@@ -30,7 +30,7 @@ sci_d <- d_l %>%
 
 ```
 
-Here is the graphing function and emmeans generating function I'll use for visualizing these metrics. The mixed model i'm using is of the form: `plot_level_metric = treatment + year + treatment * year` with plot as a random variable. Any metric which does not inherently produce a plot level value is averaged at the plot level. 
+Here is the graphing function and emmeans generating function I'll use for visualizing these metrics. The mixed model I'm using is of the form: `plot_level_metric = treatment + year + treatment * year` with plot as a random variable. Any metric which does not inherently produce a plot level value is averaged at the plot level. 
 
 ```{r}
 
@@ -95,41 +95,7 @@ var_fig(sci_mean)
 
 ```
 
-I thought I would try to see if any differences showed up by using a mixed model to control for differences in plot. The means come out the same, but what I notice is that the error bars are smaller in the emmeans.
-
-```{r}
-
-sci_mod <- lmer(val ~ treatment * year + (1 | plot), data = subset(sci_plot, year != "init"))
-
-summary(sci_mod)
-
-emmeans(sci_mod,  ~ treatment + year) %>% as.data.frame() %>%
-  rename(avg = emmean, LB = lower.CL, UB = upper.CL) %>%
-  var_fig()
-
-
-```
-
-
 Some of these trajectories look interesting, but They don't look unique, given the error bars.
-
-# Shannon-Weaver index
-
-This index calculates tree species diversity based on the number of stems.
-
-```{r}
-
-sh_plot <- sci_d %>%
-  group_by(treatment, year, plot) %>%
-  summarize(val = calc_sh(x, y))
-
-sh_mean <- var_mean(sh_plot)
-  
-var_table(sh_mean, caption = "Average Shannon-Weaver index (stem based)")
-
-var_fig(sci_mean)
-
-```
 
 # Mean directional index
 
@@ -187,13 +153,31 @@ var_fig(dbhsd_mean)
 
 ```
 
+# Shannon-Weaver index
+
+This index calculates tree species diversity based on the number of stems.
+
+```{r}
+
+sh_plot <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarize(val = calc_sh(x, y))
+
+sh_mean <- var_mean(sh_plot)
+  
+var_table(sh_mean, caption = "Average Shannon-Weaver index (stem based)")
+
+var_fig(sh_mean)
+
+```
+
 # Fun visual of SCI
 
 Here I visualize the SCI_dbh_ for a random plot from each treatment
 
 ```{r, fig.width=8, fig.height=10}
 
-sci_plots_d <- sci_d %>% select(x, y, z = dbh, plot, year) %>% split(~ plot + year)
+sci_plots_d <- sci_d %>% select(x, y, z = dbh, plot, year) %>% split(~ plot + year, drop = TRUE)
 
 
 visualize_plot_sdi <- function(data1) {
