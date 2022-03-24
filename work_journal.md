@@ -1,6 +1,25 @@
+## 03/15/2022
+
+* Calculated MDI
+
+
+## Monday meeting
+
+* Calculated Shannon-Weaver H
+* update graphs of SCI
+* We talk about:
+  * Calculating DBH~sd~, MDI, Hui Dominance Index
+  * Calculate means using mixed linear model and emmeans
+
+## 03/13/2022
+
+* Reading Keuhne paper
+
 ## 03/11/2022
 
-I realized there was an error in my calculation of SCI. Unfortunately the new values are half of what I had calculated previously which makes differences between treatments even smaller than before.
+* I realized there was an error in my calculation of SCI. Unfortunately the new values are half of what I had calculated previously which makes differences between treatments even smaller than before.
+
+* Confirmed with Dr. Zenner about SCI calculation terminology
 
 ## 03/09/2022
 
