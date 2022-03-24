@@ -28,46 +28,73 @@ ingrowth <- define_xy(ingrowth)
 
 sci_d <- d_l %>%
   filter(live) %>%
-  bind_rows(ingrowth, .id = "cohort")
+  bind_rows(ingrowth, .id = "cohort") %>%
+  mutate(year = factor(year, ordered = FALSE))
+
+```
+
+And the graphing function I'll use for visualizing these metrics.
+
+```{r}
+
+my_dodge <- position_dodge(0.4)
+
+var_fig <- function(data) {
+  # yr_breaks <- c(2008, 2013, 2018)
+  data %>%
+    filter(year != "init") %>%
+    relevel_treatment() %>%
+    # mutate(year = fix_year(year)) %>%
+    ggplot(aes(year, avg, color = treatment, group = treatment)) +
+      geom_line(size = 1, position = my_dodge) +
+      geom_point(position = my_dodge) +
+    # geom_ribbon(aes(ymin = sh_n_ci_lb, ymax = sh_n_ci_ub, fill = treatment), alpha = 0.2, color = NA) +
+      geom_errorbar(
+        aes(ymin = LB, ymax = UB),
+        width = .75,
+        position = my_dodge
+      ) +
+      theme_bw() +
+      # scale_x_continuous(breaks = yr_breaks) +
+      labs(y = NULL, x = "Year")
+}
 
 ```
 
 # SCI summarized by treatment
 
 ```{r}
+
+sci_plot <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarize(val = calc_sci(x, y, dbh))
+
+sci_treat <- sci_plot %>%
+  summarize(avg = mean(val), ci(val))
   
-# summary_sci(sci_d) %>%
-#   filter(year %in% c("init", "08", "18")) %>%
-#   group_by(treatment) %>%
-#   color_groups(digits = 2, caption = "Average SCI and confidence interval for all live trees including ingrowth")
+sci_treat %>%
+  filter(year != "13") %>%
+  color_groups(digits = 2, caption = "Average SCI and confidence interval for all live trees including ingrowth")
+
+var_fig(sci_treat)
 
 ```
+
+I thought I would try to see if any differences showed up by using a mixed model to control for differences in plot. The means come out the same, but what I notice is that the error bars are smaller in the emmeans.
 
 ```{r}
-# my_dodge <- position_dodge(1.2)
 
-# make_sci_fig <- function(data = sci_table) {
-#   yr_breaks <- c(2008, 2013, 2018)
-#   data %>%
-#     # filter(myear != "init") %>%
-#     relevel_treatment() %>%
-#     mutate(year = fix_year(year)) %>%
-#     ggplot(aes(year, sci_dbh_avg, color = treatment)) +
-#       geom_line(size = 1, position = my_dodge) +
-#       geom_point(position = my_dodge) +
-#     # geom_ribbon(aes(ymin = sci_dbh_ci_lb, ymax = sci_dbh_ci_ub, fill = treatment), alpha = 0.2, color = NA) +
-#       geom_errorbar(
-#         aes(ymin = sci_dbh_ci_lb, ymax = sci_dbh_ci_ub),
-#         width = .75,
-#         position = my_dodge
-#       ) +
-#       theme_bw() +
-#       scale_x_continuous(breaks = yr_breaks) +
-#       labs(y = NULL, x = "Year")
-# }
+sci_mod <- lmer(val ~ treatment * year + (1 | plot), data = subset(sci_plot, year != "init"))
 
-# make_sci_fig()
+summary(sci_mod)
+
+emmeans(sci_mod,  ~ treatment + year) %>% as.data.frame() %>%
+  rename(avg = emmean, LB = lower.CL, UB = upper.CL) %>%
+  var_fig()
+
+
 ```
+
 
 Some of these trajectories look interesting, but They don't look unique, given the error bars.
 
@@ -77,34 +104,55 @@ This index calculates tree species diversity based on the number of stems.
 
 ```{r}
 
-# summary_sh(sci_d) %>%
-#   filter(year %in% c("init", "08", "18")) %>%
-#   group_by(treatment) %>%
-#   color_groups(digits = 2, caption = "Average Shannon-Weaver index (stem based)")
+sh_plot <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarise(val = calc_sh(spp))
 
-# make_sh_fig <- function(data = summary_sh(sci_d)) {
-#   yr_breaks <- c(2008, 2013, 2018)
-#   data %>%
-#     # filter(myear != "init") %>%
-#     relevel_treatment() %>%
-#     mutate(year = fix_year(year)) %>%
-#     ggplot(aes(year, sh_n_avg, color = treatment)) +
-#       geom_line(size = 1, position = my_dodge) +
-#       geom_point(position = my_dodge) +
-#     # geom_ribbon(aes(ymin = sh_n_ci_lb, ymax = sh_n_ci_ub, fill = treatment), alpha = 0.2, color = NA) +
-#       geom_errorbar(
-#         aes(ymin = sh_n_ci_lb, ymax = sh_n_ci_ub),
-#         width = .75,
-#         position = my_dodge
-#       ) +
-#       theme_bw() +
-#       scale_x_continuous(breaks = yr_breaks) +
-#       labs(y = NULL, x = "Year")
-# }
+sh_treat <- sh_plot %>%
+  summarize(avg = mean(val), ci(val))
+  
+sh_treat %>%
+  filter(year != "13") %>%
+  color_groups(digits = 2, caption = "Average Shannon-Weaver index (stem based)")
 
-# make_sh_fig()
+
+var_fig(sh_treat)
 ```
 
+# Mean directional index
+
+```{r}
+
+mdi_plot <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarise(val = mean(calc_mdi(x, y)))
+
+mdi_treat <- mdi_plot %>%
+  summarize(avg = mean(val), ci(val))
+  
+mdi_treat %>%
+  filter(year != "13") %>%
+  color_groups(digits = 2, caption = "Average mean directional index (0: grid, 4:complete aggregation")
+
+var_fig(mdi_treat)
+
+```
+
+# DBH~sd~
+
+Standard deviation of DBH is a straightforward metric for estimating structural heterogeneity. 
+
+```{r}
+
+dbhsd_plot <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarise(val = sd(dbh))
+
+dbhsd_treat <- dbhsd_plot %>%
+  summarize(avg = mean(val), ci(val))
+
+var_fig(dbhsd_plot)
+```
 
 # Fun visual of SCI
 
@@ -116,16 +164,10 @@ sci_plots_d <- sci_d %>% select(x, y, z = dbh, plot, year) %>% split(~ plot + ye
 
 
 visualize_plot_sdi <- function(data1) {
+  data1 <- remove_coincident(data1)
   x <- data1$x - min(data1$x)
   y <- data1$y - min(data1$y)
   z <- data1$z
-  dup <- paste(x, y)
-  if (anyDuplicated(dup)) {
-    rem <- which(duplicated(dup))
-    x <- x[-rem]
-    y <- y[-rem]
-    z <- z[-rem]
-  }
   col <- cm.colors(20)[1 + round(19*(z - min(z))/diff(range(z)))]
   dxy <- interp::tri.mesh(x, y, duplicate = "remove")
   persp3d(dxy, z, col = col, meshColor = "vertices")

@@ -134,9 +134,11 @@ Mean directional index is described slightly differently by (Corral-Rivas et al.
 
 $$\sqrt{ \left ( \sum_{j=1}^{4} \cos{a_{ij}} \right )^2 + \left ( \sum_{j=1}^{4} \sin{a_{ij}} \right )^2 } $$
 
+Also, with this index, I am dropping extra coincident points, keeping the first.
+
 ```{r}
 
-# calculate MDI for one tree based on coordinats of neighbors
+# calculate MDI for one tree based on coordinats of self and neighbors
 mdi_tree <- function(focus, neighbors) {
   x <- neighbors[["x"]] - focus[["x"]]
   y <- neighbors[["y"]] - focus[["y"]]
@@ -146,21 +148,31 @@ mdi_tree <- function(focus, neighbors) {
   sqrt(sum(sin_theta)^2 + sum(cos_theta)^2)
 }
 
-# Given x and y coordinates, find k nearest neighbors of, and calcualte
-# MDI for each.
-calc_mdi <- function(x, y) {
-  dup <- paste(x, y)
+# drop subsequent coincident points (keep first)
+remove_coincident <- function(df) {
+  dup <- paste(df$x, df$y)
   if (anyDuplicated(dup)) {
     rem <- which(duplicated(dup))
-    x <- x[-rem]
-    y <- y[-rem]
+    df <- df[-rem, ]
   }
-  trees <- data.frame(x = x, y = y)
+  df
+}
+
+# find index of k nearest neighbors given data frame with x and y
+nearest <- function(df, k = 4) {  
   # get matrix of distances
-  distances <- dist(trees) %>% as.matrix()
-  # get index of 4 nearest for each row (excluding self)
-  idx <- apply(distances, 1, function(x) order(x)[2:5])
-  sapply(1:nrow(trees), function(x) mdi_tree(trees[x, ], trees[idx[, x], ]))
+  distances <- as.matrix(dist(df[c("x", "y")]))
+  # get index of k neighbors for each row (excluding self)
+  apply(distances, 1, function(x) order(x)[2:5]) |> as.data.frame()
+}
+
+# Given x and y coordinates calcualte
+# MDI for each.
+calc_mdi <- function(x, y) {
+  trees <- data.frame(x = x, y = y)
+  trees <- remove_coincident(trees)
+  idx <- nearest(trees)
+  sapply(1:nrow(trees), function(x) mdi_tree(trees[x, ], trees[idx[[x]], ]))
 }
 
 ```
