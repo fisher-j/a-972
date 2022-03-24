@@ -1,3 +1,13 @@
+## 03/22/2022
+
+* extracted a function to calculate DBH differentiation
+
+## 03/21/2022
+
+* Monday meeting
+  * calculate DBH differentiation
+  * Look at veg data, assess for Shannon index, or other analysis
+
 ## 03/15/2022
 
 * Calculated MDI
