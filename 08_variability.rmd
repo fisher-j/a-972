@@ -12,15 +12,11 @@ library(rgl)
 setupKnitr()
 ```
 
-# Structural complexity index
+# Structural variability
 
-SCI measures the spatial variability in a given tree attribute such as DBH or height. It is driven by differences between neighboring trees. We can calculate SCI based on residual trees only, or include ingrowth. The latter would be expected to increase the SCI, but it is unclear whether or not this kind of structural diversity is of significant importance.
+Here I'll explore various metrics identified in the literature for quantifying and comparing structural variability and species variability
 
-It is important to keep in mind that SCI, for our study, refers to heterogeneity on the within-patch scale: at the .08 ha scale. Larger plots would be needed if we are to characterize structural variability at greater scales.
-
-Finally, I realized that Zenner and following researchers definitions of SCI is a little confusing because they confuse bars around a vector as meaning absolute value, when in fact it means the norm of a vector (specifically the L~2~ norm, or )
-
-First I'll identify trees of interest as live residual trees only with ingrowth. I'm not going to consider initial conditions here.
+First I'll identify trees of interest as live trees including ingrowth. I'm not going to consider initial conditions here.
 
 ```{r}
 
@@ -34,7 +30,7 @@ sci_d <- d_l %>%
 
 ```
 
-Here is the graphing function and emmeans generating function I'll use for visualizing these metrics
+Here is the graphing function and emmeans generating function I'll use for visualizing these metrics. The mixed model i'm using is of the form: `plot_level_metric = treatment + year + treatment * year` with plot as a random variable. Any metric which does not inherently produce a plot level value is averaged at the plot level. 
 
 ```{r}
 
@@ -74,6 +70,14 @@ var_table <- function(mean_data, caption) {
 }
 
 ```
+
+# Structural complexity index
+
+SCI measures the spatial variability in a given tree attribute such as DBH or height. It is driven by differences between neighboring trees. We can calculate SCI based on residual trees only, or include ingrowth. The latter would be expected to increase the SCI, but it is unclear whether or not this kind of structural diversity is of significant importance.
+
+It is important to keep in mind that SCI, for our study, refers to heterogeneity on the within-patch scale: at the .08 ha scale. Larger plots would be needed if we are to characterize structural variability at greater scales.
+
+Finally, I realized that Zenner and following researchers definitions of SCI is a little confusing because they confuse bars around a vector as meaning absolute value, when in fact it means the norm of a vector (specifically the L~2~ norm, or )
 
 # SCI summarized by treatment
 
