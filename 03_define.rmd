@@ -149,21 +149,23 @@ mdi_tree <- function(focus, neighbors) {
 }
 
 # drop subsequent coincident points (keep first)
-remove_coincident <- function(df) {
-  dup <- paste(df$x, df$y)
+remove_coincident <- function(DF) {
+  dup <- paste(DF$x, DF$y)
   if (anyDuplicated(dup)) {
     rem <- which(duplicated(dup))
-    df <- df[-rem, ]
+    DF <- DF[-rem, ]
   }
-  df
+  DF
 }
 
 # find index of k nearest neighbors given data frame with x and y
-nearest <- function(df, k = 4) {  
+nearest <- function(DF, k) {  
   # get matrix of distances
-  distances <- as.matrix(dist(df[c("x", "y")]))
+  distances <- as.matrix(dist(DF[c("x", "y")]))
   # get index of k neighbors for each row (excluding self)
-  apply(distances, 1, function(x) order(x)[2:5]) |> as.data.frame()
+  idx <- seq(2, length.out = k)
+  apply(distances, 1, function(x) order(x)[idx], simplify = FALSE) |>
+    as.data.frame(optional = TRUE)
 }
 
 # Given x and y coordinates calcualte
@@ -171,8 +173,23 @@ nearest <- function(df, k = 4) {
 calc_mdi <- function(x, y) {
   trees <- data.frame(x = x, y = y)
   trees <- remove_coincident(trees)
-  idx <- nearest(trees)
+  idx <- nearest(trees, k = 4)
   sapply(1:nrow(trees), function(x) mdi_tree(trees[x, ], trees[idx[[x]], ]))
+}
+
+```
+
+# DBH differentiation (TD)
+
+Here i'll define the single neighbor version of the TD, this may help to reduce bias given our lack of edge correction. I am not going to remove coincident points here as they won't affect the calculation, and I am assuming two trees that share a location are indeed closest neighbors.
+
+```{r}
+
+calc_TD <- function(x, y, dbh) {
+  DF <- data.frame(x, y)
+  idx <- as.numeric(nearest(DF, k = 1)[1, ])
+  DBH_ij <- matrix(c(dbh, dbh[idx]), ncol = 2)
+  apply(DBH_ij, 1, function(x) 1 - min(x) / max(x))
 }
 
 ```
