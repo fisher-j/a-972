@@ -276,6 +276,8 @@ d_l <- d_l %>%
 
 ## Vegetation data
 
+### Species list
+
 I'll start looking at veg_species, they have different information columns and I'm not sure what
 
 ```{r}
@@ -293,8 +295,6 @@ veg_species <- bind_rows(veg_species_l, .id = "year") %>%
   as_tibble()
 
 ```
-
-### Edits
 
 edit these, I'll also remove tree species as they are covered elsewhere
 
@@ -337,7 +337,10 @@ veg_species$spp <- local({
 veg_species <- filter(veg_species, !spp %in% c("PSMEM", "SESE3", "ALRU2", "PISI", "TSHE", "UMCA"))
 
 unique(veg_species$spp)
+
 ```
+
+### Veg cover
 
 
 

@@ -12,16 +12,16 @@ navbar:
   title: A-972 10-year Study
   left: 
     - text: Import data
-      href: 01_import.rmd
+      href: 01_import.html
     - text: Detailed data cleaning
-      href: 02_data_cleaning.rmd
+      href: 02_data_cleaning.html
     - text: Define new data
-      href: 03_define.rmd
+      href: 03_define.html
     - text: Height increment model
-      href: 04_pred_ht.rmd
+      href: 04_pred_ht.html
     - text: BAI modeling
-      href: 05_analyzing_ba_increment.rmd
+      href: 05_analyzing_ba_increment.html
     - text: Summary statistics
-      href: 06_summary.rmd
+      href: 06_summary.html
     - text: Variability
-      href: 08_variability.rmd
+      href: 08_variability.html
