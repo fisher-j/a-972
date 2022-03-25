@@ -93,6 +93,16 @@ plot_info <- read.csv("./original/tblA972_PlotInfo.txt") %>%
     utm_y = UTM_N
   ) %>%
   as_tibble()
+
+
+veg_species_l <- list()
+veg_species_l$`08` <- read.csv("./original/tblA972_SpeciesPostCut08.txt")
+veg_species_l$`13` <- read.csv("./original/tblA972_Species2013.txt")
+veg_species_l$`18` <- read.csv("./original/tblA972_Species2018.txt")
+veg_cover_l <- list()
+veg_cover_l$`08` <- read.csv("./original/tblA972_VegCoverPostCut08.txt")
+veg_cover_l$`13` <- read.csv("./original/tblA972_VegCover2013.txt")
+veg_cover_l$`18` <- read.csv("./original/tblA972_VegCover2018.txt")
 ```
 
 # Initial data cleaning
@@ -262,3 +272,73 @@ d_l <- d_l %>%
   filter(min(year) < "13") %>%
   ungroup()
 ```
+
+
+## Vegetation data
+
+I'll start looking at veg_species, they have different information columns and I'm not sure what
+
+```{r}
+
+map(veg_species_l, names)
+
+# uniqe values for non standard columns
+map(veg_species_l, ~ `[`(.x, !names(.x) %in% c("ID", "Plot_ID", "Species"))) %>%
+  map(unique)
+
+veg_species <- bind_rows(veg_species_l, .id = "year") %>%
+  select(year, plot = Plot_ID, spp = Species, flag = Flag, notes = Corrections) %>%
+  mutate(treatment = str_extract(plot, treatments)) %>%
+  filter(!is.na(treatment)) %>%
+  as_tibble()
+
+```
+
+### Edits
+
+```{r}
+fix_sp <- tribble(
+  ~ old, ~ new,
+"ANAPHALIS SP.", "Anaphalis sp.",
+"OSCH", "OSBE",
+"EHEH", "unknown",
+"Lathyrus", "Lathyrus sp.",
+"LILY sp.", "lily",
+"MINT", "mint",
+"Thimbleberry", "RUPA",
+"Unknown grass", "grass",
+"GRASS", "grass",
+"grass ", "grass",
+"Unknown grass", "grass",
+"ANMA1", "ANMA",
+"ATFIC ", "ATFIC",
+"CIRSIUM SP.", "Cirsium sp.",
+"EHEH", "unknown",
+"FESTUCA SP.", "Festuca sp.",
+"OSMORHIZA SP.", "Osmorhiza sp.",
+"OZCH", "OSBE",
+"RHPA", "RHPU",
+"RIBES SP.", "Ribes sp.",
+"RIBES SP. ", "Ribes sp.",
+"RIDO", "unknown",
+"VETCH", "pea",
+"Unknown", "unknown"
+)
+
+veg_species$spp <- local({
+  toFix <- match(veg_species$spp, fix_sp$old)
+  fixes <- fix_sp$new[toFix]
+  if_else(is.na(fixes), veg_species$spp, fixes)
+})
+
+unique(veg_species$spp)
+
+```
+
+
+
+
+
+
+
+

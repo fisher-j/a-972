@@ -1,4 +1,14 @@
-## 03/22/2022
+## 03/25/2022
+
+* Cleaned up species list data
+
+
+## 03/24/2022
+
+* Switched to using least square means for mean and confidence interval
+* Import and begin checking out veg data
+
+## 03/23/2022
 
 * extracted a function to calculate DBH differentiation
 
