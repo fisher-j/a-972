@@ -267,8 +267,10 @@ update_yml <- function() {
     title
   }
 
+  html_names <- gsub(".rmd", ".html", files)
   navbar_entries <- sapply(files, get_file_title)
-
+  names(navbar_entries) <- html_names
+  
   navbar <- c(
     "navbar: ",
     "  title: A-972 10-year Study",

@@ -246,25 +246,25 @@ $(document).ready(function () {
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
         <li>
-  <a href="01_import.rmd">Import data</a>
+  <a href="01_import.html">Import data</a>
 </li>
 <li>
-  <a href="02_data_cleaning.rmd">Detailed data cleaning</a>
+  <a href="02_data_cleaning.html">Detailed data cleaning</a>
 </li>
 <li>
-  <a href="03_define.rmd">Define new data</a>
+  <a href="03_define.html">Define new data</a>
 </li>
 <li>
-  <a href="04_pred_ht.rmd">Height increment model</a>
+  <a href="04_pred_ht.html">Height increment model</a>
 </li>
 <li>
-  <a href="05_analyzing_ba_increment.rmd">BAI modeling</a>
+  <a href="05_analyzing_ba_increment.html">BAI modeling</a>
 </li>
 <li>
-  <a href="06_summary.rmd">Summary statistics</a>
+  <a href="06_summary.html">Summary statistics</a>
 </li>
 <li>
-  <a href="08_variability.rmd">Variability</a>
+  <a href="08_variability.html">Variability</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -301,6 +301,11 @@ $(document).ready(function () {
 <li><a href="#bearrot-column">Bear/rot column</a></li>
 <li><a href="#initial-complete-dataset">Initial Complete dataset</a></li>
 <li><a href="#ingrowth">Ingrowth</a></li>
+<li><a href="#vegetation-data">Vegetation data</a>
+<ul>
+<li><a href="#species-list">Species list</a></li>
+<li><a href="#veg-cover">Veg cover</a></li>
+</ul></li>
 </ul></li>
 </ul>
 </div>
@@ -382,7 +387,17 @@ plot_info &lt;- read.csv(&quot;./original/tblA972_PlotInfo.txt&quot;) %&gt;%
     utm_x = UTM_E,
     utm_y = UTM_N
   ) %&gt;%
-  as_tibble()</code></pre>
+  as_tibble()
+
+
+veg_species_l &lt;- list()
+veg_species_l$`08` &lt;- read.csv(&quot;./original/tblA972_SpeciesPostCut08.txt&quot;)
+veg_species_l$`13` &lt;- read.csv(&quot;./original/tblA972_Species2013.txt&quot;)
+veg_species_l$`18` &lt;- read.csv(&quot;./original/tblA972_Species2018.txt&quot;)
+veg_cover_l &lt;- list()
+veg_cover_l$`08` &lt;- read.csv(&quot;./original/tblA972_VegCoverPostCut08.txt&quot;)
+veg_cover_l$`13` &lt;- read.csv(&quot;./original/tblA972_VegCover2013.txt&quot;)
+veg_cover_l$`18` &lt;- read.csv(&quot;./original/tblA972_VegCover2018.txt&quot;)</code></pre>
 </div>
 <div id="initial-data-cleaning" class="section level1">
 <h1>Initial data cleaning</h1>
@@ -543,6 +558,111 @@ d_l &lt;- d_l %&gt;%
   group_by(tree_id) %&gt;%
   filter(min(year) &lt; &quot;13&quot;) %&gt;%
   ungroup()</code></pre>
+</div>
+<div id="vegetation-data" class="section level2">
+<h2>Vegetation data</h2>
+<div id="species-list" class="section level3">
+<h3>Species list</h3>
+<p>I’ll start looking at veg_species, they have different information columns and I’m not sure what</p>
+<pre class="r"><code>map(veg_species_l, names)</code></pre>
+<pre><code>## $`08`
+## [1] &quot;ID&quot;      &quot;Plot_ID&quot; &quot;Species&quot; &quot;Flag&quot;   
+## 
+## $`13`
+## [1] &quot;ID&quot;          &quot;Plot_ID&quot;     &quot;Species&quot;     &quot;Flag&quot;        &quot;Corrections&quot;
+## 
+## $`18`
+## [1] &quot;ID&quot;          &quot;Plot_ID&quot;     &quot;Species&quot;     &quot;Flag&quot;        &quot;Flag1&quot;      
+## [6] &quot;Corrections&quot;</code></pre>
+<pre class="r"><code># uniqe values for non standard columns
+map(veg_species_l, ~ `[`(.x, !names(.x) %in% c(&quot;ID&quot;, &quot;Plot_ID&quot;, &quot;Species&quot;))) %&gt;%
+  map(unique)</code></pre>
+<pre><code>## $`08`
+##      Flag
+## 1        
+## 174 MDAT*
+## 236   OTH
+## 
+## $`13`
+##                Flag                         Corrections
+## 1                                                      
+## 4               OTH                                    
+## 29            DLIST                                    
+## 263 DLIST;OTH;TYPO? Not on plant list, check field data
+## 
+## $`18`
+##      Flag Flag1 Corrections
+## 1            NA            
+## 282          NA        need
+## 405 TYPO?    NA</code></pre>
+<pre class="r"><code>veg_species &lt;- bind_rows(veg_species_l, .id = &quot;year&quot;) %&gt;%
+  select(year, plot = Plot_ID, spp = Species, flag = Flag, notes = Corrections) %&gt;%
+  mutate(treatment = str_extract(plot, treatments)) %&gt;%
+  filter(!is.na(treatment)) %&gt;%
+  as_tibble()</code></pre>
+<p>edit these, I’ll also remove tree species as they are covered elsewhere</p>
+<pre class="r"><code>fix_sp &lt;- tribble(
+  ~ old, ~ new,
+&quot;ANAPHALIS SP.&quot;, &quot;Anaphalis sp.&quot;,
+&quot;OSCH&quot;, &quot;OSBE&quot;,
+&quot;EHEH&quot;, &quot;unknown&quot;,
+&quot;Lathyrus&quot;, &quot;Lathyrus sp.&quot;,
+&quot;LILY sp.&quot;, &quot;lily&quot;,
+&quot;MINT&quot;, &quot;mint&quot;,
+&quot;Thimbleberry&quot;, &quot;RUPA&quot;,
+&quot;Unknown grass&quot;, &quot;grass&quot;,
+&quot;GRASS&quot;, &quot;grass&quot;,
+&quot;grass &quot;, &quot;grass&quot;,
+&quot;Unknown grass&quot;, &quot;grass&quot;,
+&quot;ANMA1&quot;, &quot;ANMA&quot;,
+&quot;ATFIC &quot;, &quot;ATFIC&quot;,
+&quot;CIRSIUM SP.&quot;, &quot;Cirsium sp.&quot;,
+&quot;EHEH&quot;, &quot;unknown&quot;,
+&quot;FESTUCA SP.&quot;, &quot;Festuca sp.&quot;,
+&quot;OSMORHIZA SP.&quot;, &quot;Osmorhiza sp.&quot;,
+&quot;OZCH&quot;, &quot;OSBE&quot;,
+&quot;RHPA&quot;, &quot;RHPU&quot;,
+&quot;RIBES SP.&quot;, &quot;Ribes sp.&quot;,
+&quot;RIBES SP. &quot;, &quot;Ribes sp.&quot;,
+&quot;RIDO&quot;, &quot;unknown&quot;,
+&quot;VETCH&quot;, &quot;pea&quot;,
+&quot;Unknown&quot;, &quot;unknown&quot;
+)
+
+veg_species$spp &lt;- local({
+  toFix &lt;- match(veg_species$spp, fix_sp$old)
+  fixes &lt;- fix_sp$new[toFix]
+  if_else(is.na(fixes), veg_species$spp, fixes)
+})
+
+
+veg_species &lt;- filter(veg_species, !spp %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;, &quot;ALRU2&quot;, &quot;PISI&quot;, &quot;TSHE&quot;, &quot;UMCA&quot;))
+
+unique(veg_species$spp)</code></pre>
+<pre><code>##  [1] &quot;STAJR&quot;         &quot;POMU&quot;          &quot;VAPA&quot;          &quot;VAOV2&quot;        
+##  [5] &quot;RHPU&quot;          &quot;DRAR3&quot;         &quot;RUPA&quot;          &quot;GATR3&quot;        
+##  [9] &quot;CLSI2&quot;         &quot;SARA2&quot;         &quot;GASH&quot;          &quot;VISE3&quot;        
+## [13] &quot;ANDE3&quot;         &quot;RUSP&quot;          &quot;PTAQP2&quot;        &quot;BENE2&quot;        
+## [17] &quot;DISM2&quot;         &quot;TROV2&quot;         &quot;RUUR&quot;          &quot;grass&quot;        
+## [21] &quot;unknown&quot;       &quot;BLSP&quot;          &quot;SMRA&quot;          &quot;ERMI6&quot;        
+## [25] &quot;CHUM&quot;          &quot;WHMO&quot;          &quot;TRLA6&quot;         &quot;GOOB2&quot;        
+## [29] &quot;RHMA3&quot;         &quot;OSBE&quot;          &quot;IRDO&quot;          &quot;ILAQ&quot;         
+## [33] &quot;HIAL2&quot;         &quot;PLLA&quot;          &quot;CIVU&quot;          &quot;CHANC&quot;        
+## [37] &quot;ANMA&quot;          &quot;GLEL&quot;          &quot;RISA&quot;          &quot;RUDI2&quot;        
+## [41] &quot;RIME&quot;          &quot;Ribes sp.&quot;     &quot;ATFIC&quot;         &quot;Lathyrus sp.&quot; 
+## [45] &quot;COJU2&quot;         &quot;LICO6&quot;         &quot;PEFRP&quot;         &quot;TAOF&quot;         
+## [49] &quot;Epilobium sp.&quot; &quot;CIAR&quot;          &quot;Stellaria sp.&quot; &quot;Osmorhiza sp.&quot;
+## [53] &quot;DREX2&quot;         &quot;PRVU&quot;          &quot;DIHO3&quot;         &quot;LICO&quot;         
+## [57] &quot;LIDED2&quot;        &quot;Van. Grass&quot;    &quot;DIPU&quot;          &quot;STME2&quot;        
+## [61] &quot;HELA4&quot;         &quot;LOHIV&quot;         &quot;Rush sp.&quot;      &quot;pea&quot;          
+## [65] &quot;DIFO&quot;          &quot;OXOR&quot;          &quot;CLAN2&quot;         &quot;RAPA&quot;         
+## [69] &quot;MADI&quot;          &quot;MAOR3&quot;         &quot;Anaphalis sp.&quot; &quot;lily&quot;         
+## [73] &quot;mint&quot;          &quot;HEHE&quot;          &quot;Festuca sp.&quot;   &quot;RHOC&quot;         
+## [77] &quot;Cirsium sp.&quot;</code></pre>
+</div>
+<div id="veg-cover" class="section level3">
+<h3>Veg cover</h3>
+</div>
 </div>
 </div>
 
