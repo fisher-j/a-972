@@ -296,6 +296,8 @@ veg_species <- bind_rows(veg_species_l, .id = "year") %>%
 
 ### Edits
 
+edit these, I'll also remove tree species as they are covered elsewhere
+
 ```{r}
 fix_sp <- tribble(
   ~ old, ~ new,
@@ -331,9 +333,12 @@ veg_species$spp <- local({
   if_else(is.na(fixes), veg_species$spp, fixes)
 })
 
-unique(veg_species$spp)
 
+veg_species <- filter(veg_species, !spp %in% c("PSMEM", "SESE3", "ALRU2", "PISI", "TSHE", "UMCA"))
+
+unique(veg_species$spp)
 ```
+
 
 
 
