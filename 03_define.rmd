@@ -128,7 +128,7 @@ calc_sh <- function(spp, val = 1) {
 
 ```
 
-# Mean directional index
+## Mean directional index
 
 Mean directional index is described slightly differently by (Corral-Rivas et al. 2010) and (Pommerening and Stoyan 2008) but I believe that they are equivalent representations. I'm using the latter with four :
 
@@ -179,7 +179,7 @@ calc_mdi <- function(x, y) {
 
 ```
 
-# DBH differentiation (TD)
+## DBH differentiation (TD)
 
 Here i'll define the single neighbor version of the TD, this may help to reduce bias given our lack of edge correction. I am not going to remove coincident points here as they won't affect the calculation, and I am assuming two trees that share a location are indeed closest neighbors.
 

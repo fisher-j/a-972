@@ -18,6 +18,8 @@ Here I'll explore various metrics identified in the literature for quantifying a
 
 First I'll identify trees of interest as live trees including ingrowth. I'm not going to consider initial conditions here.
 
+Details for calculations can be found on the [Define new data](03_define.html) page.
+
 ```{r}
 
 ingrowth <- define_xy(ingrowth)
@@ -98,6 +100,12 @@ var_fig(sci_mean)
 Some of these trajectories look interesting, but They don't look unique, given the error bars.
 
 # Mean directional index
+
+Mean directional index is described slightly differently by (Corral-Rivas et al. 2010) and (Pommerening and Stoyan 2008) but I believe that they are equivalent representations. I'm using the latter with four:
+
+$$\sqrt{ \left ( \sum_{j=1}^{4} \cos{a_{ij}} \right )^2 + \left ( \sum_{j=1}^{4} \sin{a_{ij}} \right )^2 } $$
+
+Also, with this index, I am dropping extra coincident points, keeping the first.
 
 ```{r}
 

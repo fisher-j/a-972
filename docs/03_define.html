@@ -299,9 +299,9 @@ $(document).ready(function () {
 <ul>
 <li><a href="#structural-diversity-sci">Structural diversity SCI</a></li>
 <li><a href="#calculate-the-shannon-weaver-index">Calculate the Shannon-Weaver Index</a></li>
-</ul></li>
 <li><a href="#mean-directional-index">Mean directional index</a></li>
 <li><a href="#dbh-differentiation-td">DBH differentiation (TD)</a></li>
+</ul></li>
 <li><a href="#calculate-plot-sdi">Calculate plot SDI</a></li>
 <li><a href="#standardize-crown-ratio">Standardize crown ratio</a>
 <ul>
@@ -408,9 +408,8 @@ calc_sci &lt;- function(x, y, z) {
   -sum(pro * log(pro))
 }</code></pre>
 </div>
-</div>
-<div id="mean-directional-index" class="section level1">
-<h1>Mean directional index</h1>
+<div id="mean-directional-index" class="section level2">
+<h2>Mean directional index</h2>
 <p>Mean directional index is described slightly differently by (Corral-Rivas et al. 2010) and (Pommerening and Stoyan 2008) but I believe that they are equivalent representations. I’m using the latter with four :</p>
 <p><span class="math display">\[\sqrt{ \left ( \sum_{j=1}^{4} \cos{a_{ij}} \right )^2 + \left ( \sum_{j=1}^{4} \sin{a_{ij}} \right )^2 } \]</span></p>
 <p>Also, with this index, I am dropping extra coincident points, keeping the first.</p>
@@ -453,8 +452,8 @@ calc_mdi &lt;- function(x, y) {
   sapply(1:nrow(trees), function(x) mdi_tree(trees[x, ], trees[idx[[x]], ]))
 }</code></pre>
 </div>
-<div id="dbh-differentiation-td" class="section level1">
-<h1>DBH differentiation (TD)</h1>
+<div id="dbh-differentiation-td" class="section level2">
+<h2>DBH differentiation (TD)</h2>
 <p>Here i’ll define the single neighbor version of the TD, this may help to reduce bias given our lack of edge correction. I am not going to remove coincident points here as they won’t affect the calculation, and I am assuming two trees that share a location are indeed closest neighbors.</p>
 <pre class="r"><code>calc_TD &lt;- function(x, y, dbh) {
   DF &lt;- data.frame(x, y)
@@ -462,6 +461,7 @@ calc_mdi &lt;- function(x, y) {
   DBH_ij &lt;- matrix(c(dbh, dbh[idx]), ncol = 2)
   apply(DBH_ij, 1, function(x) 1 - min(x) / max(x))
 }</code></pre>
+</div>
 </div>
 <div id="calculate-plot-sdi" class="section level1">
 <h1>Calculate plot SDI</h1>

@@ -7,6 +7,7 @@
 
 * Switched to using least square means for mean and confidence interval
 * Import and begin checking out veg data
+* Calculate mean directional index
 
 ## 03/23/2022
 
@@ -14,7 +15,7 @@
 
 ## 03/21/2022
 
-* Monday meeting
+* Monday meeting tasks:
   * calculate DBH differentiation
   * Look at veg data, assess for Shannon index, or other analysis
 
