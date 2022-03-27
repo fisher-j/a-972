@@ -284,12 +284,18 @@ I'll start looking at veg_species, they have different information columns and I
 
 map(veg_species_l, names)
 
-# uniqe values for non standard columns
+# unique values for non standard columns
 map(veg_species_l, ~ `[`(.x, !names(.x) %in% c("ID", "Plot_ID", "Species"))) %>%
   map(unique)
 
 veg_species <- bind_rows(veg_species_l, .id = "year") %>%
-  select(year, plot = Plot_ID, spp = Species, flag = Flag, notes = Corrections) %>%
+  select(
+    year,
+    plot = Plot_ID,
+    spp = Species,
+    flag = Flag,
+    notes = Corrections
+  ) %>%
   mutate(treatment = str_extract(plot, treatments)) %>%
   filter(!is.na(treatment)) %>%
   as_tibble()
@@ -299,6 +305,7 @@ veg_species <- bind_rows(veg_species_l, .id = "year") %>%
 edit these, I'll also remove tree species as they are covered elsewhere
 
 ```{r}
+
 fix_sp <- tribble(
   ~ old, ~ new,
 "ANAPHALIS SP.", "Anaphalis sp.",
@@ -328,25 +335,46 @@ fix_sp <- tribble(
 )
 
 veg_species$spp <- local({
-  toFix <- match(veg_species$spp, fix_sp$old)
-  fixes <- fix_sp$new[toFix]
+  to_fix <- match(veg_species$spp, fix_sp$old)
+  fixes <- fix_sp$new[to_fix]
   if_else(is.na(fixes), veg_species$spp, fixes)
 })
 
 
-veg_species <- filter(veg_species, !spp %in% c("PSMEM", "SESE3", "ALRU2", "PISI", "TSHE", "UMCA"))
+veg_species <- filter(
+  veg_species,
+  !spp %in% c("PSMEM", "SESE3", "ALRU2", "PISI", "TSHE", "UMCA")
+)
 
 unique(veg_species$spp)
-
 ```
 
 ### Veg cover
 
+```{r}
+veg_cover_files <- dir(pattern = "VegCover.*\\.txt$", recursive = TRUE)
+names(veg_cover_files) <- str_replace(veg_cover_files, "^.*(\\d{2})\\.txt$", "\\1")
+veg_cover_l <- lapply(veg_cover_files, read_csv)
+map(veg_cover_l, names) %>% unique
 
-
-
-
-
-
-
+veg_cover <- bind_rows(veg_cover_l, .id = "year") %>%
+  select(
+    year,
+    plot = Plot_ID,
+    cl_con = CoverClassCON,
+    cl_hw = CoverClassHW,
+    cl_shrub = CoverClassShrub,
+    cl_herb = CoverClassHerb,
+    dom_con = Dom_sp_CON,
+    dom_hw = Dom_sp_HW,
+    dom_shrub = Dom_sp_Shrub,
+    dom_herb = Dom_sp_Herb
+  ) %>%
+  filter(plot != "Spare1") %>%
+	mutate(treatment = str_extract(plot, treatments), .after = plot) %>%
+  mutate(
+    dom_shrub = str_replace(dom_shrub, "BENE2/GASH.*|BENE2/RUSP", "BENE2"),
+    dom_herb = str_replace(dom_herb, "(\\w+)/.*", "\\1")
+  )
+```
 
