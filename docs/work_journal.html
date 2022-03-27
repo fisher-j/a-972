@@ -13,7 +13,7 @@
 
 <title>work_journal</title>
 
-<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -61,6 +61,7 @@ if (window.hljs) {
 
 
 
+
 <style type = "text/css">
 .main-container {
   max-width: 940px;
@@ -81,6 +82,9 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
 }
 pre code {
   padding: 0;
@@ -236,7 +240,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -277,7 +281,7 @@ $(document).ready(function () {
 <div id="header">
 
 <div class="btn-group pull-right float-right">
-<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
 <ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
@@ -291,55 +295,73 @@ $(document).ready(function () {
 
 <div id="TOC">
 <ul>
-<li><a href="#section">03/25/2022</a></li>
-<li><a href="#section-1">03/24/2022</a></li>
-<li><a href="#section-2">03/23/2022</a></li>
-<li><a href="#section-3">03/21/2022</a></li>
-<li><a href="#section-4">03/15/2022</a></li>
+<li><a href="#section">03/27/2022</a></li>
+<li><a href="#section-1">03/25/2022</a></li>
+<li><a href="#section-2">03/24/2022</a></li>
+<li><a href="#section-3">03/23/2022</a></li>
+<li><a href="#section-4">03/21/2022</a></li>
+<li><a href="#section-5">03/15/2022</a></li>
 <li><a href="#monday-meeting">Monday meeting</a></li>
-<li><a href="#section-5">03/13/2022</a></li>
-<li><a href="#section-6">03/11/2022</a></li>
-<li><a href="#section-7">03/09/2022</a></li>
-<li><a href="#section-8">03/08/2022</a></li>
-<li><a href="#section-9">03/04/2022</a></li>
-<li><a href="#section-10">03/03/2022</a></li>
-<li><a href="#section-11">03/02/2022</a></li>
-<li><a href="#section-12">03/01/0222</a></li>
-<li><a href="#section-13">02/28/2022</a></li>
-<li><a href="#section-14">02/27/2022</a></li>
+<li><a href="#section-6">03/13/2022</a></li>
+<li><a href="#section-7">03/11/2022</a></li>
+<li><a href="#section-8">03/09/2022</a></li>
+<li><a href="#section-9">03/08/2022</a></li>
+<li><a href="#section-10">03/04/2022</a></li>
+<li><a href="#section-11">03/03/2022</a></li>
+<li><a href="#section-12">03/02/2022</a></li>
+<li><a href="#section-13">03/01/0222</a></li>
+<li><a href="#section-14">02/28/2022</a></li>
+<li><a href="#section-15">02/27/2022</a></li>
 </ul>
 </div>
 
 <div id="section" class="section level2">
+<h2>03/27/2022</h2>
+<ul>
+<li>Finished importing and cleaning understory cover data</li>
+<li>Fixed Shannon-Weaver index for trees: its back to being
+non-significant</li>
+<li>I realized that I can’t calculate Sh-W for understory: would need
+counts or cover by species and this was not collected.</li>
+<li>Made basic graphs depicting:
+<ul>
+<li>change in number of understory species</li>
+<li>change in percent cover of herbs and shrubs</li>
+</ul></li>
+</ul>
+</div>
+<div id="section-1" class="section level2">
 <h2>03/25/2022</h2>
 <ul>
 <li>Cleaned up species list data</li>
 </ul>
 </div>
-<div id="section-1" class="section level2">
+<div id="section-2" class="section level2">
 <h2>03/24/2022</h2>
 <ul>
-<li>Switched to using least square means for mean and confidence interval</li>
+<li>Switched to using least square means for mean and confidence
+interval</li>
 <li>Import and begin checking out veg data</li>
+<li>Calculate mean directional index</li>
 </ul>
 </div>
-<div id="section-2" class="section level2">
+<div id="section-3" class="section level2">
 <h2>03/23/2022</h2>
 <ul>
 <li>extracted a function to calculate DBH differentiation</li>
 </ul>
 </div>
-<div id="section-3" class="section level2">
+<div id="section-4" class="section level2">
 <h2>03/21/2022</h2>
 <ul>
-<li>Monday meeting
+<li>Monday meeting tasks:
 <ul>
 <li>calculate DBH differentiation</li>
 <li>Look at veg data, assess for Shannon index, or other analysis</li>
 </ul></li>
 </ul>
 </div>
-<div id="section-4" class="section level2">
+<div id="section-5" class="section level2">
 <h2>03/15/2022</h2>
 <ul>
 <li>Calculated MDI</li>
@@ -357,92 +379,122 @@ $(document).ready(function () {
 </ul></li>
 </ul>
 </div>
-<div id="section-5" class="section level2">
+<div id="section-6" class="section level2">
 <h2>03/13/2022</h2>
 <ul>
 <li>Reading Keuhne paper</li>
 </ul>
 </div>
-<div id="section-6" class="section level2">
+<div id="section-7" class="section level2">
 <h2>03/11/2022</h2>
 <ul>
-<li><p>I realized there was an error in my calculation of SCI. Unfortunately the new values are half of what I had calculated previously which makes differences between treatments even smaller than before.</p></li>
-<li><p>Confirmed with Dr. Zenner about SCI calculation terminology</p></li>
-</ul>
-</div>
-<div id="section-7" class="section level2">
-<h2>03/09/2022</h2>
-<ul>
-<li>Added <a href="06_summary.html#dominance-figure">summary table</a> of average values associated with the dominant redwood and Douglas-fir</li>
-<li>Made adjustments to mean BAI comparisons bar graph: axes, letters, error bars, legend</li>
-<li>Started working on SCI, graphing trajectories, and simplifying table</li>
+<li><p>I realized there was an error in my calculation of SCI.
+Unfortunately the new values are half of what I had calculated
+previously which makes differences between treatments even smaller than
+before.</p></li>
+<li><p>Confirmed with Dr. Zenner about SCI calculation
+terminology</p></li>
 </ul>
 </div>
 <div id="section-8" class="section level2">
-<h2>03/08/2022</h2>
+<h2>03/09/2022</h2>
 <ul>
-<li>Made BAI model table with AICc, Delta AIC, AIC weights, RMSE, and R<sup>2</sup></li>
-<li>Fixed figures:
-<ul>
-<li>summary fig: legend and axis lables</li>
-<li>dominance fig: legend, scale, and axis labels, adjusted BAI bars</li>
-<li>BAI predicted means: legend and axis labels, rescaled inset (to try it out)</li>
-</ul></li>
+<li>Added <a href="06_summary.html#dominance-figure">summary table</a>
+of average values associated with the dominant redwood and
+Douglas-fir</li>
+<li>Made adjustments to mean BAI comparisons bar graph: axes, letters,
+error bars, legend</li>
+<li>Started working on SCI, graphing trajectories, and simplifying
+table</li>
 </ul>
 </div>
 <div id="section-9" class="section level2">
+<h2>03/08/2022</h2>
+<ul>
+<li>Made BAI model table with AICc, Delta AIC, AIC weights, RMSE, and
+R<sup>2</sup></li>
+<li>Fixed figures:
+<ul>
+<li>summary fig: legend and axis lables</li>
+<li>dominance fig: legend, scale, and axis labels, adjusted BAI
+bars</li>
+<li>BAI predicted means: legend and axis labels, rescaled inset (to try
+it out)</li>
+</ul></li>
+</ul>
+</div>
+<div id="section-10" class="section level2">
 <h2>03/04/2022</h2>
 <ul>
 <li>added visualization of SCI to website</li>
 <li>Added more emmeans output for BAI model</li>
-<li>created bar chart showing compact letter display of significantly different estimates</li>
-</ul>
-</div>
-<div id="section-10" class="section level2">
-<h2>03/03/2022</h2>
-<ul>
-<li>Most of today was spent considering if average initial conditions varied significantly among treatments.</li>
-<li>I conducted anova followed by Tukey post-hoc tests as well as Kruskal-Wallis followed by both Dunn and Wilcox post-hoc tests.</li>
-<li>Here again, I’m wondering what the conceptual difference is between comparing averages between plots (n=4) and aggregating trees in treatments (n=number of trees). Statistical tests are difficult with n=4, but is it appropriate to aggregate trees from different plots?</li>
-<li>Unless we can use a more powerful test (all trees in a treatment?) only heights seem to have marginal significance, and this may not be entirely important to us, given the already questionable height data.</li>
+<li>created bar chart showing compact letter display of significantly
+different estimates</li>
 </ul>
 </div>
 <div id="section-11" class="section level2">
-<h2>03/02/2022</h2>
+<h2>03/03/2022</h2>
 <ul>
-<li>Added updated regression tables for ht and ba increment to shared document</li>
-<li>Added estimated marginal means graph with CR * year interaction</li>
-<li>Tried to specify the model form in the caption for the regression table</li>
-<li>Calculated SCI_dbh_ for each treatment/year</li>
+<li>Most of today was spent considering if average initial conditions
+varied significantly among treatments.</li>
+<li>I conducted anova followed by Tukey post-hoc tests as well as
+Kruskal-Wallis followed by both Dunn and Wilcox post-hoc tests.</li>
+<li>Here again, I’m wondering what the conceptual difference is between
+comparing averages between plots (n=4) and aggregating trees in
+treatments (n=number of trees). Statistical tests are difficult with
+n=4, but is it appropriate to aggregate trees from different plots?</li>
+<li>Unless we can use a more powerful test (all trees in a treatment?)
+only heights seem to have marginal significance, and this may not be
+entirely important to us, given the already questionable height
+data.</li>
 </ul>
 </div>
 <div id="section-12" class="section level2">
+<h2>03/02/2022</h2>
+<ul>
+<li>Added updated regression tables for ht and ba increment to shared
+document</li>
+<li>Added estimated marginal means graph with CR * year interaction</li>
+<li>Tried to specify the model form in the caption for the regression
+table</li>
+<li>Calculated SCI_dbh_ for each treatment/year</li>
+</ul>
+</div>
+<div id="section-13" class="section level2">
 <h2>03/01/0222</h2>
 <ul>
 <li>Worked on figuring out how to graphically plot SCI</li>
 <li>Read some of Zenner’s dissertation on the relevance of SCI:
 <ul>
 <li>it is correlated with other stand metrics: BA, density</li>
-<li>it is not correlated with horizontal stem distribution: clumped or even</li>
-</ul></li>
-</ul>
-</div>
-<div id="section-13" class="section level2">
-<h2>02/28/2022</h2>
-<ul>
-<li>Presented new BA increment model in meeting</li>
-<li>Change proportion dominant figures to include initial conditions</li>
-<li>Fixed <a href="06_summary.html#species-dominance-significance-test">non parametric test function</a> for comparing change in redwood dominance among treatments and included output.</li>
-<li>created composite plot: <a href="05_analyzing_ba_increment.html#estimated-marginal-means-and-regression-table-of-selected-model">dbh and cr</a></li>
-<li>changed regression output tables to:
-<ul>
-<li>include: SE, P-val</li>
-<li>remove: ICC</li>
-<li>did this for <a href="04_pred_ht.html#best-model-scrapping-above">ht increment model regression table</a> as well.</li>
+<li>it is not correlated with horizontal stem distribution: clumped or
+even</li>
 </ul></li>
 </ul>
 </div>
 <div id="section-14" class="section level2">
+<h2>02/28/2022</h2>
+<ul>
+<li>Presented new BA increment model in meeting</li>
+<li>Change proportion dominant figures to include initial
+conditions</li>
+<li>Fixed <a
+href="06_summary.html#species-dominance-significance-test">non
+parametric test function</a> for comparing change in redwood dominance
+among treatments and included output.</li>
+<li>created composite plot: <a
+href="05_analyzing_ba_increment.html#estimated-marginal-means-and-regression-table-of-selected-model">dbh
+and cr</a></li>
+<li>changed regression output tables to:
+<ul>
+<li>include: SE, P-val</li>
+<li>remove: ICC</li>
+<li>did this for <a href="04_pred_ht.html#best-model-scrapping-above">ht
+increment model regression table</a> as well.</li>
+</ul></li>
+</ul>
+</div>
+<div id="section-15" class="section level2">
 <h2>02/27/2022</h2>
 <p>Started work journal</p>
 <ul>
@@ -451,7 +503,8 @@ $(document).ready(function () {
 <li>Produced emmeans comparisons</li>
 <li>emmeans predicted growth</li>
 <li>regression outputs</li>
-<li><a href="05_analyzing_ba_increment.html#model-validation">model validation</a></li>
+<li><a href="05_analyzing_ba_increment.html#model-validation">model
+validation</a></li>
 </ul></li>
 <li>Updated website with new content
 <ul>

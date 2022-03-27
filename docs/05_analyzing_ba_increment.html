@@ -13,7 +13,7 @@
 
 <title>BAI modeling</title>
 
-<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -63,6 +63,7 @@ if (window.hljs) {
 
 
 
+
 <style type = "text/css">
 .main-container {
   max-width: 940px;
@@ -83,6 +84,9 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
 }
 pre code {
   padding: 0;
@@ -238,7 +242,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -279,7 +283,7 @@ $(document).ready(function () {
 <div id="header">
 
 <div class="btn-group pull-right float-right">
-<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
 <ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
@@ -295,31 +299,43 @@ $(document).ready(function () {
 <div id="TOC">
 <ul>
 <li><a href="#introduction">Introduction</a></li>
-<li><a href="#define-trees-of-interest">Define trees of interest</a></li>
+<li><a href="#define-trees-of-interest">Define trees of
+interest</a></li>
 <li><a href="#data-exploration">Data exploration</a>
 <ul>
 <li><a href="#outliers">Outliers</a></li>
 <li><a href="#negative-values">Negative values</a></li>
 <li><a href="#crown-ratio">Crown ratio</a></li>
 <li><a href="#plotting-data">Plotting data</a></li>
-<li><a href="#evidence-that-my-response-is-not-normally-distributed">Evidence that my response is not normally distributed?</a></li>
-<li><a href="#change-in-ba-inc-over-years-at-tree-level">Change in ba-inc over years at tree level</a></li>
+<li><a
+href="#evidence-that-my-response-is-not-normally-distributed">Evidence
+that my response is not normally distributed?</a></li>
+<li><a href="#change-in-ba-inc-over-years-at-tree-level">Change in
+ba-inc over years at tree level</a></li>
 </ul></li>
 <li><a href="#modeling">Modeling</a>
 <ul>
 <li><a href="#basic-model-forms">Basic model forms</a></li>
-<li><a href="#moving-forward-with-log---log-model-mixed-effects">Moving forward with log - log model: Mixed effects</a></li>
-<li><a href="#log-log-model-fixed-effects">log-log model fixed effects</a></li>
-<li><a href="#what-does-all-model-selection-have-to-say">What does all model selection have to say?</a></li>
+<li><a href="#moving-forward-with-log---log-model-mixed-effects">Moving
+forward with log - log model: Mixed effects</a></li>
+<li><a href="#log-log-model-fixed-effects">log-log model fixed
+effects</a></li>
+<li><a href="#what-does-all-model-selection-have-to-say">What does all
+model selection have to say?</a></li>
 </ul></li>
-<li><a href="#estimated-marginal-means-and-regression-table-of-selected-model">Estimated marginal means and regression table of selected model</a></li>
+<li><a
+href="#estimated-marginal-means-and-regression-table-of-selected-model">Estimated
+marginal means and regression table of selected model</a></li>
 <li><a href="#model-validation">Model validation</a>
 <ul>
 <li><a href="#residual-vs-fitted">Residual vs fitted</a></li>
-<li><a href="#homogeneity-of-random-group-residuals">Homogeneity of random group residuals</a></li>
+<li><a href="#homogeneity-of-random-group-residuals">Homogeneity of
+random group residuals</a></li>
 <li><a href="#normality-of-residuals">Normality of residuals</a></li>
-<li><a href="#leverage-and-cooks-distance">Leverage and Cooks distance</a></li>
-<li><a href="#random-effects-distribution">Random effects distribution</a></li>
+<li><a href="#leverage-and-cooks-distance">Leverage and Cooks
+distance</a></li>
+<li><a href="#random-effects-distribution">Random effects
+distribution</a></li>
 </ul></li>
 <li><a href="#is-a-glm-going-to-work">Is a glm going to work?</a></li>
 </ul>
@@ -330,14 +346,31 @@ palette(&quot;Tableau 10&quot;)
 library(patchwork)</code></pre>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>Basal area increment is a key feature for analysis. Dbh data is available for almost all trees in both periods, it is more precise and diameter growth (as opposed to height growth) is expected to have a strong response to thinning treatments.</p>
+<p>Basal area increment is a key feature for analysis. Dbh data is
+available for almost all trees in both periods, it is more precise and
+diameter growth (as opposed to height growth) is expected to have a
+strong response to thinning treatments.</p>
 </div>
 <div id="define-trees-of-interest" class="section level1">
 <h1>Define trees of interest</h1>
-<p>For basal area increment, I will include all live trees without broken or dead tops. I am including trees identified as leaning, these should mostly have good growth and accurate measurements. I am excluding bear damaged trees. Increment for a period will be assigned to the beginning of period observation. This means I will want to exclude observations in which a tree is damaged by bear in this or a subsequent observation.</p>
-<p>I am including trees with dead or broken tops when they didn’t lose more than 25% of their initial height. This is only about 25 trees. There are many more with broken tops that are missing heights, but histograms of the diameter increment of these suggest that they are not that different from the set of trees that have heights.</p>
-<p>I’m also filtering out observations that don’t have crown ratio, this loses 1 redwood in the L40 treatment, dropping observations from 10 to 9, as well as losing 10 redwood in H80, but this is less of a problem. If CR proves not useful, I will remove this constraint.</p>
-<p>I’m also removing trees with less than -0.2 (negative) diameter increment</p>
+<p>For basal area increment, I will include all live trees without
+broken or dead tops. I am including trees identified as leaning, these
+should mostly have good growth and accurate measurements. I am excluding
+bear damaged trees. Increment for a period will be assigned to the
+beginning of period observation. This means I will want to exclude
+observations in which a tree is damaged by bear in this or a subsequent
+observation.</p>
+<p>I am including trees with dead or broken tops when they didn’t lose
+more than 25% of their initial height. This is only about 25 trees.
+There are many more with broken tops that are missing heights, but
+histograms of the diameter increment of these suggest that they are not
+that different from the set of trees that have heights.</p>
+<p>I’m also filtering out observations that don’t have crown ratio, this
+loses 1 redwood in the L40 treatment, dropping observations from 10 to
+9, as well as losing 10 redwood in H80, but this is less of a problem.
+If CR proves not useful, I will remove this constraint.</p>
+<p>I’m also removing trees with less than -0.2 (negative) diameter
+increment</p>
 <pre class="r"><code>test_d &lt;- d_l %&gt;%
   group_by(tree_id) %&gt;%
   # only use unbroken live sese or psme from 2018
@@ -393,11 +426,16 @@ display_vars &lt;- function(x) {
   #   aes(fill = &quot;unbroken&quot;), alpha = 0.5)
   labs(x = &quot;diameter increment&quot;, y = &quot;Density&quot;, fill = NULL)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<p>I also need to have a scaling value for making response non-negative for log transformation which will be defined as</p>
+<p>I also need to have a scaling value for making response non-negative
+for log transformation which will be defined as</p>
 <p><code>-(min(ba_inc1)) + 1</code></p>
-<p>for convenience, I computed a new response variable based on this value called <code>ba_inc_scaled</code></p>
+<p>for convenience, I computed a new response variable based on this
+value called <code>ba_inc_scaled</code></p>
 <pre class="r"><code>scale_val &lt;- -min(test_d$ba_inc1) + 1</code></pre>
-<p>Number of redwoods and Douglas fir trees in each plot and each treatment. I have a little problem with sample size when it comes to redwood. Some plots have zero or one observation. It seems like bears took a tole on the</p>
+<p>Number of redwoods and Douglas fir trees in each plot and each
+treatment. I have a little problem with sample size when it comes to
+redwood. Some plots have zero or one observation. It seems like bears
+took a tole on the</p>
 <pre class="r"><code>test_d %&gt;%
   group_by(plot) %&gt;%
   mutate(n_sese = sum(spp == &quot;SESE3&quot;)) %&gt;%
@@ -439,8 +477,18 @@ display_vars &lt;- function(x) {
 <h1>Data exploration</h1>
 <div id="outliers" class="section level2">
 <h2>Outliers</h2>
-<p>Here I’m looking for any outliers in basal area increment, or extreme changes. There are definitely basal area outliers some of the most extreme can be explained by having bear damage, but on average, bear-damaged trees have diameter increments almost double those of non-bear-damaged. It is unclear whether this is due to loose bark, or the fact that these trees tend to be faster growing. This question might need further investigation. Following Dagley et. al 2018, I will remove bear damaged trees from analysis. Another option could be including bear damage as a covariate.</p>
-<p><em>Note, I have already removed increments less than -0.2 and adjusted one large tree with extrememe growth using its first increment</em></p>
+<p>Here I’m looking for any outliers in basal area increment, or extreme
+changes. There are definitely basal area outliers some of the most
+extreme can be explained by having bear damage, but on average,
+bear-damaged trees have diameter increments almost double those of
+non-bear-damaged. It is unclear whether this is due to loose bark, or
+the fact that these trees tend to be faster growing. This question might
+need further investigation. Following Dagley et. al 2018, I will remove
+bear damaged trees from analysis. Another option could be including bear
+damage as a covariate.</p>
+<p><em>Note, I have already removed increments less than -0.2 and
+adjusted one large tree with extrememe growth using its first
+increment</em></p>
 <pre class="r"><code># outliers defined as 1.5 times above or below IQR
 test_d %&gt;%
   filter(
@@ -3296,7 +3344,10 @@ test_d %&gt;%
       title = &quot;data in dataset&quot;
     )</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
-<p>To put outliers in terms of ba_inc1 in context, if we look at the full dataset, including bear damaged trees, and plot <em>diameter</em> increment instead of basal area, then we see a more consistent gradient of diameter measurements.</p>
+<p>To put outliers in terms of ba_inc1 in context, if we look at the
+full dataset, including bear damaged trees, and plot <em>diameter</em>
+increment instead of basal area, then we see a more consistent gradient
+of diameter measurements.</p>
 <pre class="r"><code>d_l %&gt;%
   filter(year %in% c(&quot;08&quot;, &quot;13&quot;), live) %&gt;%
   ggplot(aes(x = d_inc1, y = fct_reorder(tree_id, d_inc1))) +
@@ -3314,7 +3365,8 @@ test_d %&gt;%
 </div>
 <div id="negative-values" class="section level2">
 <h2>Negative values</h2>
-<p>Here is a summary of the remaining negative diameter increment values.</p>
+<p>Here is a summary of the remaining negative diameter increment
+values.</p>
 <pre class="r"><code>local({
   neg_ba_inc &lt;- test_d %&gt;% 
     filter(ba_inc1 &lt; 0) %&gt;%
@@ -3329,7 +3381,9 @@ test_d %&gt;%
 </div>
 <div id="crown-ratio" class="section level2">
 <h2>Crown ratio</h2>
-<p>I’m going to test cr in the model, it doesn’t lose too many more observations by including it, if it doesn’t seem to be worth it, I might include those few observations back in the data.</p>
+<p>I’m going to test cr in the model, it doesn’t lose too many more
+observations by including it, if it doesn’t seem to be worth it, I might
+include those few observations back in the data.</p>
 <pre class="r"><code>test_d %&gt;%
   ggplot(aes(x = cr, fill = spp)) +
     geom_bar() +
@@ -3349,7 +3403,9 @@ test_d %&gt;%
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-4.png" width="672" /></p>
 <pre class="r"><code>hist(log(test_d$dbh + 18), main = &quot;Log of DBH&quot;)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-5.png" width="672" /></p>
-<p>relationship of ba_inc1 with dbh by species and year is not exactly linear, I will use a transformation or a GLM with a different distribution.</p>
+<p>relationship of ba_inc1 with dbh by species and year is not exactly
+linear, I will use a transformation or a GLM with a different
+distribution.</p>
 <pre class="r"><code>test_d %&gt;%
   ggplot(aes(x = dbh, y = ba_inc1, color = spp)) +
   geom_point(alpha = 0.3) +
@@ -3383,9 +3439,11 @@ test_d %&gt;%
 <pre><code>## `geom_smooth()` using formula &#39;y ~ x&#39;</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
 </div>
-<div id="evidence-that-my-response-is-not-normally-distributed" class="section level2">
+<div id="evidence-that-my-response-is-not-normally-distributed"
+class="section level2">
 <h2>Evidence that my response is not normally distributed?</h2>
-<p>looking at 2-inch diameter classes, it would seem that ba_inc is not normally distributed by dbh.</p>
+<p>looking at 2-inch diameter classes, it would seem that ba_inc is not
+normally distributed by dbh.</p>
 <pre class="r"><code>d_l %&gt;%
   filter(live, !bear, year %in% c(&quot;08&quot;, &quot;13&quot;)) %&gt;%
   mutate(dbh_cut = cut_interval(dbh, length = 2)) %&gt;%
@@ -3397,9 +3455,15 @@ test_d %&gt;%
 <pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
 </div>
-<div id="change-in-ba-inc-over-years-at-tree-level" class="section level2">
+<div id="change-in-ba-inc-over-years-at-tree-level"
+class="section level2">
 <h2>Change in ba-inc over years at tree level</h2>
-<p>We can see that in the control, relatively few redwood decreased in size. Few trees over all decreased in size in the H40 and L40 treatments, In the L80 treatment, few redwoods decreased in size, and many fir did. In the intense treatments (40’s) majority of trees increased in growth rate. Overall, there seems to be a species * treatment * year interaction</p>
+<p>We can see that in the control, relatively few redwood decreased in
+size. Few trees over all decreased in size in the H40 and L40
+treatments, In the L80 treatment, few redwoods decreased in size, and
+many fir did. In the intense treatments (40’s) majority of trees
+increased in growth rate. Overall, there seems to be a species *
+treatment * year interaction</p>
 <pre class="r"><code>test_d %&gt;%
   filter(ba_inc1 &lt; 150) %&gt;%
   group_by(tree_id) %&gt;%
@@ -3418,7 +3482,8 @@ test_d %&gt;%
     theme(legend.position = &quot;bottom&quot;) +
     labs(color = NULL)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-14-1.png" width="864" /></p>
-<p>And what about at the plot level, can I discern any interactions between species, year and plot?</p>
+<p>And what about at the plot level, can I discern any interactions
+between species, year and plot?</p>
 <pre class="r"><code>plot_bainc_change &lt;- function(treatment) {
   test_d %&gt;%
     filter(ba_inc1 &lt; 150, treatment == {{treatment}}) %&gt;%
@@ -3435,13 +3500,14 @@ test_d %&gt;%
 </div>
 <div id="modeling" class="section level1">
 <h1>Modeling</h1>
-<p>Is year significant for basal area increment? T-Test? It looks like year is close to significant for the higher intensity treatments.</p>
+<p>Is year significant for basal area increment? T-Test? It looks like
+year is close to significant for the higher intensity treatments.</p>
 <pre class="r"><code>test_d %&gt;%
   group_by(treatment) %&gt;%
   select(year, ba_inc1) %&gt;%
   summarize(as.data.frame(t.test(ba_inc1 ~ year)[c(&quot;estimate&quot;, &quot;parameter&quot;, &quot;p.value&quot;)]))</code></pre>
-<pre><code>## Adding missing grouping variables: `treatment`</code></pre>
-<pre><code>## `summarise()` has grouped output by &#39;treatment&#39;. You can override using the `.groups` argument.</code></pre>
+<pre><code>## Adding missing grouping variables: `treatment`
+## `summarise()` has grouped output by &#39;treatment&#39;. You can override using the `.groups` argument.</code></pre>
 <pre><code>## # A tibble: 10 x 4
 ## # Groups:   treatment [5]
 ##    treatment estimate parameter p.value
@@ -3458,12 +3524,15 @@ test_d %&gt;%
 ## 10 L80           15.6      516.  0.305</code></pre>
 <div id="basic-model-forms" class="section level2">
 <h2>Basic model forms</h2>
-<p>Basal area increment is expected to vary by dbh and crown ratio. We hope to see a treatment effect. Because of the interaction with year, I will try to model for the most recent increment period only.</p>
+<p>Basal area increment is expected to vary by dbh and crown ratio. We
+hope to see a treatment effect. Because of the interaction with year, I
+will try to model for the most recent increment period only.</p>
 <pre><code>model a: scaled_ba_inc1 = exp((dbh) * treatment * spp),   distribution
 model b: scaled_ba_inc1 = exp((dbh) * treatment * spp), gaussian distribution
 model c: log(ba_inc1) = dbh * treatment * spp 
 model d: ba_inc1 = (log(dbh) + dbh) * treatment * spp</code></pre>
-<p>The scaling value was computed as <code>-(min(ba_inc1)) + 1</code></p>
+<p>The scaling value was computed as
+<code>-(min(ba_inc1)) + 1</code></p>
 <pre class="r"><code>m6a &lt;- glm(
   ba_inc_scaled ~ dbh * treatment * spp,
   family = Gamma(link = &quot;log&quot;),
@@ -3479,7 +3548,8 @@ m6b &lt;- glm(
 m6c &lt;- lm(log(ba_inc_scaled) ~ dbh * treatment * spp, data = test_d)
 
 m6d &lt;- lm(log(ba_inc_scaled) ~ log(dbh) * treatment * spp, data = test_d)</code></pre>
-<p>A and B are comparable, and C and D are comparable. E is not comparable with anything.</p>
+<p>A and B are comparable, and C and D are comparable. E is not
+comparable with anything.</p>
 <pre class="r"><code>AIC(m6a, m6b, m6c, m6d)</code></pre>
 <pre><code>##     df       AIC
 ## m6a 21 14830.247
@@ -3527,9 +3597,12 @@ m6d &lt;- lm(log(ba_inc_scaled) ~ log(dbh) * treatment * spp, data = test_d)</co
     labs(title = &quot;Linear model, log-log-transformed&quot;)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-19-4.png" width="672" /></p>
 </div>
-<div id="moving-forward-with-log---log-model-mixed-effects" class="section level2">
+<div id="moving-forward-with-log---log-model-mixed-effects"
+class="section level2">
 <h2>Moving forward with log - log model: Mixed effects</h2>
-<p>So, if my gamma GLM is not going to work, I will focus instead on using a mixed effect linear model. First, I’ll determine random effects using full model.</p>
+<p>So, if my gamma GLM is not going to work, I will focus instead on
+using a mixed effect linear model. First, I’ll determine random effects
+using full model.</p>
 <pre class="r"><code>f0 &lt;- formula(
   log(ba_inc1 + scale_val) ~ log(dbh) * treatment + spp + year * cr
 )
@@ -3545,7 +3618,12 @@ AICc(m0, m1, m2, m3)</code></pre>
 ## m1 17 2126.693
 ## m2 16 2124.687
 ## m3 16 2480.643</code></pre>
-<p>Including plot in the random effects results in a singular fit and no random intercepts are calculated for plot, rendering it useless. This could mean that after accounting for fixed effects, there is no discernable variation in plot, or it could mean that there is some other problem. Either way, I don’t think it makes any sense to include it right now.</p>
+<p>Including plot in the random effects results in a singular fit and no
+random intercepts are calculated for plot, rendering it useless. This
+could mean that after accounting for fixed effects, there is no
+discernable variation in plot, or it could mean that there is some other
+problem. Either way, I don’t think it makes any sense to include it
+right now.</p>
 <p><code>log_ba_inc_scaled ~ fixed_effects + (1 | tree_id)</code></p>
 </div>
 <div id="log-log-model-fixed-effects" class="section level2">
@@ -3616,7 +3694,8 @@ Marginal/conditional R<sup>2</sup>
 20
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + treatment:spp + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp +
+treatment:spp + (1 | tree_id)
 </td>
 <td style="text-align:right;">
 2110.2
@@ -3639,7 +3718,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + treatment:sp
 17
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + (1 |
+tree_id)
 </td>
 <td style="text-align:right;">
 2110.4
@@ -3662,7 +3742,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year * spp + (1 | tree_id
 18
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp + (1 |
+tree_id)
 </td>
 <td style="text-align:right;">
 2118.2
@@ -3685,7 +3766,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp + (1 | tree_id
 19
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp * treatment + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp *
+treatment + (1 | tree_id)
 </td>
 <td style="text-align:right;">
 2120.0
@@ -3708,7 +3790,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year + spp * treatment + 
 9
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr * year + spp + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr * year + spp + (1 |
+tree_id)
 </td>
 <td style="text-align:right;">
 2124.7
@@ -3731,7 +3814,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr * year + spp + (1 | tree_id
 16
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) + treatment * year * spp + cr + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) + treatment * year * spp + cr + (1 |
+tree_id)
 </td>
 <td style="text-align:right;">
 2128.5
@@ -3754,7 +3838,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) + treatment * year * spp + cr + (1 | tree_id
 10
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp * treatment + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp *
+treatment + (1 | tree_id)
 </td>
 <td style="text-align:right;">
 2150.6
@@ -3777,7 +3862,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp * treatment + 
 4
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + (1 |
+tree_id)
 </td>
 <td style="text-align:right;">
 2150.9
@@ -3800,7 +3886,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + (1 | tree_id
 11
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + year:spp + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp +
+year:spp + (1 | tree_id)
 </td>
 <td style="text-align:right;">
 2151.9
@@ -3823,7 +3910,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + year + spp + year:spp + (
 6
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + spp + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + spp + (1 |
+tree_id)
 </td>
 <td style="text-align:right;">
 2217.2
@@ -3846,7 +3934,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) * treatment + cr + spp + (1 | tree_id)
 15
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + spp + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + spp + (1 |
+tree_id)
 </td>
 <td style="text-align:right;">
 2234.9
@@ -3869,7 +3958,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) + treatment + year + spp + (1 | tree_id)
 8
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp * treatment + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp * treatment
++ (1 | tree_id)
 </td>
 <td style="text-align:right;">
 2242.3
@@ -3892,7 +3982,8 @@ log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp * treatment + (1 | 
 7
 </td>
 <td style="text-align:left;">
-log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp + (1 | tree_id)
+log(ba_inc1 + scale_val) ~ log(dbh) * treatment + year + spp + (1 |
+tree_id)
 </td>
 <td style="text-align:right;">
 2242.6
@@ -4073,7 +4164,9 @@ log(ba_inc1 + scale_val) ~ log(dbh) * treatment + (1 | tree_id)
 </tr>
 </tbody>
 </table>
-<p>Here I’ll look at the top model, plot labels refer to diameter increment (cm/year). Unfortunately the residuals do not appear to be evenly distributed. I’m not sure that I can use this model.</p>
+<p>Here I’ll look at the top model, plot labels refer to diameter
+increment (cm/year). Unfortunately the residuals do not appear to be
+evenly distributed. I’m not sure that I can use this model.</p>
 <pre class="r"><code>ba_inc_lmm &lt;- lmer(fl1[[18]], data = test_d, REML = TRUE)
 
 summary(ba_inc_lmm)</code></pre>
@@ -4134,15 +4227,21 @@ summary(ba_inc_lmm)</code></pre>
 
 residual_plot(ba_inc_lmm)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
-<p>see: <a href="https://stats.stackexchange.com/questions/115090/why-do-i-get-zero-variance-of-a-random-effect-in-my-mixed-model-despite-some-va">Cross validated post about zero variance</a></p>
-<p>And the singular models section <a href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#singular-models-random-effect-variances-estimated-as-zero-or-correlations-estimated-as---1">here</a></p>
-<p>Here I can include the random effect of plot if I have to with plot random effect.</p>
+<p>see: <a
+href="https://stats.stackexchange.com/questions/115090/why-do-i-get-zero-variance-of-a-random-effect-in-my-mixed-model-despite-some-va">Cross
+validated post about zero variance</a></p>
+<p>And the singular models section <a
+href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#singular-models-random-effect-variances-estimated-as-zero-or-correlations-estimated-as---1">here</a></p>
+<p>Here I can include the random effect of plot if I have to with plot
+random effect.</p>
 <pre class="r"><code>fl2 &lt;- lapply(fl1, update_no_simplify, ~ . + (1 | plot))
 get_aic(fl2, data = test_d, method = &quot;lmm&quot;)</code></pre>
 </div>
-<div id="what-does-all-model-selection-have-to-say" class="section level2">
+<div id="what-does-all-model-selection-have-to-say"
+class="section level2">
 <h2>What does all model selection have to say?</h2>
-<p>I could use dredge from MuMIn to test all possible models with 3 to 10 predictors models</p>
+<p>I could use dredge from MuMIn to test all possible models with 3 to
+10 predictors models</p>
 <pre class="r"><code>options(na.action = &quot;na.fail&quot;)
 
 fm1 &lt;- lmer(
@@ -4155,7 +4254,9 @@ dd &lt;- dredge(fm1, m.lim = c(3, 10))
 dd</code></pre>
 </div>
 </div>
-<div id="estimated-marginal-means-and-regression-table-of-selected-model" class="section level1">
+<div
+id="estimated-marginal-means-and-regression-table-of-selected-model"
+class="section level1">
 <h1>Estimated marginal means and regression table of selected model</h1>
 <p>First I choose a model from above based on parsimony and AICc:</p>
 <pre class="r"><code>ba_inc_mod &lt;- ba_inc_lmm
@@ -4415,7 +4516,8 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 </td>
 </tr>
 </table>
-<p>Here I get the marginal estimates and pairwise comparisons for the selected model. First I do a pairwise comparison on treatments.</p>
+<p>Here I get the marginal estimates and pairwise comparisons for the
+selected model. First I do a pairwise comparison on treatments.</p>
 <pre class="r"><code>ba_inc_ref &lt;- ref_grid(ba_inc_mod)
 
 emmeans(ba_inc_ref, pairwise ~ treatment, type = &quot;response&quot;)</code></pre>
@@ -4468,7 +4570,8 @@ emmeans(ba_inc_ref, pairwise ~ treatment, type = &quot;response&quot;)</code></p
 ## Results are averaged over the levels of: treatment, year 
 ## Degrees-of-freedom method: kenward-roger 
 ## Tests are performed on the log scale</code></pre>
-<p>This visualization shows that most pairwise comparisons of species and treatment combinations are significantly different.</p>
+<p>This visualization shows that most pairwise comparisons of species
+and treatment combinations are significantly different.</p>
 <pre class="r"><code>emmeans(ba_inc_ref, ~ treatment + spp) %&gt;% pwpp(type = &quot;response&quot;)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
 <pre class="r"><code>emmeans(ba_inc_ref, pairwise ~ treatment + spp, type = &quot;response&quot;)</code></pre>
@@ -4542,7 +4645,10 @@ emmeans(ba_inc_ref, pairwise ~ treatment, type = &quot;response&quot;)</code></p
 ## Degrees-of-freedom method: kenward-roger 
 ## P value adjustment: tukey method for comparing a family of 10 estimates 
 ## Tests are performed on the log scale</code></pre>
-<p>Here I plot the expected response by species and dbh, averaged over the effect of year and add an inset for the interaction effect of crown ratio and year. For this I define two more reference grids, one with a range of dbh to include and one with a range of cr to include</p>
+<p>Here I plot the expected response by species and dbh, averaged over
+the effect of year and add an inset for the interaction effect of crown
+ratio and year. For this I define two more reference grids, one with a
+range of dbh to include and one with a range of cr to include</p>
 <pre class="r"><code>library(patchwork)
 
 ba_inc_ref_dbh &lt;- ref_grid(
@@ -4639,7 +4745,9 @@ ggsave(
   height = 13,
   units = &quot;cm&quot;
 )</code></pre>
-<p>Now we show the estimated mean BAI response of a tree of average size, with average CR and for an average year, and identify which species/treatment combinations vary significantly from each other.</p>
+<p>Now we show the estimated mean BAI response of a tree of average
+size, with average CR and for an average year, and identify which
+species/treatment combinations vary significantly from each other.</p>
 <pre class="r"><code>dodge &lt;- position_dodge(width = 0.9)
 
 emmeans(ba_inc_ref, ~ treatment + spp, type = &quot;response&quot;) %&gt;% 
@@ -4739,7 +4847,8 @@ abline(0,0)</code></pre>
 <div id="homogeneity-of-random-group-residuals" class="section level2">
 <h2>Homogeneity of random group residuals</h2>
 <p>I can check that random group residuals are homogenous.</p>
-<p>I can’t really check if residuals are homogenous for each tree, because there are over a thousand of them.</p>
+<p>I can’t really check if residuals are homogenous for each tree,
+because there are over a thousand of them.</p>
 <pre class="r"><code>plot(
   ba_inc_mod,
   resid(., scaled=TRUE) ~ fitted(.)| plot,
@@ -4752,14 +4861,17 @@ abline(0,0)</code></pre>
 </div>
 <div id="normality-of-residuals" class="section level2">
 <h2>Normality of residuals</h2>
-<p>It seems we are violating the assumption of normality of residuals here.</p>
+<p>It seems we are violating the assumption of normality of residuals
+here.</p>
 <pre class="r"><code>qqnorm(resid(ba_inc_mod, type = &quot;pearson&quot;), pch=16, col = 1,  main = &quot;QQplot for pearosn residuals&quot;)
 qqline(resid(ba_inc_mod, type = &quot;pearson&quot;))</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-35-1.png" width="960" /></p>
 </div>
 <div id="leverage-and-cooks-distance" class="section level2">
 <h2>Leverage and Cooks distance</h2>
-<p>Cooks outliers, defined as &gt; 3 x mean(cooks distance) are colored in red. None of these “outliers” seem like they would disproportionately affect regression.</p>
+<p>Cooks outliers, defined as &gt; 3 x mean(cooks distance) are colored
+in red. None of these “outliers” seem like they would disproportionately
+affect regression.</p>
 <pre class="r"><code># Plot leverage against standardised residuals
 
 plot(
@@ -4785,15 +4897,24 @@ text(x=1650,y=0.8,&quot;Cook&#39;s distance&quot;,adj=c(0,0.5))</code></pre>
 </div>
 <div id="random-effects-distribution" class="section level2">
 <h2>Random effects distribution</h2>
-<p>The distribution of random effects (plots) should be roughly normal. Here our distribution is skewed, <a href="" title="https://stats.stackexchange.com/a/366500">from what I’ve read</a>, this should not be a problem for estimates or their std’s.</p>
+<p>The distribution of random effects (plots) should be roughly normal.
+Here our distribution is skewed, <a href=""
+title="https://stats.stackexchange.com/a/366500">from what I’ve
+read</a>, this should not be a problem for estimates or their std’s.</p>
 <pre class="r"><code>hist(as.vector(unlist(ranef(ba_inc_mod)$tree_id)), col = 1)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-37-1.png" width="672" /></p>
 </div>
 </div>
 <div id="is-a-glm-going-to-work" class="section level1">
 <h1>Is a glm going to work?</h1>
-<p>While GLMs with gamma family are used in the literature for basal area increment models. I had a hard time getting them to converge. They are computationally expensive (slow) to fit and when I look at the residuals, they are not all the different from the log-log model fit above.</p>
-<p>In looking at the results for the GLM model, it looks very similar to the linear log log model, the qq plot reveals similarly light tailed distribution.</p>
+<p>While GLMs with gamma family are used in the literature for basal
+area increment models. I had a hard time getting them to converge. They
+are computationally expensive (slow) to fit and when I look at the
+residuals, they are not all the different from the log-log model fit
+above.</p>
+<p>In looking at the results for the GLM model, it looks very similar to
+the linear log log model, the qq plot reveals similarly light tailed
+distribution.</p>
 <pre class="r"><code>glm_mod &lt;- glmer(
   ba_inc_scaled ~ treatment + scale(dbh) + scale(cr) + spp + year + (1 | plot) + (1 | tree_id),
   data = test_d,

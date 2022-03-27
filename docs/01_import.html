@@ -13,7 +13,7 @@
 
 <title>Import data</title>
 
-<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -61,6 +61,7 @@ if (window.hljs) {
 
 
 
+
 <style type = "text/css">
 .main-container {
   max-width: 940px;
@@ -81,6 +82,9 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
 }
 pre code {
   padding: 0;
@@ -236,7 +240,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -277,7 +281,7 @@ $(document).ready(function () {
 <div id="header">
 
 <div class="btn-group pull-right float-right">
-<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
 <ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
@@ -299,7 +303,8 @@ $(document).ready(function () {
 <li><a href="#status-column">Status column</a></li>
 <li><a href="#cut-trees">Cut trees</a></li>
 <li><a href="#bearrot-column">Bear/rot column</a></li>
-<li><a href="#initial-complete-dataset">Initial Complete dataset</a></li>
+<li><a href="#initial-complete-dataset">Initial Complete
+dataset</a></li>
 <li><a href="#ingrowth">Ingrowth</a></li>
 <li><a href="#vegetation-data">Vegetation data</a>
 <ul>
@@ -317,7 +322,11 @@ library(kableExtra)</code></pre>
 </div>
 <div id="import-data" class="section level1">
 <h1>Import Data</h1>
-<p>I’ll start by importing tree data from all three periods as well as the tree list. These will be stored in four appropriately named data frames. While importing, I’ll rename some columns, select useful columns and remove the “spare” observations. I combine condition codes into a single column.</p>
+<p>I’ll start by importing tree data from all three periods as well as
+the tree list. These will be stored in four appropriately named data
+frames. While importing, I’ll rename some columns, select useful columns
+and remove the “spare” observations. I combine condition codes into a
+single column.</p>
 <pre class="r"><code>tree_2008 &lt;- read.csv(
   &quot;./original/tblA972_TreeData2008.txt&quot;,
   na.strings = &quot;&quot;
@@ -403,7 +412,8 @@ veg_cover_l$`18` &lt;- read.csv(&quot;./original/tblA972_VegCover2018.txt&quot;)
 <h1>Initial data cleaning</h1>
 <div id="status-column" class="section level2">
 <h2>Status column</h2>
-<p>I’ll remove bad data indicated by status -99, -999, or -9999. These occur in 2013.</p>
+<p>I’ll remove bad data indicated by status -99, -999, or -9999. These
+occur in 2013.</p>
 <pre class="r"><code>bad_id &lt;- tree_2013$tree_id[tree_2013$status %in% c(-99, -999, -9999)]
 data.frame(id = bad_id,
            notes_08 = tree_2008$notes[tree_2008$tree_id %in% bad_id],
@@ -417,7 +427,12 @@ data.frame(id = bad_id,
 tree_2013 &lt;- tree_2013[!tree_2013$tree_id %in% bad_id, ]
 tree_2018 &lt;- tree_2018[!tree_2018$tree_id %in% bad_id, ]
 tree_list_all &lt;- tree_list_all[!tree_list_all$tree_id %in% bad_id, ]</code></pre>
-<p>I’ll also look at trees with status == 99, and determine if they (a) died after harvest, and thus are period 1 mortality, or (b) died before harvest, and were snags. I also give status=1 to ingrowth in 2018 (where status was NA). Finally, some down, windthrown trees (broken below dbh or uprooted) continue to have dbh recorded (44), and others do not (115). I’m not sure how to handle this for now.</p>
+<p>I’ll also look at trees with status == 99, and determine if they (a)
+died after harvest, and thus are period 1 mortality, or (b) died before
+harvest, and were snags. I also give status=1 to ingrowth in 2018 (where
+status was NA). Finally, some down, windthrown trees (broken below dbh
+or uprooted) continue to have dbh recorded (44), and others do not
+(115). I’m not sure how to handle this for now.</p>
 <pre class="r"><code># Deal with status 99
 tree_2008[tree_2008$status == 99, &quot;status&quot;]</code></pre>
 <pre><code>## # A tibble: 4 x 1
@@ -431,10 +446,14 @@ tree_2008[tree_2008$status == 99, &quot;status&quot;]</code></pre>
 
 # Deal with status=NA in 2018
 tree_2018[is.na(tree_2018$status), &quot;status&quot;] &lt;- 1</code></pre>
-<p>Changing status of one “split” tree from “live” to “broken above dbh” and one snag from -5 to 5.</p>
+<p>Changing status of one “split” tree from “live” to “broken above dbh”
+and one snag from -5 to 5.</p>
 <pre class="r"><code>tree_2013[tree_2013$tree_id == &quot;4L40.3255&quot;, &quot;status&quot;] &lt;- 31
 tree_2018[tree_2018$tree_id == &quot;1L40.3661&quot;, &quot;status&quot;] &lt;- 5</code></pre>
-<p>Change status of several windthrow trees from 1 to 30 or 31, based on condition codes. These are strange because, subsequent dbh for these trees continue to increase, despite them being windthrown. I’m not sure what to make of this.</p>
+<p>Change status of several windthrow trees from 1 to 30 or 31, based on
+condition codes. These are strange because, subsequent dbh for these
+trees continue to increase, despite them being windthrown. I’m not sure
+what to make of this.</p>
 <pre class="r"><code>bad_windthrow_13 &lt;- tree_2013$status == 1 &amp; grepl(&quot;30|31|32&quot;, tree_2013$cond)
 new_status_13 &lt;- str_extract(tree_2013$cond[bad_windthrow_13], &quot;30|31|32&quot;)
 tree_2013[bad_windthrow_13, &quot;status&quot;] &lt;- as.numeric(new_status_13)
@@ -445,8 +464,20 @@ tree_2018[bad_windthrow_18, &quot;status&quot;] &lt;- as.numeric(new_status_18)<
 </div>
 <div id="cut-trees" class="section level2">
 <h2>Cut trees</h2>
-<p>The 2008 data needs to be broken into initial and post cut conditions. To separate these I’ll use the Status column (“15” and “16” indicate cut). Initial conditions will include cut and uncut trees. I’ll make sure tree_2008 doesn’t have any remaining cut trees, then I’ll check subsequent measurement periods to make sure there are no more remaining cut trees. Finally, I’ll remove harvested trees from tree_list_all.</p>
-<p>While ids (with a “C”) don’t indicate any unexpected cut trees in subsequent years, year 2013 has two cut trees indicated by status 16. One of these, 2L80.3731 is listed as windthrown prior to harvest in 2008, this tree should be omitted as it is not representative of treatment effects. Tree 3H40.3195 was listed as alive in 2008 and then as cut in 2013, I’m going to assume it was actually cut in 2008 (when it was 5.5 inches).</p>
+<p>The 2008 data needs to be broken into initial and post cut
+conditions. To separate these I’ll use the Status column (“15” and “16”
+indicate cut). Initial conditions will include cut and uncut trees. I’ll
+make sure tree_2008 doesn’t have any remaining cut trees, then I’ll
+check subsequent measurement periods to make sure there are no more
+remaining cut trees. Finally, I’ll remove harvested trees from
+tree_list_all.</p>
+<p>While ids (with a “C”) don’t indicate any unexpected cut trees in
+subsequent years, year 2013 has two cut trees indicated by status 16.
+One of these, 2L80.3731 is listed as windthrown prior to harvest in
+2008, this tree should be omitted as it is not representative of
+treatment effects. Tree 3H40.3195 was listed as alive in 2008 and then
+as cut in 2013, I’m going to assume it was actually cut in 2008 (when it
+was 5.5 inches).</p>
 <pre class="r"><code>init_2008 &lt;- tree_2008
 tree_2008 &lt;- tree_2008[!init_2008$status %in% c(15, 16), ]
 
@@ -498,21 +529,30 @@ tree_list &lt;- tree_list_all[!tree_list_all$tree_id %in% cut_ids, ]</code></pre
 </div>
 <div id="bearrot-column" class="section level2">
 <h2>Bear/rot column</h2>
-<p>Covert bear damage and rot to TRUE/FALSE, rather than Y/N or 1/(missing)</p>
+<p>Covert bear damage and rot to TRUE/FALSE, rather than Y/N or
+1/(missing)</p>
 <pre class="r"><code>init_2008$bear &lt;- if_else(init_2008$bear == &quot;Y&quot;, TRUE, FALSE)
 init_2008$rot &lt;- if_else(init_2008$rot == &quot;Y&quot;, TRUE, FALSE)
 tree_2008$bear &lt;- if_else(tree_2008$bear == &quot;Y&quot;, TRUE, FALSE)
 tree_2008$rot &lt;- if_else(tree_2008$rot == &quot;Y&quot;, TRUE, FALSE)
 tree_2013$bear &lt;- if_else(tree_2013$bear == 1, TRUE, FALSE, missing = FALSE)
 tree_2018$bear &lt;- if_else(tree_2018$bear == 1, TRUE, FALSE, missing = FALSE)</code></pre>
-<p>In 2018, “bear” column does not agree with bear damage recorded in “condition codes,” I’ll default to using the condition codes and adjust “bear” accordingly.</p>
+<p>In 2018, “bear” column does not agree with bear damage recorded in
+“condition codes,” I’ll default to using the condition codes and adjust
+“bear” accordingly.</p>
 <pre class="r"><code>any(tree_2018$bear == FALSE &amp; str_detect(tree_2018$cond, &quot;17|18|19&quot;))</code></pre>
 <pre><code>## [1] TRUE</code></pre>
 <pre class="r"><code>tree_2018[str_detect(tree_2018$cond, &quot;17|18|19&quot;), &quot;bear&quot;] &lt;- TRUE</code></pre>
 </div>
 <div id="initial-complete-dataset" class="section level2">
 <h2>Initial Complete dataset</h2>
-<p>I’ll check to make sure all tree_ids for all measurement years are represented in the tree list and vice-versa. Then I’ll make a long format dataset where each observation has one row by simply attaching each dataset together, end to end and adding a column for the year. This format should be efficient for producing summary statistics. I am including initial conditions in this dataset and convert to metric. I also fix notes that have multiple lines.</p>
+<p>I’ll check to make sure all tree_ids for all measurement years are
+represented in the tree list and vice-versa. Then I’ll make a long
+format dataset where each observation has one row by simply attaching
+each dataset together, end to end and adding a column for the year. This
+format should be efficient for producing summary statistics. I am
+including initial conditions in this dataset and convert to metric. I
+also fix notes that have multiple lines.</p>
 <pre class="r"><code>all_years &lt;- list(`init` = init_2008, `08` = tree_2008,
                    `13` = tree_2013, `18` = tree_2018)
 after_harvest &lt;- all_years[names(all_years) != &quot;init&quot;]
@@ -539,7 +579,11 @@ d_l &lt;- d_l %&gt;%
 </div>
 <div id="ingrowth" class="section level2">
 <h2>Ingrowth</h2>
-<p>Ingrowth is important for metrics such as structural diversity, under story diversity and others, but might skew metrics relating to the growth of dominant trees of interest. Here I remove ingrowth from the main dataset. Also, one ingrowth tree is missing locations. I’ll put it in some random place in the plot.</p>
+<p>Ingrowth is important for metrics such as structural diversity, under
+story diversity and others, but might skew metrics relating to the
+growth of dominant trees of interest. Here I remove ingrowth from the
+main dataset. Also, one ingrowth tree is missing locations. I’ll put it
+in some random place in the plot.</p>
 <pre class="r"><code>no_loc &lt;- is.na(d_l$h_dist) | is.na(d_l$azi)
 no_loc &lt;- unique(d_l[no_loc, ]$tree_id)
 
@@ -563,7 +607,8 @@ d_l &lt;- d_l %&gt;%
 <h2>Vegetation data</h2>
 <div id="species-list" class="section level3">
 <h3>Species list</h3>
-<p>I’ll start looking at veg_species, they have different information columns and I’m not sure what</p>
+<p>I’ll start looking at veg_species, they have different information
+columns and I’m not sure what</p>
 <pre class="r"><code>map(veg_species_l, names)</code></pre>
 <pre><code>## $`08`
 ## [1] &quot;ID&quot;      &quot;Plot_ID&quot; &quot;Species&quot; &quot;Flag&quot;   
@@ -574,7 +619,7 @@ d_l &lt;- d_l %&gt;%
 ## $`18`
 ## [1] &quot;ID&quot;          &quot;Plot_ID&quot;     &quot;Species&quot;     &quot;Flag&quot;        &quot;Flag1&quot;      
 ## [6] &quot;Corrections&quot;</code></pre>
-<pre class="r"><code># uniqe values for non standard columns
+<pre class="r"><code># unique values for non standard columns
 map(veg_species_l, ~ `[`(.x, !names(.x) %in% c(&quot;ID&quot;, &quot;Plot_ID&quot;, &quot;Species&quot;))) %&gt;%
   map(unique)</code></pre>
 <pre><code>## $`08`
@@ -596,11 +641,18 @@ map(veg_species_l, ~ `[`(.x, !names(.x) %in% c(&quot;ID&quot;, &quot;Plot_ID&quo
 ## 282          NA        need
 ## 405 TYPO?    NA</code></pre>
 <pre class="r"><code>veg_species &lt;- bind_rows(veg_species_l, .id = &quot;year&quot;) %&gt;%
-  select(year, plot = Plot_ID, spp = Species, flag = Flag, notes = Corrections) %&gt;%
+  select(
+    year,
+    plot = Plot_ID,
+    spp = Species,
+    flag = Flag,
+    notes = Corrections
+  ) %&gt;%
   mutate(treatment = str_extract(plot, treatments)) %&gt;%
   filter(!is.na(treatment)) %&gt;%
   as_tibble()</code></pre>
-<p>edit these, I’ll also remove tree species as they are covered elsewhere</p>
+<p>edit these, I’ll also remove tree species as they are covered
+elsewhere</p>
 <pre class="r"><code>fix_sp &lt;- tribble(
   ~ old, ~ new,
 &quot;ANAPHALIS SP.&quot;, &quot;Anaphalis sp.&quot;,
@@ -630,38 +682,96 @@ map(veg_species_l, ~ `[`(.x, !names(.x) %in% c(&quot;ID&quot;, &quot;Plot_ID&quo
 )
 
 veg_species$spp &lt;- local({
-  toFix &lt;- match(veg_species$spp, fix_sp$old)
-  fixes &lt;- fix_sp$new[toFix]
+  to_fix &lt;- match(veg_species$spp, fix_sp$old)
+  fixes &lt;- fix_sp$new[to_fix]
   if_else(is.na(fixes), veg_species$spp, fixes)
 })
 
 
-veg_species &lt;- filter(veg_species, !spp %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;, &quot;ALRU2&quot;, &quot;PISI&quot;, &quot;TSHE&quot;, &quot;UMCA&quot;))
-
-unique(veg_species$spp)</code></pre>
-<pre><code>##  [1] &quot;STAJR&quot;         &quot;POMU&quot;          &quot;VAPA&quot;          &quot;VAOV2&quot;        
-##  [5] &quot;RHPU&quot;          &quot;DRAR3&quot;         &quot;RUPA&quot;          &quot;GATR3&quot;        
-##  [9] &quot;CLSI2&quot;         &quot;SARA2&quot;         &quot;GASH&quot;          &quot;VISE3&quot;        
-## [13] &quot;ANDE3&quot;         &quot;RUSP&quot;          &quot;PTAQP2&quot;        &quot;BENE2&quot;        
-## [17] &quot;DISM2&quot;         &quot;TROV2&quot;         &quot;RUUR&quot;          &quot;grass&quot;        
-## [21] &quot;unknown&quot;       &quot;BLSP&quot;          &quot;SMRA&quot;          &quot;ERMI6&quot;        
-## [25] &quot;CHUM&quot;          &quot;WHMO&quot;          &quot;TRLA6&quot;         &quot;GOOB2&quot;        
-## [29] &quot;RHMA3&quot;         &quot;OSBE&quot;          &quot;IRDO&quot;          &quot;ILAQ&quot;         
-## [33] &quot;HIAL2&quot;         &quot;PLLA&quot;          &quot;CIVU&quot;          &quot;CHANC&quot;        
-## [37] &quot;ANMA&quot;          &quot;GLEL&quot;          &quot;RISA&quot;          &quot;RUDI2&quot;        
-## [41] &quot;RIME&quot;          &quot;Ribes sp.&quot;     &quot;ATFIC&quot;         &quot;Lathyrus sp.&quot; 
-## [45] &quot;COJU2&quot;         &quot;LICO6&quot;         &quot;PEFRP&quot;         &quot;TAOF&quot;         
-## [49] &quot;Epilobium sp.&quot; &quot;CIAR&quot;          &quot;Stellaria sp.&quot; &quot;Osmorhiza sp.&quot;
-## [53] &quot;DREX2&quot;         &quot;PRVU&quot;          &quot;DIHO3&quot;         &quot;LICO&quot;         
-## [57] &quot;LIDED2&quot;        &quot;Van. Grass&quot;    &quot;DIPU&quot;          &quot;STME2&quot;        
-## [61] &quot;HELA4&quot;         &quot;LOHIV&quot;         &quot;Rush sp.&quot;      &quot;pea&quot;          
-## [65] &quot;DIFO&quot;          &quot;OXOR&quot;          &quot;CLAN2&quot;         &quot;RAPA&quot;         
-## [69] &quot;MADI&quot;          &quot;MAOR3&quot;         &quot;Anaphalis sp.&quot; &quot;lily&quot;         
-## [73] &quot;mint&quot;          &quot;HEHE&quot;          &quot;Festuca sp.&quot;   &quot;RHOC&quot;         
-## [77] &quot;Cirsium sp.&quot;</code></pre>
+veg_species &lt;- filter(
+  veg_species,
+  !spp %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;, &quot;ALRU2&quot;, &quot;PISI&quot;, &quot;TSHE&quot;, &quot;UMCA&quot;)
+)</code></pre>
 </div>
 <div id="veg-cover" class="section level3">
 <h3>Veg cover</h3>
+<p>For sites that list more than one dominant species, I’m only taking
+the first one.</p>
+<pre class="r"><code>veg_cover_files &lt;- dir(pattern = &quot;VegCover.*\\.txt$&quot;, recursive = TRUE)
+names(veg_cover_files) &lt;- str_replace(veg_cover_files, &quot;^.*(\\d{2})\\.txt$&quot;, &quot;\\1&quot;)
+veg_cover_l &lt;- lapply(veg_cover_files, read_csv)
+map(veg_cover_l, names) %&gt;% unique</code></pre>
+<pre><code>## [[1]]
+##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;   
+##  [5] &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;      
+##  [9] &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;     &quot;Flag&quot;</code></pre>
+<pre class="r"><code>veg_cover &lt;- bind_rows(veg_cover_l, .id = &quot;year&quot;) %&gt;%
+  select(
+    year,
+    plot = Plot_ID,
+    cl_con = CoverClassCON,
+    cl_hw = CoverClassHW,
+    cl_shrub = CoverClassShrub,
+    cl_herb = CoverClassHerb,
+    dom_con = Dom_sp_CON,
+    dom_hw = Dom_sp_HW,
+    dom_shrub = Dom_sp_Shrub,
+    dom_herb = Dom_sp_Herb
+  ) %&gt;%
+  filter(plot != &quot;Spare1&quot;) %&gt;%
+    mutate(treatment = str_extract(plot, treatments), .after = plot) %&gt;%
+  mutate(
+    dom_shrub = str_replace(dom_shrub, &quot;BENE2/GASH.*|BENE2/RUSP&quot;, &quot;BENE2&quot;),
+    dom_herb = str_replace(dom_herb, &quot;(\\w+)/.*&quot;, &quot;\\1&quot;)
+  )</code></pre>
+<p>I convert cover classes to percent cover using the following provided
+information:</p>
+<table>
+<thead>
+<tr class="header">
+<th>CoverCode</th>
+<th align="right">Range_pct</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td align="right">No Cover</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td align="right">0&gt; Cover &lt;5</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td align="right">6 - 25</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td align="right">26 - 50</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td align="right">51 - 75</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td align="right">76 - 100</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>veg_cover &lt;- mutate(veg_cover, 
+  across(starts_with(&quot;cl&quot;), 
+    ~ case_when(
+      .x == 0 ~ 0,
+      .x == 1 ~ 2.5,
+      .x == 2 ~ 15,
+      .x == 3 ~ 37.5,
+      .x == 4 ~ 62.5,
+      .x == 5 ~ 87.5
+    )
+  )
+)</code></pre>
 </div>
 </div>
 </div>

@@ -161,7 +161,7 @@ var_fig(dbhsd_mean)
 
 ```
 
-# Shannon-Weaver index
+# Shannon-Weaver index (overstory)
 
 This index calculates tree species diversity based on the number of stems.
 
@@ -169,7 +169,7 @@ This index calculates tree species diversity based on the number of stems.
 
 sh_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
-  summarize(val = calc_sh(x, y))
+  summarize(val = calc_sh(spp))
 
 sh_mean <- var_mean(sh_plot)
   
@@ -177,6 +177,53 @@ var_table(sh_mean, caption = "Average Shannon-Weaver index (stem based)")
 
 var_fig(sh_mean)
 
+```
+
+
+# Understory species
+
+What I realized is that I can't calculate Shannon-weaver index from a species list, the best I can do is come up with an average number of species.
+
+```{r}
+
+sh_veg_plot <- veg_species %>%
+  group_by(treatment, year, plot) %>%
+  summarize(val = n())
+
+sh_veg_mean <- var_mean(sh_veg_plot)
+  
+var_table(sh_veg_mean, caption = "Average understory species counts")
+
+var_fig(sh_veg_mean)
+
+```
+
+# Understory cover
+
+```{r}
+
+doj <- position_dodge(width = 0.3)
+veg_cover %>%
+  group_by(treatment, year) %>%
+  summarise(
+    herb_mean = mean(cl_herb),
+    herb_se = sd(cl_herb) / sqrt(n()),
+    shrub_mean = mean(cl_shrub),
+    shrub_se = sd(cl_shrub) / sqrt(n())
+  ) %>%
+  mutate(year = as.factor(year)) %>%
+  pivot_longer(
+    -c(treatment, year),
+    names_to = c("veg_type", ".value"),
+    names_sep = "_"
+  ) %>%
+  ggplot(aes(year, mean, color = treatment, group = treatment)) +
+    geom_point(position = doj) +
+    facet_wrap(~ veg_type) +
+    geom_line(position = doj) +
+    geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.5, position = doj) +
+    labs(caption = "average cover classes of shrub and herb, errorbars are 1 std. error (0-5 = 0-100%)")
+    
 ```
 
 # Fun visual of SCI

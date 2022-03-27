@@ -346,10 +346,11 @@ veg_species <- filter(
   !spp %in% c("PSMEM", "SESE3", "ALRU2", "PISI", "TSHE", "UMCA")
 )
 
-unique(veg_species$spp)
 ```
 
 ### Veg cover
+
+For sites that list more than one dominant species, I'm only taking the first one.
 
 ```{r}
 veg_cover_files <- dir(pattern = "VegCover.*\\.txt$", recursive = TRUE)
@@ -378,3 +379,28 @@ veg_cover <- bind_rows(veg_cover_l, .id = "year") %>%
   )
 ```
 
+I convert cover classes to percent cover using the following provided information:
+
+CoverCode	 Range_pct
+---------  ---------
+        0	 No Cover 
+        1	 0> Cover <5
+        2	 6 - 25
+        3	 26 - 50
+        4	 51 - 75
+        5  76 - 100
+
+```{r}
+veg_cover <- mutate(veg_cover, 
+  across(starts_with("cl"), 
+    ~ case_when(
+      .x == 0 ~ 0,
+      .x == 1 ~ 2.5,
+      .x == 2 ~ 15,
+      .x == 3 ~ 37.5,
+      .x == 4 ~ 62.5,
+      .x == 5 ~ 87.5
+    )
+  )
+)
+```

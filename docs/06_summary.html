@@ -13,7 +13,7 @@
 
 <title>Summary statistics</title>
 
-<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -63,6 +63,7 @@ if (window.hljs) {
 
 
 
+
 <style type = "text/css">
 .main-container {
   max-width: 940px;
@@ -83,6 +84,9 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
 }
 pre code {
   padding: 0;
@@ -238,7 +242,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -279,7 +283,7 @@ $(document).ready(function () {
 <div id="header">
 
 <div class="btn-group pull-right float-right">
-<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
 <ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
@@ -302,7 +306,8 @@ $(document).ready(function () {
 <li><a href="#heights">Heights</a></li>
 <li><a href="#basal-area">Basal Area</a>
 <ul>
-<li><a href="#compare-to-teraoka-2016">Compare to Teraoka (2016)</a></li>
+<li><a href="#compare-to-teraoka-2016">Compare to Teraoka
+(2016)</a></li>
 </ul></li>
 <li><a href="#sdi">SDI</a></li>
 <li><a href="#density-of-dominant">Density of dominant</a></li>
@@ -317,7 +322,8 @@ $(document).ready(function () {
 <li><a href="#species-dominance">Species dominance</a>
 <ul>
 <li><a href="#dominance-figure">Dominance figure</a></li>
-<li><a href="#species-dominance-significance-test">Species dominance significance test</a></li>
+<li><a href="#species-dominance-significance-test">Species dominance
+significance test</a></li>
 </ul></li>
 </ul>
 </div>
@@ -326,13 +332,24 @@ $(document).ready(function () {
 library(dplyr)</code></pre>
 <div id="summary-measures" class="section level1">
 <h1>Summary measures</h1>
-<p>I’m making the assumption now that all trees recorded as cut were alive in the initial conditions. For all of the following I use trees with status 1, 2, 3, 15, 16. Fifteen and 16 are cut trees, but in the long data format, they only occur on entries where year = “init” so they do not affect other periods. Status 1, 2 and 3 represent second-growth, advanced regen, and old-growth, respectively.</p>
-<p>Generally, the <code>summarise()</code> command in each section defines the output of a given measure. The <code>mutate()</code> command is also used for calculating new columns. Calculations are done by grouping levels (generally by treatment, by year).</p>
+<p>I’m making the assumption now that all trees recorded as cut were
+alive in the initial conditions. For all of the following I use trees
+with status 1, 2, 3, 15, 16. Fifteen and 16 are cut trees, but in the
+long data format, they only occur on entries where year = “init” so they
+do not affect other periods. Status 1, 2 and 3 represent second-growth,
+advanced regen, and old-growth, respectively.</p>
+<p>Generally, the <code>summarise()</code> command in each section
+defines the output of a given measure. The <code>mutate()</code> command
+is also used for calculating new columns. Calculations are done by
+grouping levels (generally by treatment, by year).</p>
 <pre class="r"><code># I&#39;ll store all my metrics in this list
 measures &lt;- list()</code></pre>
 <div id="density" class="section level2">
 <h2>Density</h2>
-<p>I’ll look at a quick summary of quartiles of the number of tree observations by plot for each year. Initial plots had between 83 and 164 observations and subsequent years are roughly parallel. Density is being calculated for all live trees, including those broken above dbh.</p>
+<p>I’ll look at a quick summary of quartiles of the number of tree
+observations by plot for each year. Initial plots had between 83 and 164
+observations and subsequent years are roughly parallel. Density is being
+calculated for all live trees, including those broken above dbh.</p>
 <pre class="r"><code>d_l %&gt;%
   filter(status %in% c(1, 2, 3, 15, 16, 31)) %&gt;%
   group_by(year, plot) %&gt;%
@@ -361,7 +378,13 @@ measures &lt;- list()</code></pre>
 </div>
 <div id="mortality" class="section level2">
 <h2>Mortality</h2>
-<p>New mortality here is ascribed to observations of the current period which were alive in the previous period and are not alive in the current period and reported in tph. Currently, this is undefined for the first period (“init”) and is zero for “08” (because “init” and “08” are really only one observation). The values for 2013 and 2018 record the new mortality in the previous period, i.e.: 08-13 and 13-18, respectively.</p>
+<p>New mortality here is ascribed to observations of the current period
+which were alive in the previous period and are not alive in the current
+period and reported in tph. Currently, this is undefined for the first
+period (“init”) and is zero for “08” (because “init” and “08” are really
+only one observation). The values for 2013 and 2018 record the new
+mortality in the previous period, i.e.: 08-13 and 13-18,
+respectively.</p>
 <pre class="r"><code>measures$mort &lt;- function(data, species) {
   if(is.null(species)) species &lt;- unique(data$spp)
   data %&gt;%
@@ -379,7 +402,9 @@ measures &lt;- list()</code></pre>
 </div>
 <div id="qmd" class="section level2">
 <h2>Qmd</h2>
-<p>DBH is actually QMD here. It will be calculated based on all live trees, including those broken above dbh and with broken and dead tops (most of these are SESE and assumed to be alive).</p>
+<p>DBH is actually QMD here. It will be calculated based on all live
+trees, including those broken above dbh and with broken and dead tops
+(most of these are SESE and assumed to be alive).</p>
 <pre class="r"><code>measures$dbh &lt;- function(data, species) {
   if(is.null(species)) species &lt;- unique(data$spp)
   data %&gt;%
@@ -409,9 +434,16 @@ measures$dom_dbh &lt;- function(data, species) {
 </div>
 <div id="heights" class="section level2">
 <h2>Heights</h2>
-<p>Heights will be determined using only trees with unbroken, live crowns.</p>
-<p>Because there are about 14 observations in 2008 and 2013 that do not have height measurements, I am omitting these from analysis for now. Also, I am only looking at trees that have height measurements in 2018. This means that of the 3,538 total height observations, I am only looking at 1,929 over the the three measurement periods.</p>
-<p>For dominant heights, I am using dominant dbh trees <em>not including broken and dead tops</em>. Not all of these have heights. For this reason, there are fewer than 4 trees per plot.</p>
+<p>Heights will be determined using only trees with unbroken, live
+crowns.</p>
+<p>Because there are about 14 observations in 2008 and 2013 that do not
+have height measurements, I am omitting these from analysis for now.
+Also, I am only looking at trees that have height measurements in 2018.
+This means that of the 3,538 total height observations, I am only
+looking at 1,929 over the the three measurement periods.</p>
+<p>For dominant heights, I am using dominant dbh trees <em>not including
+broken and dead tops</em>. Not all of these have heights. For this
+reason, there are fewer than 4 trees per plot.</p>
 <pre class="r"><code># get ids of trees that have heights in 2018
 ht_id_2018 &lt;- filter(d_l, year == &quot;18&quot;, !is.na(ht_p)) %&gt;% pull(tree_id)
 
@@ -458,7 +490,8 @@ measures$dom_ht &lt;- function(data, species) {
 </div>
 <div id="basal-area" class="section level2">
 <h2>Basal Area</h2>
-<p>Basal area, similar to density will be calculated for all live trees.</p>
+<p>Basal area, similar to density will be calculated for all live
+trees.</p>
 <pre class="r"><code>measures$ba &lt;- function(data, species) {
   if(is.null(species)) species &lt;- unique(data$spp)
   data %&gt;%
@@ -479,14 +512,16 @@ measures$dom_ht &lt;- function(data, species) {
 }</code></pre>
 <div id="compare-to-teraoka-2016" class="section level3">
 <h3>Compare to Teraoka (2016)</h3>
-<p>I want to create another function for calculating basal area. This should return basal area in m<sup>2</sup>/ha:</p>
+<p>I want to create another function for calculating basal area. This
+should return basal area in m<sup>2</sup>/ha:</p>
 <ol style="list-style-type: decimal">
 <li>by species</li>
 <li>for all species</li>
 <li>for a subset of species</li>
 <li>it should include all live + harvested trees</li>
 </ol>
-<p>It turns out that this function is almost identical to my previous one, except that it allows to calculate by species.</p>
+<p>It turns out that this function is almost identical to my previous
+one, except that it allows to calculate by species.</p>
 <pre class="r"><code>library(tidyverse)
 
 get_ba &lt;- function(data, by_species = FALSE, species_subset = NULL) {
@@ -527,8 +562,11 @@ get_ba(d_l, by_species = TRUE) %&gt;%
     labs(x = &quot;Treatment&quot;, fill = &quot;Species&quot;, y = &quot;BA (m^2 / ha)&quot;) +
     scale_fill_manual(values = teraoka_colors)</code></pre>
 <p><img src="06_summary_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
-<p>It looks pretty similar, but there are discrepancies. Next I’ll print out the percent changes in basal area, again similar to Teraoka et al. (2016), but for both 5-year growth periods.</p>
-<p>I define a percent change function which takes output from one of my metric functions (expecting the variable “mean_[variable_name]”)</p>
+<p>It looks pretty similar, but there are discrepancies. Next I’ll print
+out the percent changes in basal area, again similar to Teraoka et
+al. (2016), but for both 5-year growth periods.</p>
+<p>I define a percent change function which takes output from one of my
+metric functions (expecting the variable “mean_[variable_name]”)</p>
 <pre class="r"><code>pct_change &lt;- function(data, var) {
   mutate(data, pct_change = ({{var}} - lag({{var}})) / lag({{var}})) %&gt;%
   select(-starts_with(c(&quot;n&quot;, &quot;sd&quot;)))
@@ -564,7 +602,9 @@ get_ba(d_l) %&gt;%
 </div>
 <div id="sdi" class="section level2">
 <h2>SDI</h2>
-<p>For SDI, I use the same trees that were used for basal area and density: all standing trees (broken or not) that are taller than breast height.</p>
+<p>For SDI, I use the same trees that were used for basal area and
+density: all standing trees (broken or not) that are taller than breast
+height.</p>
 <pre class="r"><code># do any target trees have missing dbh?
 any(nrow(filter(d_l, status %in% c(1, 2, 3, 15, 16), is.na(dbh))))</code></pre>
 <pre><code>## [1] FALSE</code></pre>
@@ -1841,11 +1881,27 @@ Basal area (m<sup>2</sup>/ha)
 </div>
 <div id="species-dominance" class="section level1">
 <h1>Species dominance</h1>
-<p>I’m interested in creating a measure of species dominance. I will select the 4 largest trees per plot and then determine what proportion of these are from each species. I will only consider and report on RW and DF. I could augment this by showing the average size of the dominant tree by species.</p>
-<p>For this two function, the four highest ranking trees (height, growth, or diameter) were selected from each plot these were aggregated at the treatment level to determine the proportion of dominant trees in each species.</p>
-<p>If I want to do hypothesis testing, I need to have two datasets, one of the raw data (counts of trees per plot) and one of the average proportion. I may want to do this with all of my metrics. The final aggregation may be able to be done with a single function, depending on how data were aggregated for each metric. Qmd is the only metric where the mean is not straight forward, as it is the square root of the mean of squared diameters.</p>
-<p>For this to make sense for heights, we will need to predict heights for missing trees because the largest trees are missing heights in many cases.</p>
-<p>Although I refer to proportions here, this is of 100 TPH, so multiplying by 100 gives TPH.</p>
+<p>I’m interested in creating a measure of species dominance. I will
+select the 4 largest trees per plot and then determine what proportion
+of these are from each species. I will only consider and report on RW
+and DF. I could augment this by showing the average size of the dominant
+tree by species.</p>
+<p>For this two function, the four highest ranking trees (height,
+growth, or diameter) were selected from each plot these were aggregated
+at the treatment level to determine the proportion of dominant trees in
+each species.</p>
+<p>If I want to do hypothesis testing, I need to have two datasets, one
+of the raw data (counts of trees per plot) and one of the average
+proportion. I may want to do this with all of my metrics. The final
+aggregation may be able to be done with a single function, depending on
+how data were aggregated for each metric. Qmd is the only metric where
+the mean is not straight forward, as it is the square root of the mean
+of squared diameters.</p>
+<p>For this to make sense for heights, we will need to predict heights
+for missing trees because the largest trees are missing heights in many
+cases.</p>
+<p>Although I refer to proportions here, this is of 100 TPH, so
+multiplying by 100 gives TPH.</p>
 <pre class="r"><code>spp_dom_raw &lt;- function(data = d_l, metrics = NULL, years = NULL) {
   if(is.null(years)) years &lt;- c(&quot;08&quot;, &quot;13&quot;, &quot;18&quot;)
   if(is.null(metrics)) metrics &lt;- c(&quot;dbh&quot;, &quot;ht_p&quot;, &quot;ba_inc2&quot;)
@@ -1958,7 +2014,9 @@ make_dominance_fig(years = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &
   units = &quot;cm&quot;
 )</code></pre>
 <pre><code>## Warning: Removed 20 rows containing missing values (position_stack).</code></pre>
-<p>Now I need to display the average values for these dominant species, perhaps along with their standard deviations. I think I’ll just do this for each treatment in the most recent measurement period.</p>
+<p>Now I need to display the average values for these dominant species,
+perhaps along with their standard deviations. I think I’ll just do this
+for each treatment in the most recent measurement period.</p>
 <pre class="r"><code>spp_dom_raw() %&gt;%
   group_by(year, treatment, measure) %&gt;%
   summarise(average = mean(value)) %&gt;%
@@ -2188,8 +2246,23 @@ ht_p
 </div>
 <div id="species-dominance-significance-test" class="section level2">
 <h2>Species dominance significance test</h2>
-<p>A Wilcoxon rank-sum test could be used to test if one treatment results in changes that are significantly greater than another treatment. Unfortunately, it seems like none of the treatments that show an average increase in the number of dominant SESE are significant at the alpha = 0.05 level, using a 1-sided test. One-sided permutation tests shows even larger p-values, and these I would expect to be more accurate given the number of zeros in the data.</p>
-<p>To start, I will only test significance for dbh ranked dominance, to see if treatment effect is significant there. first I get a list of differences from 2008 to 2018 for each plot in a treatment, this represents the treatments effect on redwood dominance. Then I compare the treatments to see is ones with a larger average effect, are significantly larger than those with a smaller average effect: 1-sided non-parametric tests. Wilcox rank-sum has lower p-values, than the permutation test. The data has a lot of zeros, and very few data points, none of the one-sided differences are significant. It is too soon to tell if redwood dominance has been affected.</p>
+<p>A Wilcoxon rank-sum test could be used to test if one treatment
+results in changes that are significantly greater than another
+treatment. Unfortunately, it seems like none of the treatments that show
+an average increase in the number of dominant SESE are significant at
+the alpha = 0.05 level, using a 1-sided test. One-sided permutation
+tests shows even larger p-values, and these I would expect to be more
+accurate given the number of zeros in the data.</p>
+<p>To start, I will only test significance for dbh ranked dominance, to
+see if treatment effect is significant there. first I get a list of
+differences from 2008 to 2018 for each plot in a treatment, this
+represents the treatments effect on redwood dominance. Then I compare
+the treatments to see is ones with a larger average effect, are
+significantly larger than those with a smaller average effect: 1-sided
+non-parametric tests. Wilcox rank-sum has lower p-values, than the
+permutation test. The data has a lot of zeros, and very few data points,
+none of the one-sided differences are significant. It is too soon to
+tell if redwood dominance has been affected.</p>
 <pre class="r"><code># This is the permutation calculation
 
 new_diff &lt;- function(d_null) {

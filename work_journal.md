@@ -1,3 +1,12 @@
+## 03/27/2022
+
+* Finished importing and cleaning understory cover data
+* Fixed Shannon-Weaver index for trees: its back to being non-significant
+* I realized that I can't calculate Sh-W for understory: would need counts or cover by species and this was not collected.
+* Made basic graphs depicting:
+  - change in number of understory species
+  - change in percent cover of herbs and shrubs
+
 ## 03/25/2022
 
 * Cleaned up species list data

@@ -13,7 +13,7 @@
 
 <title>Height increment model</title>
 
-<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -63,6 +63,7 @@ if (window.hljs) {
 
 
 
+
 <style type = "text/css">
 .main-container {
   max-width: 940px;
@@ -83,6 +84,9 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
 }
 pre code {
   padding: 0;
@@ -238,7 +242,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -279,7 +283,7 @@ $(document).ready(function () {
 <div id="header">
 
 <div class="btn-group pull-right float-right">
-<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
 <ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
@@ -295,47 +299,66 @@ $(document).ready(function () {
 <div id="TOC">
 <ul>
 <li><a href="#introduction">Introduction</a></li>
-<li><a href="#defining-trees-of-interest">Defining trees of interest</a></li>
-<li><a href="#assessment-of-linear-relationship-between-dbh-and-height-increment">Assessment of linear relationship between dbh and height increment</a></li>
+<li><a href="#defining-trees-of-interest">Defining trees of
+interest</a></li>
+<li><a
+href="#assessment-of-linear-relationship-between-dbh-and-height-increment">Assessment
+of linear relationship between dbh and height increment</a></li>
 <li><a href="#global-model">Global Model</a></li>
-<li><a href="#optimal-random-effects-specification">Optimal random effects specification</a></li>
-<li><a href="#choosing-a-sub-model-for-fixed-effects">Choosing a sub-model for fixed effects</a></li>
-<li><a href="#best-model-scrapping-above">Best model (scrapping above)</a>
+<li><a href="#optimal-random-effects-specification">Optimal random
+effects specification</a></li>
+<li><a href="#choosing-a-sub-model-for-fixed-effects">Choosing a
+sub-model for fixed effects</a></li>
+<li><a href="#best-model-scrapping-above">Best model (scrapping
+above)</a>
 <ul>
-<li><a href="#best-model-estimated-means">Best model estimated means</a></li>
+<li><a href="#best-model-estimated-means">Best model estimated
+means</a></li>
 <li><a href="#best-model-validation">Best model validation</a>
 <ul>
 <li><a href="#residual-vs-fitted">Residual vs fitted</a></li>
-<li><a href="#homogeneity-of-random-group-residuals">Homogeneity of random group residuals</a></li>
+<li><a href="#homogeneity-of-random-group-residuals">Homogeneity of
+random group residuals</a></li>
 <li><a href="#normality-of-residuals">Normality of residuals</a></li>
-<li><a href="#leverage-and-cooks-distance">Leverage and Cooks distance</a></li>
-<li><a href="#random-effects-distribution">Random effects distribution</a></li>
+<li><a href="#leverage-and-cooks-distance">Leverage and Cooks
+distance</a></li>
+<li><a href="#random-effects-distribution">Random effects
+distribution</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#update-data-with-predicted-heights">Update data with predicted heights</a></li>
+<li><a href="#update-data-with-predicted-heights">Update data with
+predicted heights</a></li>
 </ul>
 </div>
 
-<pre class="r"><code>library(lme4)</code></pre>
-<pre><code>## Loading required package: Matrix</code></pre>
-<pre><code>## 
-## Attaching package: &#39;Matrix&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
-## 
-##     expand, pack, unpack</code></pre>
-<pre class="r"><code>library(emmeans)
+<pre class="r"><code>library(lme4)
+library(emmeans)
 library(MuMIn)
 palette(&quot;Tableau 10&quot;)
 library(broom.mixed)</code></pre>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
-<p>I need to predict missing heights in 2018 in order to complete other steps of the analysis and provide better summary data. To accomplish this, I will model height increment as a function of the continuous predictor, dbh, as well as a combination of nested groupings: year, treatment, plot, and species. Additionally, height increment response is of interest in it’s own right. While height growth in trees is less responsive to conditions then diameter, it would be important to see whether there is a difference detected between treatments.</p>
+<p>I need to predict missing heights in 2018 in order to complete other
+steps of the analysis and provide better summary data. To accomplish
+this, I will model height increment as a function of the continuous
+predictor, dbh, as well as a combination of nested groupings: year,
+treatment, plot, and species. Additionally, height increment response is
+of interest in it’s own right. While height growth in trees is less
+responsive to conditions then diameter, it would be important to see
+whether there is a difference detected between treatments.</p>
 </div>
 <div id="defining-trees-of-interest" class="section level1">
 <h1>Defining trees of interest</h1>
-<p>First, I’ll define the dataset of interest as only years 2013 and 2018 observations of healthy, non-leaning, unbroken SESE or PSME trees. I’ll also define three other alternative treatment groupings for consideration: thinned/unthinned, H/L/C (thinning type), and 40/80/C (thinning intensity).</p>
-<p>I will predict height increment based on the beginning of period dbh. Predicting based on the end of period dbh resulted in a lower AIC, but I am defaulting to typical practice.</p>
-<p>I’m also using height increment from both 2008 - 2013 and 2013 to 2018.</p>
+<p>First, I’ll define the dataset of interest as only years 2013 and
+2018 observations of healthy, non-leaning, unbroken SESE or PSME trees.
+I’ll also define three other alternative treatment groupings for
+consideration: thinned/unthinned, H/L/C (thinning type), and 40/80/C
+(thinning intensity).</p>
+<p>I will predict height increment based on the beginning of period dbh.
+Predicting based on the end of period dbh resulted in a lower AIC, but I
+am defaulting to typical practice.</p>
+<p>I’m also using height increment from both 2008 - 2013 and 2013 to
+2018.</p>
 <pre class="r"><code># test_d2 &lt;- d_l %&gt;%
 #   group_by(tree_id) %&gt;%
 #   filter(
@@ -389,9 +412,16 @@ test_d &lt;- d_l %&gt;%
 #   ) %&gt;%
 #   select(starts_with(&quot;treatment&quot;), spp, year, tree_id, dbh, ht_inc1, plot, x, y)</code></pre>
 </div>
-<div id="assessment-of-linear-relationship-between-dbh-and-height-increment" class="section level1">
-<h1>Assessment of linear relationship between dbh and height increment</h1>
-<p>We are pretty sure that height growth is correlated with diameter, in that larger trees are capable of more height growth than smaller ones. We also think that this relationship is probably not linear. I will take a look at log and square root transformations of dbh for linear prediction of height growth.</p>
+<div
+id="assessment-of-linear-relationship-between-dbh-and-height-increment"
+class="section level1">
+<h1>Assessment of linear relationship between dbh and height
+increment</h1>
+<p>We are pretty sure that height growth is correlated with diameter, in
+that larger trees are capable of more height growth than smaller ones.
+We also think that this relationship is probably not linear. I will take
+a look at log and square root transformations of dbh for linear
+prediction of height growth.</p>
 <pre class="r"><code>m0 &lt;- lm(ht_inc1 ~ dbh * treatment * spp, data = test_d)
 m1 &lt;- update(m0, ~ sqrt(dbh) * treatment * spp)
 m2 &lt;- update(m0, ~ log(dbh) * treatment * spp)
@@ -411,38 +441,54 @@ test_d %&gt;%
     )</code></pre>
 <p><img src="04_pred_ht_files/figure-html/unnamed-chunk-3-1.png" width="960" /></p>
 <pre class="r"><code>rm(m0, m1, m2)</code></pre>
-<p>It doesn’t look like it matters a whole lot with this noisy data. I’m going to use log transformation.</p>
+<p>It doesn’t look like it matters a whole lot with this noisy data. I’m
+going to use log transformation.</p>
 </div>
 <div id="global-model" class="section level1">
 <h1>Global Model</h1>
-<p>The next step is going to specify our likely global model. In general, we want to answer questions about how a given treatment affected growth for each species. There may have also been different responses between years. This will be a mixed model and I want to control for the random effect of plot and tree_id. The global model will include <code>log(dbh)</code> as well as the categories: <code>treatment</code>, <code>species</code>, <code>year</code>, and all their interactions. Resulting in the fixed effects:</p>
+<p>The next step is going to specify our likely global model. In
+general, we want to answer questions about how a given treatment
+affected growth for each species. There may have also been different
+responses between years. This will be a mixed model and I want to
+control for the random effect of plot and tree_id. The global model will
+include <code>log(dbh)</code> as well as the categories:
+<code>treatment</code>, <code>species</code>, <code>year</code>, and all
+their interactions. Resulting in the fixed effects:</p>
 <p><code>ht_inc1 ~ log(dbh) * treatment * spp * year</code></p>
 </div>
 <div id="optimal-random-effects-specification" class="section level1">
 <h1>Optimal random effects specification</h1>
-<p>We will determine the optimal random effects structure using the global fixed effects structure. I will select the best of the following random effects structures:</p>
+<p>We will determine the optimal random effects structure using the
+global fixed effects structure. I will select the best of the following
+random effects structures:</p>
 <pre><code>(1 | plot)
 (1 | plot) + (1 | tree_id)
 (log(dbh) | plot) + (1 | tree_id)</code></pre>
-<p>I’ll do this using AIC and Restricted Maximum Likelihood Estimation (REML), which I believe is the preferred method when comparing random effects structure, whereas ML is necessary when comparing different fixed effects.</p>
+<p>I’ll do this using AIC and Restricted Maximum Likelihood Estimation
+(REML), which I believe is the preferred method when comparing random
+effects structure, whereas ML is necessary when comparing different
+fixed effects.</p>
 <pre class="r"><code>f0 &lt;- formula(ht_inc1 ~ log(dbh) * treatment * spp * year)
 m0 &lt;- nlme::gls(f0, data = test_d, method = &quot;REML&quot;)
 m1 &lt;- lmer(update(f0, ~ . + (1 | plot)), REML = TRUE, data = test_d)
 m2 &lt;- update(m1, ~ . + (1 | tree_id))</code></pre>
-<pre><code>## boundary (singular) fit: see ?isSingular</code></pre>
+<pre><code>## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
 <pre class="r"><code>m3 &lt;- update(m2, ~ . + (0 + log(dbh) | plot))</code></pre>
-<pre><code>## boundary (singular) fit: see ?isSingular</code></pre>
+<pre><code>## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
 <pre class="r"><code>AIC(m0, m1, m2, m3)</code></pre>
 <pre><code>##    df       AIC
 ## m0 41 1009.0492
 ## m1 42  980.7354
 ## m2 43  982.7354
 ## m3 44  984.7354</code></pre>
-<p>The optimal random effects structure, includes the random intercept only for <code>plot</code>. I will assume this random effects structure in all further height models.</p>
+<p>The optimal random effects structure, includes the random intercept
+only for <code>plot</code>. I will assume this random effects structure
+in all further height models.</p>
 </div>
 <div id="choosing-a-sub-model-for-fixed-effects" class="section level1">
 <h1>Choosing a sub-model for fixed effects</h1>
-<p>The next step is to define a list of potential sub-models for fixed effects to determine the optimal structure.</p>
+<p>The next step is to define a list of potential sub-models for fixed
+effects to determine the optimal structure.</p>
 <pre class="r"><code>fl &lt;- list(
   ht_inc1 ~ log(dbh) + (1 | plot),
   ht_inc1 ~ log(dbh) + spp + (1 | plot),
@@ -484,7 +530,8 @@ m2 &lt;- update(m1, ~ . + (1 | tree_id))</code></pre>
   ht_inc1 ~ log(dbh) * treatment4 * year + spp + (1 | plot),
   ht_inc1 ~ log(dbh) + treatment4 + year + spp + (1 | plot)
 )</code></pre>
-<p>I use AIC to assess the fit of each of the models with coefficients estimated with ML in order to compare among various fixed effects.</p>
+<p>I use AIC to assess the fit of each of the models with coefficients
+estimated with ML in order to compare among various fixed effects.</p>
 <pre class="r"><code>get_aic(fl, data = test_d) %&gt;%
   kableExtra::kbl(caption = &quot;AICS for ht increment models&quot;) %&gt;%
   kableExtra::kable_styling(full_width = FALSE)</code></pre>
@@ -1237,7 +1284,11 @@ summary(lm(ht_inc1 ~ log(dbh) + treatment4 * spp, data = test_d))</code></pre>
 </div>
 <div id="best-model-scrapping-above" class="section level1">
 <h1>Best model (scrapping above)</h1>
-<p>While these models are interesting, there is reason to believe that our height measurements are not precise enough to capture the small height differences between treatments (around 3 feet). For this reason, I will default to a simple additive model that includes spp and treatment.</p>
+<p>While these models are interesting, there is reason to believe that
+our height measurements are not precise enough to capture the small
+height differences between treatments (around 3 feet). For this reason,
+I will default to a simple additive model that includes spp and
+treatment.</p>
 <pre class="r"><code>ht_inc_mod1 &lt;- lmod(fl[[32]])
 
 summary(ht_inc_mod1)</code></pre>
@@ -1271,7 +1322,8 @@ summary(ht_inc_mod1)</code></pre>
 ## trtmnt4nthn -0.582  0.569              
 ## sppSESE3    -0.074  0.013  0.054       
 ## lg(dbh):tr4  0.556 -0.565 -0.973 -0.038</code></pre>
-<p>Here is the summary table of the model used for predicting height increments and thus heights</p>
+<p>Here is the summary table of the model used for predicting height
+increments and thus heights</p>
 <pre class="r"><code>sjPlot::tab_model(ht_inc_mod1,
   dv.labels = &quot;Height increment&quot;,
   show.ci = FALSE,
@@ -1683,14 +1735,17 @@ abline(0,0)</code></pre>
 </div>
 <div id="normality-of-residuals" class="section level3">
 <h3>Normality of residuals</h3>
-<p>Checking for normality of residuals. The tails are perhaps a bit fat, I’m not sure if this requires attention or not.</p>
+<p>Checking for normality of residuals. The tails are perhaps a bit fat,
+I’m not sure if this requires attention or not.</p>
 <pre class="r"><code>qqnorm(resid(ht_inc_mod1, type = &quot;pearson&quot;), pch=16, col = 1,  main = &quot;QQplot for pearosn residuals&quot;)
 qqline(resid(ht_inc_mod1, type = &quot;pearson&quot;))</code></pre>
 <p><img src="04_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="960" /></p>
 </div>
 <div id="leverage-and-cooks-distance" class="section level3">
 <h3>Leverage and Cooks distance</h3>
-<p>Cooks outliers, defined as &gt; 3 x mean(cooks distance) are colored in red. None of these “outliers” seem like they would disproportionately affect regression.</p>
+<p>Cooks outliers, defined as &gt; 3 x mean(cooks distance) are colored
+in red. None of these “outliers” seem like they would disproportionately
+affect regression.</p>
 <pre class="r"><code># Plot leverage against standardised residuals
 plot(
   resid ~ lev,
@@ -1707,7 +1762,10 @@ points(resid ~ lev, data = filter(ht_inc_d, cooks &gt; 3 * mean(cooks)), pch = 1
 </div>
 <div id="random-effects-distribution" class="section level3">
 <h3>Random effects distribution</h3>
-<p>The distribution of random effects (plots) should be roughly normal. Here our distribution is skewed, <a href="" title="https://stats.stackexchange.com/a/366500">from what I’ve read</a>, this should not be a problem for estimates or their std’s.</p>
+<p>The distribution of random effects (plots) should be roughly normal.
+Here our distribution is skewed, <a href=""
+title="https://stats.stackexchange.com/a/366500">from what I’ve
+read</a>, this should not be a problem for estimates or their std’s.</p>
 <pre class="r"><code>hist(as.vector(unlist(ranef(ht_inc_mod1)$plot)), col = 1)</code></pre>
 <p><img src="04_pred_ht_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
 </div>
@@ -1715,8 +1773,15 @@ points(resid ~ lev, data = filter(ht_inc_d, cooks &gt; 3 * mean(cooks)), pch = 1
 </div>
 <div id="update-data-with-predicted-heights" class="section level1">
 <h1>Update data with predicted heights</h1>
-<p>I will start by predicting heights for Douglas-fir and Redwood only. I can only predict heights for trees in year 13 and 18, and only if they have a height in the previous period. I can predict heights for trees whose crown status did not change from one measurement to the next. I will be assuming that a broken tree resumes height growth at a “normal” rate.</p>
-<p>I’ll predict heights for all trees and then filter this to include only observations of live trees that didn’t break, or get a dead top (or start leaning) from one observation to the next.</p>
+<p>I will start by predicting heights for Douglas-fir and Redwood only.
+I can only predict heights for trees in year 13 and 18, and only if they
+have a height in the previous period. I can predict heights for trees
+whose crown status did not change from one measurement to the next. I
+will be assuming that a broken tree resumes height growth at a “normal”
+rate.</p>
+<p>I’ll predict heights for all trees and then filter this to include
+only observations of live trees that didn’t break, or get a dead top (or
+start leaning) from one observation to the next.</p>
 <pre class="r"><code>new_heights &lt;- d_l %&gt;%
   mutate(treatment4 = if_else(str_detect(treatment, &quot;C&quot;), &quot;unthinned&quot;, &quot;thinned&quot;)) %&gt;%
   filter(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;)) %&gt;%
@@ -1732,7 +1797,9 @@ points(resid ~ lev, data = filter(ht_inc_d, cooks &gt; 3 * mean(cooks)), pch = 1
   ) %&gt;%
   select(tree_id, year, ht_p) %&gt;%
   ungroup()</code></pre>
-<p>Now I’ll update the data with height predictions for selected trees and fill in available heights for other species that were not predicted.</p>
+<p>Now I’ll update the data with height predictions for selected trees
+and fill in available heights for other species that were not
+predicted.</p>
 <pre class="r"><code>if (&quot;ht_p&quot; %in% names(d_l)) d_l[&quot;ht_p&quot;] &lt;- NULL
 
 d_l &lt;- left_join(d_l, new_heights, by = c(&quot;tree_id&quot;, &quot;year&quot;)) %&gt;%

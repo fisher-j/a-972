@@ -13,7 +13,7 @@
 
 <title>Define new data</title>
 
-<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -61,6 +61,7 @@ if (window.hljs) {
 
 
 
+
 <style type = "text/css">
 .main-container {
   max-width: 940px;
@@ -81,6 +82,9 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
 }
 pre code {
   padding: 0;
@@ -236,7 +240,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -277,7 +281,7 @@ $(document).ready(function () {
 <div id="header">
 
 <div class="btn-group pull-right float-right">
-<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<button type="button" class="btn btn-default btn-xs btn-secondary btn-sm dropdown-toggle" data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
 <ul class="dropdown-menu dropdown-menu-right" style="min-width: 50px;">
 <li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
 <li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
@@ -293,26 +297,33 @@ $(document).ready(function () {
 <div id="TOC">
 <ul>
 <li><a href="#defining-livedead-trees">Defining live/dead trees</a></li>
-<li><a href="#define-diameter-basal-area-and-height-increment">Define diameter, basal area, and height increment</a></li>
-<li><a href="#define-utm-coordinates-for-each-tree">Define UTM coordinates for each tree</a></li>
+<li><a href="#define-diameter-basal-area-and-height-increment">Define
+diameter, basal area, and height increment</a></li>
+<li><a href="#define-utm-coordinates-for-each-tree">Define UTM
+coordinates for each tree</a></li>
 <li><a href="#diversity-measures">Diversity measures</a>
 <ul>
-<li><a href="#structural-diversity-sci">Structural diversity SCI</a></li>
-<li><a href="#calculate-the-shannon-weaver-index">Calculate the Shannon-Weaver Index</a></li>
+<li><a href="#structural-diversity-sci">Structural diversity
+SCI</a></li>
+<li><a href="#calculate-the-shannon-weaver-index">Calculate the
+Shannon-Weaver Index</a></li>
 <li><a href="#mean-directional-index">Mean directional index</a></li>
 <li><a href="#dbh-differentiation-td">DBH differentiation (TD)</a></li>
 </ul></li>
 <li><a href="#calculate-plot-sdi">Calculate plot SDI</a></li>
 <li><a href="#standardize-crown-ratio">Standardize crown ratio</a>
 <ul>
-<li><a href="#update-post-harvest-data">Update post-harvest data</a></li>
+<li><a href="#update-post-harvest-data">Update post-harvest
+data</a></li>
 </ul></li>
 </ul>
 </div>
 
 <div id="defining-livedead-trees" class="section level1">
 <h1>Defining live/dead trees</h1>
-<p>Status and condition codes provided do not necessarily define mortality, because a broken tree, depending on species may still be alive or dead. I’ll define dead trees as:</p>
+<p>Status and condition codes provided do not necessarily define
+mortality, because a broken tree, depending on species may still be
+alive or dead. I’ll define dead trees as:</p>
 <ol style="list-style-type: decimal">
 <li>snags or down snags (status -9 to -5, and 5 to 9)</li>
 <li>trees broken below dbh and uprooted trees (status 30, 32)</li>
@@ -336,9 +347,18 @@ $(document).ready(function () {
 nrow(filter(group_by(d_l, tree_id), any(!live &amp; lead(live))))</code></pre>
 <pre><code>## [1] 0</code></pre>
 </div>
-<div id="define-diameter-basal-area-and-height-increment" class="section level1">
+<div id="define-diameter-basal-area-and-height-increment"
+class="section level1">
 <h1>Define diameter, basal area, and height increment</h1>
-<p>Here I will add annual height, diameter and basal area increments to the dataset. Increment will be defined on the observation level, meaning that it must apply to either the first or second measurement. This is significant for modeling, as I will be predicting an increment based on one period’s dbh observation. I’ll add increment data to both the beginning and ending observations to facilitate modeling based on either observation. *_inc1 will be assigned to the first measurement (refers to subsequent measurement) and *_inc2 will be assigned to the second (refers to previous measurement).</p>
+<p>Here I will add annual height, diameter and basal area increments to
+the dataset. Increment will be defined on the observation level, meaning
+that it must apply to either the first or second measurement. This is
+significant for modeling, as I will be predicting an increment based on
+one period’s dbh observation. I’ll add increment data to both the
+beginning and ending observations to facilitate modeling based on either
+observation. *_inc1 will be assigned to the first measurement (refers to
+subsequent measurement) and *_inc2 will be assigned to the second
+(refers to previous measurement).</p>
 <pre class="r"><code># Add diameter increment data and update post-harvest data
 d_l &lt;- d_l %&gt;%
   group_by(tree_id) %&gt;%
@@ -370,9 +390,17 @@ d_l &lt;- define_xy(d_l)</code></pre>
 <h1>Diversity measures</h1>
 <div id="structural-diversity-sci" class="section level2">
 <h2>Structural diversity SCI</h2>
-<p>After some experimentation, I determined that ingrowth does have an effect on SCI, especially for the more intense thinnings, supposedly because they let in more light and encourage more understory initiation.</p>
-<p>I also confirmed that the SCI function works the same regardless of whether coordinates are plot coordinates or UTM coordinates.</p>
-<p>First, here is my code for defining SCI. The area of a triangle is equal to 1/2 the magnitude of the cross product of two vectors representing sides of a triangle. The magnitude of a vector is the square root of the the sum of its values squared. This is also known as the norm and is denoted with single or double vertical bars.</p>
+<p>After some experimentation, I determined that ingrowth does have an
+effect on SCI, especially for the more intense thinnings, supposedly
+because they let in more light and encourage more understory
+initiation.</p>
+<p>I also confirmed that the SCI function works the same regardless of
+whether coordinates are plot coordinates or UTM coordinates.</p>
+<p>First, here is my code for defining SCI. The area of a triangle is
+equal to 1/2 the magnitude of the cross product of two vectors
+representing sides of a triangle. The magnitude of a vector is the
+square root of the the sum of its values squared. This is also known as
+the norm and is denoted with single or double vertical bars.</p>
 <pre class="r"><code>cross_product &lt;- function(a, b) {
   if(length(a)!=3 || length(b)!=3){
         stop(&quot;Cross product is only defined for 3D vectors.&quot;)
@@ -410,9 +438,15 @@ calc_sci &lt;- function(x, y, z) {
 </div>
 <div id="mean-directional-index" class="section level2">
 <h2>Mean directional index</h2>
-<p>Mean directional index is described slightly differently by (Corral-Rivas et al. 2010) and (Pommerening and Stoyan 2008) but I believe that they are equivalent representations. I’m using the latter with four :</p>
-<p><span class="math display">\[\sqrt{ \left ( \sum_{j=1}^{4} \cos{a_{ij}} \right )^2 + \left ( \sum_{j=1}^{4} \sin{a_{ij}} \right )^2 } \]</span></p>
-<p>Also, with this index, I am dropping extra coincident points, keeping the first.</p>
+<p>Mean directional index is described slightly differently by
+(Corral-Rivas et al. 2010) and (Pommerening and Stoyan 2008) but I
+believe that they are equivalent representations. I’m using the latter
+with four :</p>
+<p><span class="math display">\[\sqrt{ \left ( \sum_{j=1}^{4}
+\cos{a_{ij}} \right )^2 + \left ( \sum_{j=1}^{4} \sin{a_{ij}} \right )^2
+} \]</span></p>
+<p>Also, with this index, I am dropping extra coincident points, keeping
+the first.</p>
 <pre class="r"><code># calculate MDI for one tree based on coordinats of self and neighbors
 mdi_tree &lt;- function(focus, neighbors) {
   x &lt;- neighbors[[&quot;x&quot;]] - focus[[&quot;x&quot;]]
@@ -454,7 +488,11 @@ calc_mdi &lt;- function(x, y) {
 </div>
 <div id="dbh-differentiation-td" class="section level2">
 <h2>DBH differentiation (TD)</h2>
-<p>Here i’ll define the single neighbor version of the TD, this may help to reduce bias given our lack of edge correction. I am not going to remove coincident points here as they won’t affect the calculation, and I am assuming two trees that share a location are indeed closest neighbors.</p>
+<p>Here i’ll define the single neighbor version of the TD, this may help
+to reduce bias given our lack of edge correction. I am not going to
+remove coincident points here as they won’t affect the calculation, and
+I am assuming two trees that share a location are indeed closest
+neighbors.</p>
 <pre class="r"><code>calc_TD &lt;- function(x, y, dbh) {
   DF &lt;- data.frame(x, y)
   idx &lt;- as.numeric(nearest(DF, k = 1)[1, ])
