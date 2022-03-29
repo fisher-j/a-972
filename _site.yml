@@ -8,6 +8,7 @@ output:
     highlight: textmate
     code_folding: hide
     df_print: default
+bibliography: [reference/a972.bib]
 navbar: 
   title: A-972 10-year Study
   left: 

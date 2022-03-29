@@ -22,7 +22,10 @@ Details for calculations can be found on the [Define new data](03_define.html) p
 
 ```{r}
 
-ingrowth <- define_xy(ingrowth)
+ingrowth <- mutate(ingrowth,
+  define_xy(ingrowth),
+  ba = pi * (dbh / 2)^2
+)
 
 sci_d <- d_l %>%
   filter(live) %>%
@@ -93,15 +96,13 @@ sci_mean <- var_mean(sci_plot)
   
 var_table(sci_mean, caption = "Average SCI and confidence interval for all live trees including ingrowth")
 
-var_fig(sci_mean)
-
 ```
 
 Some of these trajectories look interesting, but They don't look unique, given the error bars.
 
 # Mean directional index
 
-Mean directional index is described slightly differently by (Corral-Rivas et al. 2010) and (Pommerening and Stoyan 2008) but I believe that they are equivalent representations. I'm using the latter with four:
+Mean directional index is described slightly differently by @corral-rivasPermutationTestSpatial2010 and @pommereningReconstructingSpatialTree2008 but I believe that they are equivalent representations. I'm using the latter with four:
 
 $$\sqrt{ \left ( \sum_{j=1}^{4} \cos{a_{ij}} \right )^2 + \left ( \sum_{j=1}^{4} \sin{a_{ij}} \right )^2 } $$
 
@@ -117,7 +118,7 @@ mdi_mean <- var_mean(mdi_plot)
   
 var_table(mdi_mean, caption = "Average mean directional index (0: grid, 4:complete aggregation")
 
-var_fig(mdi_mean)
+
 
 ```
 
@@ -127,7 +128,7 @@ This index is defined by Füldner, (1995) as:
 
 $$ TD_i = 1 - \frac{min(DBH_i, DBH_j)}{max(DBH_i, DBH_j)} $$
 
-This is the single closest neighbor version, there is also a N neighbor version, Khuenhe used this one and found it was highly correlated with SCI and DBH~sd~
+This is the single closest neighbor version, there is also a N neighbor version, Khuenhe used this one and found it was highly correlated with SCI and DBHsd
 
 ```{r}
 
@@ -139,7 +140,7 @@ TD_mean <- var_mean(TD_plot)
   
 var_table(TD_mean, caption = "Average DBH differentiation, 0: similar tree sizes, approaching 1: more difference in neighbor tree size")
 
-var_fig(TD_mean)
+
 
 ```
 
@@ -157,13 +158,13 @@ dbhsd_mean <- var_mean(dbhsd_plot)
   
 var_table(dbhsd_mean, caption = "Standard deviation of DBH")
 
-var_fig(dbhsd_mean)
+
 
 ```
 
 # Shannon-Weaver index (overstory)
 
-This index calculates tree species diversity based on the number of stems.
+This index calculates tree species diversity based on the number of stems and basal area.
 
 ```{r}
 
@@ -175,10 +176,30 @@ sh_mean <- var_mean(sh_plot)
   
 var_table(sh_mean, caption = "Average Shannon-Weaver index (stem based)")
 
-var_fig(sh_mean)
+
+sh_plot_ba <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarize(val = calc_sh(spp, val = ba))
+
+sh_mean_ba <- var_mean(sh_plot_ba)
+  
+var_table(sh_mean_ba, caption = "Basal area based average Shannon-Weaver index")
 
 ```
 
+```{r}
+bind_rows(
+  sci = sci_mean,
+  mdi = mdi_mean,
+  TD = TD_mean,
+  sh = sh_mean,
+  sh_ba = sh_mean_ba,
+  dbhsd = dbhsd_mean,
+  .id = "metric"
+) %>%
+  var_fig() +
+  facet_wrap(~ metric, scales = "free_y")
+```
 
 # Understory species
 
@@ -199,6 +220,24 @@ var_fig(sh_veg_mean)
 ```
 
 # Understory cover
+
+What are the dominant shrubs and herbs for each treatment/year?
+
+```{r}
+veg_cover %>%
+  group_by(treatment, year) %>%
+  summarize(
+    shrub = paste(dom_shrub, collapse = ", "),
+    herb = paste(dom_herb, collapse = ", ")
+  )
+
+veg_cover %>%
+  group_by(treatment, year) %>%
+  count(dom_shrub) %>%
+  pivot_wider(names_from = dom_shrub, values_from = n)
+```
+
+change in percent cover of shrubs and herbs over time for each treatment
 
 ```{r}
 
@@ -222,13 +261,14 @@ veg_cover %>%
     facet_wrap(~ veg_type) +
     geom_line(position = doj) +
     geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width = 0.5, position = doj) +
-    labs(caption = "average cover classes of shrub and herb, errorbars are 1 std. error (0-5 = 0-100%)")
-    
+    labs(caption = "average percent cover of shrub and herb, errorbars are 1 std. error")
+
 ```
+
 
 # Fun visual of SCI
 
-Here I visualize the SCI_dbh_ for a random plot from each treatment
+Here I visualize the SCI_dbh for 10 random plots
 
 ```{r, fig.width=8, fig.height=10}
 

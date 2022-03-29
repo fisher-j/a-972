@@ -13,7 +13,7 @@
 
 <title>Import data</title>
 
-<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.13.3/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -317,8 +317,11 @@ dataset</a></li>
 
 <div id="libraries" class="section level2">
 <h2>libraries</h2>
-<pre class="r"><code>library(&quot;tidyverse&quot;)
-library(kableExtra)</code></pre>
+<pre class="r"><code>library(&quot;tidyverse&quot;)</code></pre>
+<pre><code>## Warning: package &#39;tibble&#39; was built under R version 4.1.3</code></pre>
+<pre><code>## Warning: package &#39;tidyr&#39; was built under R version 4.1.3</code></pre>
+<pre><code>## Warning: package &#39;readr&#39; was built under R version 4.1.3</code></pre>
+<pre class="r"><code>library(kableExtra)</code></pre>
 </div>
 <div id="import-data" class="section level1">
 <h1>Import Data</h1>
@@ -486,17 +489,14 @@ tree_2008 &lt;- tree_2008[!init_2008$status %in% c(15, 16), ]
 pattern &lt;- &quot;\\w+\\.([Cc]\\d+)|(\\d+[Cc])&quot;
 tree_2008[grepl(pattern, tree_2008[[&quot;tree_id&quot;]]), ]</code></pre>
 <pre><code>## # A tibble: 0 x 8
-## # ... with 8 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;int&gt;, cr &lt;int&gt;,
-## #   status &lt;int&gt;, bear &lt;chr&gt;, rot &lt;chr&gt;, notes &lt;chr&gt;</code></pre>
+## # ... with 8 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;int&gt;, cr &lt;int&gt;, status &lt;int&gt;, bear &lt;chr&gt;, rot &lt;chr&gt;, notes &lt;chr&gt;</code></pre>
 <pre class="r"><code># Check if there are trees with &quot;C&quot; in subsequent years. There are not.
 tree_2013[grepl(pattern, tree_2013[[&quot;tree_id&quot;]]), ]</code></pre>
 <pre><code>## # A tibble: 0 x 9
-## # ... with 9 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;dbl&gt;, cr &lt;dbl&gt;, cc &lt;int&gt;,
-## #   status &lt;int&gt;, bear &lt;int&gt;, cond &lt;chr&gt;, notes &lt;chr&gt;</code></pre>
+## # ... with 9 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;dbl&gt;, cr &lt;dbl&gt;, cc &lt;int&gt;, status &lt;int&gt;, bear &lt;int&gt;, cond &lt;chr&gt;, notes &lt;chr&gt;</code></pre>
 <pre class="r"><code>tree_2018[grepl(pattern, tree_2018[[&quot;tree_id&quot;]]), ]</code></pre>
 <pre><code>## # A tibble: 0 x 8
-## # ... with 8 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;int&gt;, cr &lt;int&gt;,
-## #   status &lt;int&gt;, cond &lt;chr&gt;, bear &lt;int&gt;, notes &lt;chr&gt;</code></pre>
+## # ... with 8 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;int&gt;, cr &lt;int&gt;, status &lt;int&gt;, cond &lt;chr&gt;, bear &lt;int&gt;, notes &lt;chr&gt;</code></pre>
 <pre class="r"><code># Check for status 15 or 16 in subsequent years: 2 cut trees in 2013
 tree_2013[tree_2013$status %in% c(15, 16), ]</code></pre>
 <pre><code>## # A tibble: 2 x 9
@@ -506,8 +506,7 @@ tree_2013[tree_2013$status %in% c(15, 16), ]</code></pre>
 ## 2 3H40.3195     0     0     0    -1     16    NA &quot;&quot;    cut down accidentally</code></pre>
 <pre class="r"><code>tree_2018[tree_2018$status %in% c(15, 16), ]</code></pre>
 <pre><code>## # A tibble: 0 x 8
-## # ... with 8 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;int&gt;, cr &lt;int&gt;,
-## #   status &lt;int&gt;, cond &lt;chr&gt;, bear &lt;int&gt;, notes &lt;chr&gt;</code></pre>
+## # ... with 8 variables: tree_id &lt;chr&gt;, dbh &lt;dbl&gt;, ht &lt;int&gt;, cr &lt;int&gt;, status &lt;int&gt;, cond &lt;chr&gt;, bear &lt;int&gt;, notes &lt;chr&gt;</code></pre>
 <pre class="r"><code># remove pre-harvest windthrown tree
 bad_id &lt;- &quot;2L80.3731&quot;
 tree_2008 &lt;- tree_2008[!tree_2008$tree_id %in% bad_id, ]
@@ -617,8 +616,7 @@ columns and I’m not sure what</p>
 ## [1] &quot;ID&quot;          &quot;Plot_ID&quot;     &quot;Species&quot;     &quot;Flag&quot;        &quot;Corrections&quot;
 ## 
 ## $`18`
-## [1] &quot;ID&quot;          &quot;Plot_ID&quot;     &quot;Species&quot;     &quot;Flag&quot;        &quot;Flag1&quot;      
-## [6] &quot;Corrections&quot;</code></pre>
+## [1] &quot;ID&quot;          &quot;Plot_ID&quot;     &quot;Species&quot;     &quot;Flag&quot;        &quot;Flag1&quot;       &quot;Corrections&quot;</code></pre>
 <pre class="r"><code># unique values for non standard columns
 map(veg_species_l, ~ `[`(.x, !names(.x) %in% c(&quot;ID&quot;, &quot;Plot_ID&quot;, &quot;Species&quot;))) %&gt;%
   map(unique)</code></pre>
@@ -702,9 +700,8 @@ names(veg_cover_files) &lt;- str_replace(veg_cover_files, &quot;^.*(\\d{2})\\.tx
 veg_cover_l &lt;- lapply(veg_cover_files, read_csv)
 map(veg_cover_l, names) %&gt;% unique</code></pre>
 <pre><code>## [[1]]
-##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;   
-##  [5] &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;      
-##  [9] &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;     &quot;Flag&quot;</code></pre>
+##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;    &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;       &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;    
+## [11] &quot;Flag&quot;</code></pre>
 <pre class="r"><code>veg_cover &lt;- bind_rows(veg_cover_l, .id = &quot;year&quot;) %&gt;%
   select(
     year,

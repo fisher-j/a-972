@@ -1,3 +1,9 @@
+## 03/28/2022
+
+* Calculated sh-BA
+* put all structural diversity figures together
+* began to look at changes dominant species
+
 ## 03/27/2022
 
 * Finished importing and cleaning understory cover data

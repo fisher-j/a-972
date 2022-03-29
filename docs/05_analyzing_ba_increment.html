@@ -13,7 +13,7 @@
 
 <title>BAI modeling</title>
 
-<script src="site_libs/header-attrs-2.13/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.13.3/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
@@ -4171,8 +4171,7 @@ evenly distributed. I’m not sure that I can use this model.</p>
 
 summary(ba_inc_lmm)</code></pre>
 <pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
-## Formula: log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year +  
-##     spp + (1 | tree_id)
+## Formula: log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year +      spp + (1 | tree_id)
 ##    Data: test_d
 ## 
 ## REML criterion at convergence: 2140.5
@@ -4263,8 +4262,7 @@ class="section level1">
 
 summary(ba_inc_mod)</code></pre>
 <pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
-## Formula: log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year +  
-##     spp + (1 | tree_id)
+## Formula: log(ba_inc1 + scale_val) ~ log(dbh) + treatment + cr * year +      spp + (1 | tree_id)
 ##    Data: test_d
 ## 
 ## REML criterion at convergence: 2140.5
