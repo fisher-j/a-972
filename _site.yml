@@ -24,5 +24,7 @@ navbar:
       href: 05_analyzing_ba_increment.html
     - text: Summary statistics
       href: 06_summary.html
+    - text: Comparing initial conditions
+      href: 07_initial_conditions.html
     - text: Variability
       href: 08_variability.html

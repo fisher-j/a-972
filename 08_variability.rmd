@@ -223,7 +223,7 @@ var_fig(sh_veg_mean)
 
 What are the dominant shrubs and herbs for each treatment/year?
 
-It is hard to say because sword fern are treated (mostly) as herbs for the first two entries, and then as shrubs for the last, but even this is inconsistant, some third entries have sword fern listed as an herb.
+It is hard to say because sword fern are treated (mostly) as herbs for the first two entries, and then as shrubs for the last, but even this is inconsistent, some third entries have sword fern listed as an herb.
 
 ```{r}
 spp_common_name <- function(species) {
