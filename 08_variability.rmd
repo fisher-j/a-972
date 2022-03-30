@@ -223,18 +223,63 @@ var_fig(sh_veg_mean)
 
 What are the dominant shrubs and herbs for each treatment/year?
 
+It is hard to say because sword fern are treated (mostly) as herbs for the first two entries, and then as shrubs for the last, but even this is inconsistant, some third entries have sword fern listed as an herb.
+
 ```{r}
+spp_common_name <- function(species) {
+  case_when(
+    species == "POMU"     ~ "Sword fern",
+    species == "IRDO"     ~ "Douglas' iris",
+    species == "VISE3"    ~ "Evergreen violet",
+    species == "STAJR"    ~ "Hedge nettle",
+    species == "TRLA6"    ~ "Starflower",
+    species == "GRASS"    ~ "Grass",
+    species == "WHMO"     ~ "Modesty",
+    species == "CLSI2"    ~ "Candyflower",
+    species == "VAOV2"    ~ "Evergreen huckleberry",
+    species == "Fireweed" ~ "Fireweed",
+    species == "RUSP"     ~ "Salmon berry",
+    species == "GASH"     ~ "Salal",
+    species == "BENE2"    ~ "Oregon grape", 
+    species == "SARA"     ~ "Red elderberry"
+  )
+}
+
 veg_cover %>%
   group_by(treatment, year) %>%
   summarize(
     shrub = paste(dom_shrub, collapse = ", "),
     herb = paste(dom_herb, collapse = ", ")
-  )
+  ) %>% arrange(year) %>% group_by(year) %>% color_groups(caption = "Dominant herb/shrub for four plots in each treatment/year. Evergreen huckleberey (VAOV2) and sword fern (POMU) are treated inconsistently.")
+
+```
+
+What is interesting here is that the high intensity thinnings lead consistently to heavy salmon berry shrub cover and the rest lead to heavy sword fern cover. Evergreen violet seems to be the most common herb following all treatments (except control) but the H40 and L40 appear to be more consistent/homogenous across plots.
+
+```{r}
+
+doj <- position_dodge(width = 0.5)
+veg_cover %>%
+  mutate(
+    plot2 = str_extract(plot, "\\d"),
+    dom_herb = spp_common_name(dom_herb)
+  ) %>%
+  arrange(treatment, plot2, year) %>%
+  ggplot(aes(year, dom_herb, group = plot2)) +
+    geom_line(position = doj) +
+    geom_point(aes(size = cl_shrub), position = doj, alpha = 0.5) +
+    facet_wrap(~ treatment)
 
 veg_cover %>%
-  group_by(treatment, year) %>%
-  count(dom_shrub) %>%
-  pivot_wider(names_from = dom_shrub, values_from = n)
+  mutate(
+    plot2 = str_extract(plot, "\\d"),
+    dom_herb = spp_common_name(dom_herb)
+  ) %>%
+  arrange(treatment, plot2, year) %>%
+  ggplot(aes(year, dom_shrub, group = plot2)) +
+    geom_line(position = doj) +
+    geom_point(aes(size = cl_shrub), position = doj, alpha = 0.5) +
+    facet_wrap(~ treatment)
 ```
 
 change in percent cover of shrubs and herbs over time for each treatment
