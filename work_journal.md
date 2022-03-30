@@ -1,8 +1,12 @@
+## 03/29/2022
+
+* I think we figured out what we can from the [understory data](08_variability.rmd). 
+
 ## 03/28/2022
 
 * Calculated sh-BA
 * put all structural diversity figures together
-* began to look at changes dominant species
+* began to look at changes dominant understory species
 
 ## 03/27/2022
 
