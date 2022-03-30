@@ -2,7 +2,7 @@
 
 * I think we figured out what we can from the [understory data](08_variability.rmd). 
 
-## 03/28/2022
+## 03/28/2022 
 
 * Calculated sh-BA
 * put all structural diversity figures together
