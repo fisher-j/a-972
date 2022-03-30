@@ -1,13 +1,14 @@
 ---
 title: Variability
+bibliography: [reference/a972.bib]
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
-
 ```
 
 ```{r}
+require(tidyverse)
 library(rgl)
 setupKnitr()
 ```
@@ -78,7 +79,7 @@ var_table <- function(mean_data, caption) {
 
 # Structural complexity index
 
-SCI measures the spatial variability in a given tree attribute such as DBH or height. It is driven by differences between neighboring trees. We can calculate SCI based on residual trees only, or include ingrowth. The latter would be expected to increase the SCI, but it is unclear whether or not this kind of structural diversity is of significant importance.
+SCI [@zennerNewMethodModeling2000] measures the spatial variability in a given tree attribute such as DBH or height. It is driven by differences between neighboring trees. We can calculate SCI based on residual trees only, or include ingrowth. The latter would be expected to increase the SCI, but it is unclear whether or not this kind of structural diversity is of significant importance.
 
 It is important to keep in mind that SCI, for our study, refers to heterogeneity on the within-patch scale: at the .08 ha scale. Larger plots would be needed if we are to characterize structural variability at greater scales.
 
@@ -102,9 +103,11 @@ Some of these trajectories look interesting, but They don't look unique, given t
 
 # Mean directional index
 
-Mean directional index is described slightly differently by @corral-rivasPermutationTestSpatial2010 and @pommereningReconstructingSpatialTree2008 but I believe that they are equivalent representations. I'm using the latter with four:
+Mean directional index is described slightly differently by @corral-rivasPermutationTestSpatial2010 and @pommereningReconstructingSpatialTree2008 but I believe that they are equivalent representations. I'm using the latter with four neighbors:
 
 $$\sqrt{ \left ( \sum_{j=1}^{4} \cos{a_{ij}} \right )^2 + \left ( \sum_{j=1}^{4} \sin{a_{ij}} \right )^2 } $$
+
+Values should range between 0 for a grided arrangement to 4. A completely random arrange results in a value of about 1.8 [@corral-rivasPermutationTestSpatial2010].
 
 Also, with this index, I am dropping extra coincident points, keeping the first.
 
@@ -118,17 +121,17 @@ mdi_mean <- var_mean(mdi_plot)
   
 var_table(mdi_mean, caption = "Average mean directional index (0: grid, 4:complete aggregation")
 
-
-
 ```
 
 # DBH differentiation (TD)
 
-This index is defined by Füldner, (1995) as:
+This index is defined by @fuldnerStrukturbeschreibungBuchenEdellaubholzMischwaldern1995 as:
 
 $$ TD_i = 1 - \frac{min(DBH_i, DBH_j)}{max(DBH_i, DBH_j)} $$
 
 This is the single closest neighbor version, there is also a N neighbor version, Khuenhe used this one and found it was highly correlated with SCI and DBHsd
+
+@pommereningApproachesQuantifyingForest2002 provided interpretations of this metric, in our case suggesting *average to small differentiation*, where trees are generally more than 50% (closer to 70%) the size of their neighbor. 
 
 ```{r}
 
@@ -164,7 +167,7 @@ var_table(dbhsd_mean, caption = "Standard deviation of DBH")
 
 # Shannon-Weaver index (overstory)
 
-This index calculates tree species diversity based on the number of stems and basal area.
+This index calculates tree species diversity based on the number of stems and basal area [@shannonMathematicalTheoryCommunication2001]
 
 ```{r}
 
@@ -187,14 +190,32 @@ var_table(sh_mean_ba, caption = "Basal area based average Shannon-Weaver index")
 
 ```
 
+# Mean DBH (DBHm)
+
+Another metric we were going to look at is DBHm, I had previously presented this as a boxplot of trees aggregated at the treatment level. This is different than all of our other analysys which base inference off of plot-level averages, or otherwise control for the variance between plots. Here I'll look at mean dbh following the same analysis format used for the other structural variables.
+
+```{r}
+
+dbhm_plot <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarize(val = mean(dbh))
+
+dbhm_mean <- var_mean(dbhm_plot)
+  
+var_table(dbhm_mean, caption = "Standard deviation of DBH")
+
+```
+
+# Combined diversity figure
+
 ```{r}
 bind_rows(
-  sci = sci_mean,
-  mdi = mdi_mean,
+  SCI = sci_mean,
+  MDI = mdi_mean,
   TD = TD_mean,
-  sh = sh_mean,
-  sh_ba = sh_mean_ba,
-  dbhsd = dbhsd_mean,
+  SH = sh_mean,
+  DBHsd = dbhsd_mean,
+  DBHm = dbhm_mean,
   .id = "metric"
 ) %>%
   var_fig() +
@@ -203,19 +224,19 @@ bind_rows(
 
 # Understory species
 
-What I realized is that I can't calculate Shannon-weaver index from a species list, the best I can do is come up with an average number of species.
+What I realized is that I can't calculate Shannon-weaver index from a species list, the best I can do is come up with an average number of species. The pattern here might suggest that crews had different skill levels in identifying herbs, or it could have to do with different seasons of observation. It is unexpected that the control has the same trend.
 
 ```{r}
 
-sh_veg_plot <- veg_species %>%
+richness_veg_plot <- veg_species %>%
   group_by(treatment, year, plot) %>%
   summarize(val = n())
 
-sh_veg_mean <- var_mean(sh_veg_plot)
+richness_veg_mean <- var_mean(richness_veg_plot)
   
-var_table(sh_veg_mean, caption = "Average understory species counts")
+var_table(richness_veg_mean, caption = "Average understory species counts")
 
-var_fig(sh_veg_mean)
+var_fig(richness_veg_mean)
 
 ```
 
@@ -273,7 +294,7 @@ veg_cover %>%
 veg_cover %>%
   mutate(
     plot2 = str_extract(plot, "\\d"),
-    dom_herb = spp_common_name(dom_herb)
+    dom_shrub = spp_common_name(dom_shrub)
   ) %>%
   arrange(treatment, plot2, year) %>%
   ggplot(aes(year, dom_shrub, group = plot2)) +
@@ -282,7 +303,7 @@ veg_cover %>%
     facet_wrap(~ treatment)
 ```
 
-change in percent cover of shrubs and herbs over time for each treatment
+change in percent cover of shrubs and herbs over time for each treatment. The fact that herb and shrub cover change so much is really confounded by the fact that sword fern (and to a lesser extent, huckleberry) are classified differently over time.
 
 ```{r}
 
@@ -310,12 +331,42 @@ veg_cover %>%
 
 ```
 
+I think what I need to do is just look at 2018 and show the total percent cover and dominant species in the same barplot. This plot shows average shrub cover for each treatment with the weighted dominant species at each plot, or more simply, just the most prevalent dominant species.
+
+```{r}
+veg_cover %>%
+  filter(year == "18") %>%
+  mutate(dom_shrub = spp_common_name(dom_shrub)) %>%
+  ggplot(aes(treatment, fill = dom_shrub, group = fct_reorder(plot, cl_shrub))) +
+    stat_count(aes(weight = cl_shrub), position = "dodge") +
+    labs(caption = "one bar for each plot indicating dominant species and percent cover")
+
+veg_cover %>%
+  filter(year == "18") %>%
+  mutate(dom_shrub = spp_common_name(dom_shrub)) %>%
+  ggplot(aes(treatment, fill = dom_shrub)) +
+    stat_count(aes(weight = cl_shrub / 4), position = "stack") +
+    scale_fill_grey() +
+    labs(caption = "one bar for each treatment, indicating average percent cover and a scaled representation of dominant species from each of the 4 plots")
+
+
+veg_cover %>%
+  filter(year == "18") %>%
+  mutate(
+    dom_herb = spp_common_name(dom_herb),
+    dom_shrub = spp_common_name(dom_shrub)
+  ) %>%
+  ggplot(aes(treatment, fill = dom_herb)) +
+    stat_count(aes(weight = cl_herb / 4), position = "stack") +
+    scale_fill_grey() +
+    labs(caption = "this is the same as the graph above, but for herbs")
+```
 
 # Fun visual of SCI
 
 Here I visualize the SCI_dbh for 10 random plots
 
-```{r, fig.width=8, fig.height=10}
+```{r, fig.width=8, fig.height=10, cache=TRUE}
 
 sci_plots_d <- sci_d %>% select(x, y, z = dbh, plot, year) %>% split(~ plot + year, drop = TRUE)
 
@@ -351,7 +402,7 @@ I can use the function described in `?rgl::persp3d.triSht` which uses the output
 Here are boxplots showing the variability in 2018 of some potentially important variables.
 
 ```{r}
-p_h %>%
+sci_d %>%
   filter(year == "18") %>%
   select(treatment, spp, dbh, ht, cr, ht_inc2) %>%
   pivot_longer(
@@ -364,3 +415,4 @@ p_h %>%
     facet_wrap(~ measure, scales = "free_y")
 ```
 
+# References

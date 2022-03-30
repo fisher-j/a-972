@@ -1,6 +1,7 @@
 ## 03/29/2022
 
 * I think we figured out what we can from the [understory data](08_variability.html)
+* Unfortunately, because sword-fern is classified as both shrub and herb between years, within years, and even within the same treatment/year, it is hard to make comparisons. I think we are pretty safe in presenting the shrub data for just 2018 as it seems to show a robust trend.
 
 ## 03/28/2022 
 
