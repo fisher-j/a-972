@@ -1,6 +1,6 @@
 ## 03/29/2022
 
-* I think we figured out what we can from the [understory data](08_variability.rmd)
+* I think we figured out what we can from the [understory data](08_variability.html)
 
 ## 03/28/2022 
 
