@@ -4524,16 +4524,16 @@ selected model. First I do a pairwise comparison on treatments.</p>
 emmeans(ba_inc_ref, pairwise ~ treatment, type = &quot;response&quot;)</code></pre>
 <pre><code>## $emmeans
 ##  treatment response    SE   df lower.CL upper.CL
-##  C             12.1 0.459 1153     11.2     13.0
-##  H40           25.7 1.321 1139     23.2     28.4
-##  H80           15.8 0.550 1137     14.7     16.9
-##  L40           25.5 1.409 1138     22.9     28.4
-##  L80           15.5 0.552 1128     14.4     16.6
+##  C             18.8 0.459 1153     17.9     19.7
+##  H40           32.4 1.321 1139     29.9     35.1
+##  H80           22.5 0.550 1137     21.4     23.6
+##  L40           32.2 1.409 1138     29.6     35.1
+##  L80           22.2 0.552 1128     21.1     23.3
 ## 
 ## Results are averaged over the levels of: year, spp 
 ## Degrees-of-freedom method: kenward-roger 
 ## Confidence level used: 0.95 
-## Intervals are back-transformed from the log(mu + 6.685) scale 
+## Intervals are back-transformed from the log scale 
 ## 
 ## $contrasts
 ##  contrast  ratio     SE   df null t.ratio p.value
@@ -4556,13 +4556,13 @@ emmeans(ba_inc_ref, pairwise ~ treatment, type = &quot;response&quot;)</code></p
 <pre class="r"><code>emmeans(ba_inc_ref, pairwise ~ spp, type = &quot;response&quot;)</code></pre>
 <pre><code>## $emmeans
 ##  spp   response    SE   df lower.CL upper.CL
-##  PSMEM     15.5 0.354 1113     14.8     16.2
-##  SESE3     21.5 0.734 1219     20.1     22.9
+##  PSMEM     22.2 0.354 1113     21.5     22.9
+##  SESE3     28.1 0.734 1219     26.7     29.6
 ## 
 ## Results are averaged over the levels of: treatment, year 
 ## Degrees-of-freedom method: kenward-roger 
 ## Confidence level used: 0.95 
-## Intervals are back-transformed from the log(mu + 6.685) scale 
+## Intervals are back-transformed from the log scale 
 ## 
 ## $contrasts
 ##  contrast      ratio     SE   df null t.ratio p.value
@@ -4578,21 +4578,21 @@ and treatment combinations are significantly different.</p>
 <pre class="r"><code>emmeans(ba_inc_ref, pairwise ~ treatment + spp, type = &quot;response&quot;)</code></pre>
 <pre><code>## $emmeans
 ##  treatment spp   response    SE   df lower.CL upper.CL
-##  C         PSMEM     9.98 0.368 1154     9.28     10.7
-##  H40       PSMEM    22.10 1.198 1117    19.84     24.5
-##  H80       PSMEM    13.26 0.524 1139    12.26     14.3
-##  L40       PSMEM    21.91 1.244 1118    19.57     24.5
-##  L80       PSMEM    12.99 0.483 1114    12.06     14.0
-##  C         SESE3    14.45 0.713 1170    13.09     15.9
-##  H40       SESE3    29.81 1.641 1171    26.73     33.2
-##  H80       SESE3    18.61 0.775 1164    17.13     20.2
-##  L40       SESE3    29.57 1.763 1166    26.27     33.2
-##  L80       SESE3    18.26 0.816 1165    16.71     19.9
+##  C         PSMEM     16.7 0.368 1154     16.0     17.4
+##  H40       PSMEM     28.8 1.198 1117     26.5     31.2
+##  H80       PSMEM     19.9 0.524 1139     18.9     21.0
+##  L40       PSMEM     28.6 1.244 1118     26.3     31.1
+##  L80       PSMEM     19.7 0.483 1114     18.7     20.6
+##  C         SESE3     21.1 0.713 1170     19.8     22.6
+##  H40       SESE3     36.5 1.641 1171     33.4     39.9
+##  H80       SESE3     25.3 0.775 1164     23.8     26.9
+##  L40       SESE3     36.3 1.763 1166     33.0     39.9
+##  L80       SESE3     24.9 0.816 1165     23.4     26.6
 ## 
 ## Results are averaged over the levels of: year 
 ## Degrees-of-freedom method: kenward-roger 
 ## Confidence level used: 0.95 
-## Intervals are back-transformed from the log(mu + 6.685) scale 
+## Intervals are back-transformed from the log scale 
 ## 
 ## $contrasts
 ##  contrast              ratio     SE   df null t.ratio p.value

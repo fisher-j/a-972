@@ -394,7 +394,7 @@ veg_cover %>%
 
 ```
 
-I think what I need to do is just look at 2018 and show the total percent cover and dominant species in the same barplot. This plot shows average shrub cover for each treatment with the weighted dominant species at each plot, or more simply, just the most prevalent dominant species.
+I think what I need to do is just look at 2018 and show the total percent cover and dominant species in the same barplot. This plot shows shrub cover for each plot, colored with the dominant species for that plot.
 
 ```{r}
 veg_cover %>%
@@ -403,6 +403,11 @@ veg_cover %>%
   ggplot(aes(treatment, fill = dom_shrub, group = fct_reorder(plot, cl_shrub))) +
     stat_count(aes(weight = cl_shrub), position = "dodge") +
     labs(caption = "one bar for each plot indicating dominant species and percent cover")
+```
+
+This figure shows the same information as above, but stacked, where the total bar heights indicate the average shrub cover for a treatment and the region heigts represent proportion of plots where that species was recorded as dominant, weighted by that plots total cover.
+
+```{r}
 
 veg_cover %>%
   filter(year == "18") %>%
@@ -435,9 +440,11 @@ ggsave(
   height = 9,
   units = "cm"
 )
+```
 
+It would have been nice to show the same informtion for herb species, but unfortunately, the fact that sword fern is a significant component and it was recorded inconsistently, makes interpretation of this (and much of the understory data) very difficult.
 
-
+```{r}
 veg_cover %>%
   filter(year == "18") %>%
   mutate(
@@ -449,7 +456,6 @@ veg_cover %>%
     scale_fill_grey() +
     labs(caption = "this is the same as the graph above, but for herbs")
 ```
-
 
 # Fun visual of SCI
 

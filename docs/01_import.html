@@ -320,8 +320,11 @@ dataset</a></li>
 
 <div id="libraries" class="section level2">
 <h2>libraries</h2>
-<pre class="r"><code>library(&quot;tidyverse&quot;)
-library(kableExtra)</code></pre>
+<pre class="r"><code>library(&quot;tidyverse&quot;)</code></pre>
+<pre><code>## Warning: package &#39;tibble&#39; was built under R version 4.1.3</code></pre>
+<pre><code>## Warning: package &#39;tidyr&#39; was built under R version 4.1.3</code></pre>
+<pre><code>## Warning: package &#39;readr&#39; was built under R version 4.1.3</code></pre>
+<pre class="r"><code>library(kableExtra)</code></pre>
 </div>
 <div id="import-data" class="section level1">
 <h1>Import Data</h1>
@@ -700,8 +703,8 @@ names(veg_cover_files) &lt;- str_replace(veg_cover_files, &quot;^.*(\\d{2})\\.tx
 veg_cover_l &lt;- lapply(veg_cover_files, read_csv)
 map(veg_cover_l, names) %&gt;% unique</code></pre>
 <pre><code>## [[1]]
-##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;    &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;       &quot;Dom_sp_Shrub&quot;   
-## [10] &quot;Dom_sp_Herb&quot;     &quot;Flag&quot;</code></pre>
+##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;    &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;       &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;    
+## [11] &quot;Flag&quot;</code></pre>
 <pre class="r"><code>veg_cover &lt;- bind_rows(veg_cover_l, .id = &quot;year&quot;) %&gt;%
   select(
     year,
