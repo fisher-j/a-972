@@ -1,3 +1,8 @@
+## 03/31/2022
+
+* Added structural heterogeneity figure and caption
+* Added understory diversity figure and caption
+
 ## 03/29/2022
 
 * I think we figured out what we can from the [understory data](08_variability.html)

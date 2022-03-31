@@ -356,8 +356,11 @@ treatment</a></li>
 <li><a href="#mean-dbh-dbhm">Mean DBH (DBHm)</a></li>
 <li><a href="#combined-diversity-figure">Combined diversity
 figure</a></li>
-<li><a href="#understory-species">Understory species</a></li>
+<li><a href="#understory-species">Understory species</a>
+<ul>
+<li><a href="#richness">Richness</a></li>
 <li><a href="#understory-cover">Understory cover</a></li>
+</ul></li>
 <li><a href="#fun-visual-of-sci">Fun visual of SCI</a></li>
 <li><a href="#references">References</a></li>
 </ul>
@@ -2385,7 +2388,9 @@ L80
 </div>
 <div id="combined-diversity-figure" class="section level1">
 <h1>Combined diversity figure</h1>
-<pre class="r"><code>bind_rows(
+<pre class="r"><code>my_dodge &lt;- position_dodge(0.5)
+
+bind_rows(
   SCI = sci_mean,
   MDI = mdi_mean,
   TD = TD_mean,
@@ -2394,18 +2399,79 @@ L80
   DBHm = dbhm_mean,
   .id = &quot;metric&quot;
 ) %&gt;%
-  var_fig() +
-  facet_wrap(~ metric, scales = &quot;free_y&quot;)</code></pre>
+  relevel_treatment() %&gt;%
+  mutate(year = paste0(&quot;20&quot;, year)) %&gt;%
+  ggplot(aes(year, emmean, group = treatment)) +
+    geom_line(aes(linetype = treatment), position = my_dodge) +
+    geom_point(aes(shape = treatment), size = 1.8, position = my_dodge) +
+    geom_errorbar(
+      aes(ymin = emmean - SE, ymax = emmean + SE),
+      width = .4,
+      position = my_dodge,
+      alpha = 0.4
+    ) +
+    theme_bw() +
+    labs(y = NULL, x = &quot;Year&quot;) +
+    facet_wrap(~ metric, scales = &quot;free_y&quot;, strip.position = &quot;left&quot;) +
+    theme(
+      panel.spacing.x = unit(0, &quot;mm&quot;),
+      strip.background.y = element_blank(),
+      strip.switch.pad.wrap = unit(0, &quot;mm&quot;),
+      strip.placement = &quot;outside&quot;,
+      legend.position = &quot;bottom&quot;,
+      legend.title = element_blank(),
+      legend.box.margin = margin(),
+      legend.box.spacing = unit(0, &quot;mm&quot;),
+      plot.margin = margin(1,1, unit = &quot;mm&quot;)
+    ) +
+    scale_linetype_manual(
+      values = c(
+        C40 = &quot;solid&quot;,
+        L40 = &quot;dashed&quot;,
+        C80 = &quot;solid&quot;,
+        L80 = &quot;dashed&quot;,
+        Control = &quot;dotted&quot;
+      )
+    ) +
+    scale_shape_manual(
+      values = c(
+        C40 = &quot;circle&quot;,
+        L40 = &quot;triangle&quot;,
+        C80 = &quot;circle open&quot;,
+        L80 = &quot;triangle open&quot;,
+        Control = &quot;asterisk&quot;
+      )
+    )</code></pre>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre class="r"><code>ggsave(
+  filename = &quot;figs/structure_fig.pdf&quot;,
+  device = cairo_pdf,
+  width = 18.2,
+  height = 10,
+  units = &quot;cm&quot;
+)
+
+ggsave(
+  filename = &quot;figs/structure_fig.jpg&quot;,
+  width = 18.2,
+  height = 10,
+  units = &quot;cm&quot;
+)</code></pre>
 </div>
 <div id="understory-species" class="section level1">
 <h1>Understory species</h1>
+<div id="richness" class="section level2">
+<h2>Richness</h2>
 <p>What I realized is that I can’t calculate Shannon-weaver index from a
 species list, the best I can do is come up with an average number of
 species. The pattern here might suggest that crews had different skill
 levels in identifying herbs, or it could have to do with different
 seasons of observation. It is unexpected that the control has the same
 trend.</p>
+<p>I used a random slope linear model here, I’m not sure this is
+appropriate as we are dealing with count data. I did run a glmmm with
+poisson family (various links) and these all had a significantly higher
+BIC.</p>
 <pre class="r"><code>richness_veg_plot &lt;- veg_species %&gt;%
   group_by(treatment, year, plot) %&gt;%
   summarize(val = n())
@@ -2678,8 +2744,8 @@ L80
 <pre class="r"><code>var_fig(richness_veg_mean)</code></pre>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
 </div>
-<div id="understory-cover" class="section level1">
-<h1>Understory cover</h1>
+<div id="understory-cover" class="section level2">
+<h2>Understory cover</h2>
 <p>What are the dominant shrubs and herbs for each treatment/year?</p>
 <p>It is hard to say because sword fern are treated (mostly) as herbs
 for the first two entries, and then as shrubs for the last, but even
@@ -3012,13 +3078,39 @@ species.</p>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
 <pre class="r"><code>veg_cover %&gt;%
   filter(year == &quot;18&quot;) %&gt;%
-  mutate(dom_shrub = spp_common_name(dom_shrub)) %&gt;%
+  mutate(
+    dom_shrub = spp_common_name(dom_shrub)) %&gt;%
+  relevel_treatment() %&gt;%
   ggplot(aes(treatment, fill = dom_shrub)) +
+    theme_bw() +
+    theme(legend.position = c(0.79, 0.84)) +
     stat_count(aes(weight = cl_shrub / 4), position = &quot;stack&quot;) +
     scale_fill_grey() +
-    labs(caption = &quot;one bar for each treatment, indicating average percent cover and a scaled representation of dominant species from each of the 4 plots&quot;)</code></pre>
+    scale_y_continuous(expand = c(0.0, 0, 0.05, 0)) +
+    labs(
+      fill = NULL,
+      x = &quot;Treatment&quot;,
+      y = &quot;Cover (%)&quot;
+    )</code></pre>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-15-2.png" width="672" /></p>
-<pre class="r"><code>veg_cover %&gt;%
+<pre class="r"><code>ggsave(
+  filename = &quot;figs/shrub_fig.pdf&quot;,
+  device = cairo_pdf,
+  width = 8.84,
+  height = 9,
+  units = &quot;cm&quot;
+)
+
+ggsave(
+  filename = &quot;figs/shrub_fig.jpg&quot;,
+  width = 8.84,
+  height = 9,
+  units = &quot;cm&quot;
+)
+
+
+
+veg_cover %&gt;%
   filter(year == &quot;18&quot;) %&gt;%
   mutate(
     dom_herb = spp_common_name(dom_herb),
@@ -3029,6 +3121,7 @@ species.</p>
     scale_fill_grey() +
     labs(caption = &quot;this is the same as the graph above, but for herbs&quot;)</code></pre>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-15-3.png" width="672" /></p>
+</div>
 </div>
 <div id="fun-visual-of-sci" class="section level1">
 <h1>Fun visual of SCI</h1>
@@ -3069,7 +3162,7 @@ which uses the output of either package tripack or interp</p>
 important variables.</p>
 <pre class="r"><code>sci_d %&gt;%
   filter(year == &quot;18&quot;) %&gt;%
-  select(treatment, spp, dbh, ht, cr, ht_inc2) %&gt;%
+  select(treatment, spp, dbh, ht_p, cr, ht_inc2) %&gt;%
   pivot_longer(
     !c(treatment, spp),
     names_to = &quot;measure&quot;,

@@ -209,6 +209,9 @@ var_table(dbhm_mean, caption = "Standard deviation of DBH")
 # Combined diversity figure
 
 ```{r}
+
+my_dodge <- position_dodge(0.5)
+
 bind_rows(
   SCI = sci_mean,
   MDI = mdi_mean,
@@ -218,13 +221,73 @@ bind_rows(
   DBHm = dbhm_mean,
   .id = "metric"
 ) %>%
-  var_fig() +
-  facet_wrap(~ metric, scales = "free_y")
+  relevel_treatment() %>%
+  mutate(year = paste0("20", year)) %>%
+  ggplot(aes(year, emmean, group = treatment)) +
+    geom_line(aes(linetype = treatment), position = my_dodge) +
+    geom_point(aes(shape = treatment), size = 1.8, position = my_dodge) +
+    geom_errorbar(
+      aes(ymin = emmean - SE, ymax = emmean + SE),
+      width = .4,
+      position = my_dodge,
+      alpha = 0.4
+    ) +
+    theme_bw() +
+    labs(y = NULL, x = "Year") +
+    facet_wrap(~ metric, scales = "free_y", strip.position = "left") +
+    theme(
+      panel.spacing.x = unit(0, "mm"),
+      strip.background.y = element_blank(),
+      strip.switch.pad.wrap = unit(0, "mm"),
+      strip.placement = "outside",
+      legend.position = "bottom",
+      legend.title = element_blank(),
+      legend.box.margin = margin(),
+      legend.box.spacing = unit(0, "mm"),
+      plot.margin = margin(1,1, unit = "mm")
+    ) +
+    scale_linetype_manual(
+      values = c(
+        C40 = "solid",
+        L40 = "dashed",
+        C80 = "solid",
+        L80 = "dashed",
+        Control = "dotted"
+      )
+    ) +
+    scale_shape_manual(
+      values = c(
+        C40 = "circle",
+        L40 = "triangle",
+        C80 = "circle open",
+        L80 = "triangle open",
+        Control = "asterisk"
+      )
+    )
+
+ggsave(
+  filename = "figs/structure_fig.pdf",
+  device = cairo_pdf,
+  width = 18.2,
+  height = 10,
+  units = "cm"
+)
+
+ggsave(
+  filename = "figs/structure_fig.jpg",
+  width = 18.2,
+  height = 10,
+  units = "cm"
+)
 ```
 
 # Understory species
 
+## Richness
+
 What I realized is that I can't calculate Shannon-weaver index from a species list, the best I can do is come up with an average number of species. The pattern here might suggest that crews had different skill levels in identifying herbs, or it could have to do with different seasons of observation. It is unexpected that the control has the same trend.
+
+I used a random slope linear model here, I'm not sure this is appropriate as we are dealing with count data. I did run a glmmm with poisson family (various links) and these all had a significantly higher BIC.
 
 ```{r}
 
@@ -240,7 +303,7 @@ var_fig(richness_veg_mean)
 
 ```
 
-# Understory cover
+## Understory cover
 
 What are the dominant shrubs and herbs for each treatment/year?
 
@@ -343,11 +406,36 @@ veg_cover %>%
 
 veg_cover %>%
   filter(year == "18") %>%
-  mutate(dom_shrub = spp_common_name(dom_shrub)) %>%
+  mutate(
+    dom_shrub = spp_common_name(dom_shrub)) %>%
+  relevel_treatment() %>%
   ggplot(aes(treatment, fill = dom_shrub)) +
+    theme_bw() +
+    theme(legend.position = c(0.79, 0.84)) +
     stat_count(aes(weight = cl_shrub / 4), position = "stack") +
     scale_fill_grey() +
-    labs(caption = "one bar for each treatment, indicating average percent cover and a scaled representation of dominant species from each of the 4 plots")
+    scale_y_continuous(expand = c(0.0, 0, 0.05, 0)) +
+    labs(
+      fill = NULL,
+      x = "Treatment",
+      y = "Cover (%)"
+    )
+
+ggsave(
+  filename = "figs/shrub_fig.pdf",
+  device = cairo_pdf,
+  width = 8.84,
+  height = 9,
+  units = "cm"
+)
+
+ggsave(
+  filename = "figs/shrub_fig.jpg",
+  width = 8.84,
+  height = 9,
+  units = "cm"
+)
+
 
 
 veg_cover %>%
@@ -361,6 +449,7 @@ veg_cover %>%
     scale_fill_grey() +
     labs(caption = "this is the same as the graph above, but for herbs")
 ```
+
 
 # Fun visual of SCI
 
@@ -404,7 +493,7 @@ Here are boxplots showing the variability in 2018 of some potentially important 
 ```{r}
 sci_d %>%
   filter(year == "18") %>%
-  select(treatment, spp, dbh, ht, cr, ht_inc2) %>%
+  select(treatment, spp, dbh, ht_p, cr, ht_inc2) %>%
   pivot_longer(
     !c(treatment, spp),
     names_to = "measure",
