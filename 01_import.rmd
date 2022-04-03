@@ -127,6 +127,7 @@ tree_list_all <- tree_list_all[!tree_list_all$tree_id %in% bad_id, ]
 I'll also look at trees with status == 99, and determine if they (a) died after harvest, and thus are period 1 mortality, or (b) died before harvest, and were snags. I also give status=1 to ingrowth in 2018 (where status was NA). Finally, some down, windthrown trees (broken below dbh or uprooted) continue to have dbh recorded (44), and others do not (115). I'm not sure how to handle this for now.
 
 ```{r}
+
 # Deal with status 99
 tree_2008[tree_2008$status == 99, "status"]
 tree_2008[tree_2008$status == 99, "status"] <- c(5, 5, 1, 1)
@@ -353,10 +354,18 @@ veg_species <- filter(
 For sites that list more than one dominant species, I'm only taking the first one.
 
 ```{r}
+
 veg_cover_files <- dir(pattern = "VegCover.*\\.txt$", recursive = TRUE)
-names(veg_cover_files) <- str_replace(veg_cover_files, "^.*(\\d{2})\\.txt$", "\\1")
+
+names(veg_cover_files) <- str_replace(
+  veg_cover_files,
+  "^.*(\\d{2})\\.txt$",
+  "\\1"
+)
+
 veg_cover_l <- lapply(veg_cover_files, read_csv)
 map(veg_cover_l, names) %>% unique
+
 
 veg_cover <- bind_rows(veg_cover_l, .id = "year") %>%
   select(
@@ -372,7 +381,7 @@ veg_cover <- bind_rows(veg_cover_l, .id = "year") %>%
     dom_herb = Dom_sp_Herb
   ) %>%
   filter(plot != "Spare1") %>%
-	mutate(treatment = str_extract(plot, treatments), .after = plot) %>%
+  mutate(treatment = str_extract(plot, treatments), .after = plot) %>%
   mutate(
     dom_shrub = str_replace(dom_shrub, "BENE2/GASH.*|BENE2/RUSP", "BENE2"),
     dom_herb = str_replace(dom_herb, "(\\w+)/.*", "\\1")
@@ -381,18 +390,19 @@ veg_cover <- bind_rows(veg_cover_l, .id = "year") %>%
 
 I convert cover classes to percent cover using the following provided information:
 
-CoverCode	 Range_pct
----------  ---------
-        0	 No Cover 
-        1	 0> Cover <5
-        2	 6 - 25
-        3	 26 - 50
-        4	 51 - 75
-        5  76 - 100
+
+CoverCod    Range_pct
+
+0           No Cover 
+1           0> Cover <5
+2           6 - 25
+3           26 - 50
+4           51 - 75
+5           76 - 100
 
 ```{r}
-veg_cover <- mutate(veg_cover, 
-  across(starts_with("cl"), 
+veg_cover <- mutate(veg_cover,
+  across(starts_with("cl"),
     ~ case_when(
       .x == 0 ~ 0,
       .x == 1 ~ 2.5,

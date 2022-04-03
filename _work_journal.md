@@ -1,3 +1,7 @@
+## 04/02/2022
+
+* Calculated Ducey's ratio
+
 ## 03/31/2022
 
 * Added structural heterogeneity figure and caption

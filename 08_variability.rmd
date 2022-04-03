@@ -53,7 +53,7 @@ var_fig <- function(data) {
       geom_point(position = my_dodge) +
     # geom_ribbon(aes(ymin = sh_n_ci_lb, ymax = sh_n_ci_ub, fill = treatment), alpha = 0.2, color = NA) +
       geom_errorbar(
-        aes(ymin = lower.CL, ymax = upper.CL),
+        aes(ymin = emmean - SE, ymax = emmean + SE),
         width = .75,
         position = my_dodge
       ) +
@@ -65,6 +65,11 @@ var_fig <- function(data) {
 var_mean <- function(plot_data) {
   mod <- lmer(val ~ treatment * year + (1 | plot), data = plot_data)
   emmeans(mod,  ~ treatment + year) %>% as.data.frame()
+}
+
+var_sig <- function(plot_data) {
+  mod <- lmer(val ~ treatment * year + (1 | plot), data = plot_data)
+  emmeans(mod, pairwise ~ treatment | year)
 }
 
 var_table <- function(mean_data, caption) {
@@ -97,6 +102,7 @@ sci_mean <- var_mean(sci_plot)
   
 var_table(sci_mean, caption = "Average SCI and confidence interval for all live trees including ingrowth")
 
+var_fig(sci_mean)
 ```
 
 Some of these trajectories look interesting, but They don't look unique, given the error bars.
@@ -121,6 +127,7 @@ mdi_mean <- var_mean(mdi_plot)
   
 var_table(mdi_mean, caption = "Average mean directional index (0: grid, 4:complete aggregation")
 
+var_fig(mdi_mean)
 ```
 
 # DBH differentiation (TD)
@@ -143,7 +150,7 @@ TD_mean <- var_mean(TD_plot)
   
 var_table(TD_mean, caption = "Average DBH differentiation, 0: similar tree sizes, approaching 1: more difference in neighbor tree size")
 
-
+var_fig(TD_mean)
 
 ```
 
@@ -161,7 +168,7 @@ dbhsd_mean <- var_mean(dbhsd_plot)
   
 var_table(dbhsd_mean, caption = "Standard deviation of DBH")
 
-
+var_fig(dbhsd_mean)
 
 ```
 
@@ -179,6 +186,7 @@ sh_mean <- var_mean(sh_plot)
   
 var_table(sh_mean, caption = "Average Shannon-Weaver index (stem based)")
 
+var_fig(sh_mean)
 
 sh_plot_ba <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -204,15 +212,35 @@ dbhm_mean <- var_mean(dbhm_plot)
   
 var_table(dbhm_mean, caption = "Standard deviation of DBH")
 
+var_fig(dbhm_mean)
+
+```
+
+# Ducey's ratio
+
+Here we have Ducey's ratio of the additive method of calulating SDI and the method proposed by Reineke. Potential values depend on the truncation of the underlying distribution, our min and max are 10 and 83, which, acording to @duceyRatioAdditiveTraditional2009 suggests that our potential lower limit might be around 0.74 for a stand where 95% of the trees were 10 cm and the rest were 83.
+
+Our values run from about 0.95 to about 0.98. 
+
+```{r}
+
+ducey_plot <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarize(val = sdi_sum(dbh) / sdi_r(dbh))
+
+ducey_mean <- var_mean(ducey_plot)
+
+var_sig(ducey_plot)
+  
+var_table(ducey_mean, caption = "Standard deviation of DBH")
+
+var_fig(ducey_mean)
 ```
 
 # Combined diversity figure
 
 ```{r}
-
-my_dodge <- position_dodge(0.5)
-
-bind_rows(
+structural_all <- bind_rows(
   SCI = sci_mean,
   MDI = mdi_mean,
   TD = TD_mean,
@@ -220,7 +248,14 @@ bind_rows(
   DBHsd = dbhsd_mean,
   DBHm = dbhm_mean,
   .id = "metric"
-) %>%
+) 
+```
+
+```{r}
+
+my_dodge <- position_dodge(0.5)
+
+structural_all %>%
   relevel_treatment() %>%
   mutate(year = paste0("20", year)) %>%
   ggplot(aes(year, emmean, group = treatment)) +

@@ -201,9 +201,19 @@ For "live" trees only
 ```{r}
 
 d_l <- d_l %>%
-  group_by(plot) %>%
+  group_by(plot, year) %>%
   mutate(sdi_plot = sum(12.5 * (dbh * live / 25.4)^1.605, na.rm = TRUE)) %>%
   ungroup()
+
+sdi_r <- function(dbh) {
+  qmd <- sqrt(mean(dbh**2))
+  tpa <- length(dbh) * 12.5
+  tpa * (qmd / 25.4)**1.605
+}
+
+sdi_sum <- function(dbh) {
+  sum(12.5 * (dbh / 25.4)**1.605)
+}
 
 ```
 
