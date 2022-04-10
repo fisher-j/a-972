@@ -12,71 +12,158 @@ require(tidyverse)
 
 # Bear damage
 
-Trees of interest. I'll create a new variable called `bear2` that is cumulative bear damage, ensuring that any bear damaged tree remains bear damaged.
+## data cleaning
 
-In looking at notes, trees trees that have "old bear damage" recorded are treated inconsistently. Sometimes they are recorded as bear damaged, sometimes not. Using cumulative bear damage helps to smooth over this inconsistency.
+I'll only consider live trees.
 
-I need to create another variable which indicates if the damage is new for that period, when a trees goes from undamaged to damaged.
+```{r}
+bd <- d_l %>%
+  filter(live) %>%
+  mutate(year = factor(year, ordered = FALSE)) %>%
+  select(-c(h_dist, azi, x, y, cc, live, ht), -contains("inc1"))
+```
 
-finally, I can count trees where the damage increases from one period to the next as new damage I think, ie. when condition code increases from 17 or 18 to 19 or 20.
+There are trees with "healed over" in the notes, most of these are in 2008. It makes sense if these trees are subsequently listed as not bear damaged. 
+
+I'm assuming that any tree that goes from bear damaged in 2008 to not bear damaged in 2013 is in fact healed and that any damage in 2018 is new damage.
+
+```{r}
+# # Use this to look at any "healed" trees
+# bd %>% 
+#   group_by(tree_id) %>%
+#   filter(any(str_detect(tolower(notes), "healed"))) %>%
+#   color_groups()
+```
+
+In looking at notes, trees trees that have "old bear damage" recorded are treated inconsistently, some are recorded with bear damage, some without. I'll assume that trees recorded as not bear damaged are either undamaged or completely healed, and subsequent damage implies a new bear incidence of bear damage.
 
 ```{r}
 
-cum_logic <- function(x) {
-  if (any(x)) {
-    idx <- min(which(x))
-    x[idx:length(x)] <- TRUE
-  }
-  return(x)
-}
+# # Use this to look at any "old bd" trees
+# bd %>% 
+#   group_by(tree_id) %>%
+#   filter(any(str_detect(tolower(notes), "old"))) %>%
+#   color_groups()
 
-bd <- d_l %>%
-  filter(live) %>%
+```
+
+Are there trees that are recorded as bear damaged in one period and then not in the next period? Put another way, are bear damaged trees dropped from the list for one reason or another? 
+
+There are 64 trees that are dropped (all in 2013), of these, 14 are subsequently listed as damaged (all in 2018). As stated above, I will consider these valid occurrences of new damage.
+
+```{r}
+bear_dropped <- bd %>%
+  group_by(tree_id) %>%
+  mutate(bear_dropped = lag(bear) & !bear) %>%
+  filter(any(bear_dropped)) %>%
+  mutate(id = cur_group_id()) %>%
+  relocate(id) %>%
+  arrange(id)
+
+# # all dropped bear damage trees occur in 2013
+# filter(bear_dropped, bear_dropped) %>% pull(year) %>% unique()
+
+# color_groups(bear_dropped)
+
+# trees that are re-attacked
+bear_dropped %>%
+  filter(any(bear & !lag(bear))) %>%
+  mutate(id = cur_group_id(), .before = 1) %>%
+  color_groups()
+
+```
+
+I need to create another variable which indicates if the damage is new for that period, when a trees goes from undamaged to damaged. I will also count trees as new bear damage when the damage increases from one period to the next ie. when condition code increases from 17 or 18 to 19 or 20.
+
+```{r}
+
+# # this was used for ensuring all bear damage stuck with a tree throughout its life
+# # I've since decided to allow trees to "completely heal," as the data seems to suggest this
+# cum_logic <- function(x) {
+#   if (any(x)) {
+#     idx <- min(which(x))
+#     x[idx:length(x)] <- TRUE
+#   }
+#   return(x)
+# }
+
+bd <- bd %>%
   group_by(tree_id) %>%
   mutate(
-    bear2 = cum_logic(bear),
     bear_mag = as.numeric(get_cond(17, 18, 19, str = TRUE)),
-    
+    bear_new = bear & year == "08" | bear & !lag(bear) | bear_mag > lag(bear_mag)
     ) %>%
+  select(-bear_mag) %>%
   ungroup()
 
-# bd %>%
-#   group_by(tree_id) %>%
-#   filter(year != "init", any(str_detect(tolower(notes), "old"))) %>%
-#   print(n=Inf)
+bd %>% filter(bear_new)
 
-bd %>% 
-  mutate(bear_mag = as.numeric(get_cond(17, 18, 19, str = TRUE))) %>%
-  group_by(tree_id) %>%
-  filter(bear_mag > lag(bear_mag))
 ```
 
 ## Summary
 
-Are there trees that are recorded as bear damaged in one period and then not in the next period? Put another way, are bear damaged trees dropped from the list? Yet another way: are we considering cumulative bear damage here, or somehow separating new vs old occurrences? 
+Here is percent new bear damage over time. The H40 and L40 treatments seem to have the largest increases.
 
-I am going to focus on cumulative bear damage, assuming that once a tree is damaged, it remains damaged. It is important to note here that we have no way of quantifying re-damage, so if in reality there is extensive re-damage, then we will will be underestimating damage. There is another column for 2013 and 2018 that indicates the extent of bear damage.
-
-```{r}
-bd %>%
-  group_by(tree_id) %>%
-  mutate(bear_dropped = lag(bear) & !bear) %>%
-  filter(any(bear_dropped)) %>%
-  group_by(treatment, plot, year) %>%
-  summarize(bear_dropped = sum(bear_dropped)) %>%
-  summarize(bear_dropped = sum(bear_dropped))
-```
-
-Here is percent cumulative bear damage over time. The H40 and L40 treatments seem to have the largest increases, but is important to remember that the increase from init to 08 is a function of marking decisions, not bear response. This means that more bear damaged trees were kept.
+In the H40 treatment there is a decline in percent new bear damage in two plots, whereas for the L40 treatment, only one declines, and it is anomalous in that is the only plot that sees an increase from 2008 to 2013.
 
 ```{r}
+
 bd %>%
+  filter(year != "init") %>%
   group_by(year, treatment, plot) %>% 
-  summarize(pct_bear = sum(bear2) / n()) %>% 
+  summarize(pct_bear = sum(bear_new, na.rm = TRUE) / n()) %>% 
   summarize(avg_pct_bear = mean(pct_bear)) %>% 
   ggplot(aes(year, avg_pct_bear, color = treatment, group = treatment)) + 
     geom_line() +
-    geom_point()
+    geom_point() +
+    labs(title = "Average percent new bear damage for each treatment")
+
+bd %>%
+  filter(year != "init") %>%
+  group_by(year, treatment, plot) %>% 
+  summarize(pct_bear = sum(bear_new, na.rm = TRUE) / n()) %>% 
+  # summarize(avg_pct_bear = mean(pct_bear)) %>% 
+  ggplot(aes(year, pct_bear, color = treatment, group = plot)) + 
+    geom_line(position = position_dodge(width = 0.4), size = 1, alpha = 0.6) +
+    geom_point(position = position_dodge(width = 0.4)) +
+    scale_x_discrete(expand = expansion(mult = 0.2)) +
+    labs(title = "Actual percent new bear damage for each plot in treatment")
+
+bd %>%
+  filter(year != "init") %>%
+  mutate(
+    bear_new = if_else(is.na(bear_new), FALSE, bear_new),
+    plot2 = str_extract(plot, "\\d")
+  ) %>%
+  group_by(treatment, year, plot2) %>%
+  summarize(bear_new = sum(bear_new)) %>%
+  ungroup() %>%
+  ggplot(aes(plot2, bear_new, fill = year)) + 
+    geom_col(position = "dodge", color = "black") +
+    facet_wrap(~ treatment) +
+    labs(
+      title = "Actual count new bear damage for each plot in treatment",
+      y = "Count of bear damage", x = "Plot number"  
+    )
+
+bd %>%
+  filter(year != "init") %>%
+  mutate(
+    bear_new = if_else(is.na(bear_new), FALSE, bear_new),
+    plot2 = str_extract(plot, "\\d")
+  ) %>%
+  group_by(treatment, year, plot, plot2) %>%
+  summarize(bear_new = sum(bear_new)) %>%
+  ungroup() %>%
+  ggplot(aes(year, bear_new, group = plot2)) + 
+    geom_point(position = position_dodge(0.3), alpha = 0.5) +
+    geom_line(position = position_dodge(0.3), size = 1, alpha = 0.5) +
+    facet_wrap(~ treatment) +
+    labs(
+      title = "Actual count new bear damage for each plot in treatment",
+      y = "Count of bear damage", x = "Year"  
+    )
+
 ```
 
 

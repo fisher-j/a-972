@@ -6,6 +6,11 @@
   - plot level, percent bear damage 
   - cumulative bear damage
   - "new" bear damage (including increase in severity)
+* I rethink the data cleaning and decide to allow trees to "heal completely" thus allowing re-damage of these trees to be interpreted as new damage.
+  - Preferring "new damage" over "cumulative damage"
+* made summary graphs of new bear damage
+  - percent
+  - count
 
 ## 04/02/2022
 
