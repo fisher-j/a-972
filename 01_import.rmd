@@ -120,8 +120,6 @@ tree_2008 <- tree_2008[!tree_2008$tree_id %in% bad_id, ]
 tree_2013 <- tree_2013[!tree_2013$tree_id %in% bad_id, ]
 tree_2018 <- tree_2018[!tree_2018$tree_id %in% bad_id, ]
 tree_list_all <- tree_list_all[!tree_list_all$tree_id %in% bad_id, ]
-
-
 ```
 
 I'll also look at trees with status == 99, and determine if they (a) died after harvest, and thus are period 1 mortality, or (b) died before harvest, and were snags. I also give status=1 to ingrowth in 2018 (where status was NA). Finally, some down, windthrown trees (broken below dbh or uprooted) continue to have dbh recorded (44), and others do not (115). I'm not sure how to handle this for now.

@@ -1,0 +1,82 @@
+---
+title: Bear and other damage
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+```{r}
+require(tidyverse)
+```
+
+# Bear damage
+
+Trees of interest. I'll create a new variable called `bear2` that is cumulative bear damage, ensuring that any bear damaged tree remains bear damaged.
+
+In looking at notes, trees trees that have "old bear damage" recorded are treated inconsistently. Sometimes they are recorded as bear damaged, sometimes not. Using cumulative bear damage helps to smooth over this inconsistency.
+
+I need to create another variable which indicates if the damage is new for that period, when a trees goes from undamaged to damaged.
+
+finally, I can count trees where the damage increases from one period to the next as new damage I think, ie. when condition code increases from 17 or 18 to 19 or 20.
+
+```{r}
+
+cum_logic <- function(x) {
+  if (any(x)) {
+    idx <- min(which(x))
+    x[idx:length(x)] <- TRUE
+  }
+  return(x)
+}
+
+bd <- d_l %>%
+  filter(live) %>%
+  group_by(tree_id) %>%
+  mutate(
+    bear2 = cum_logic(bear),
+    bear_mag = as.numeric(get_cond(17, 18, 19, str = TRUE)),
+    
+    ) %>%
+  ungroup()
+
+# bd %>%
+#   group_by(tree_id) %>%
+#   filter(year != "init", any(str_detect(tolower(notes), "old"))) %>%
+#   print(n=Inf)
+
+bd %>% 
+  mutate(bear_mag = as.numeric(get_cond(17, 18, 19, str = TRUE))) %>%
+  group_by(tree_id) %>%
+  filter(bear_mag > lag(bear_mag))
+```
+
+## Summary
+
+Are there trees that are recorded as bear damaged in one period and then not in the next period? Put another way, are bear damaged trees dropped from the list? Yet another way: are we considering cumulative bear damage here, or somehow separating new vs old occurrences? 
+
+I am going to focus on cumulative bear damage, assuming that once a tree is damaged, it remains damaged. It is important to note here that we have no way of quantifying re-damage, so if in reality there is extensive re-damage, then we will will be underestimating damage. There is another column for 2013 and 2018 that indicates the extent of bear damage.
+
+```{r}
+bd %>%
+  group_by(tree_id) %>%
+  mutate(bear_dropped = lag(bear) & !bear) %>%
+  filter(any(bear_dropped)) %>%
+  group_by(treatment, plot, year) %>%
+  summarize(bear_dropped = sum(bear_dropped)) %>%
+  summarize(bear_dropped = sum(bear_dropped))
+```
+
+Here is percent cumulative bear damage over time. The H40 and L40 treatments seem to have the largest increases, but is important to remember that the increase from init to 08 is a function of marking decisions, not bear response. This means that more bear damaged trees were kept.
+
+```{r}
+bd %>%
+  group_by(year, treatment, plot) %>% 
+  summarize(pct_bear = sum(bear2) / n()) %>% 
+  summarize(avg_pct_bear = mean(pct_bear)) %>% 
+  ggplot(aes(year, avg_pct_bear, color = treatment, group = treatment)) + 
+    geom_line() +
+    geom_point()
+```
+
+

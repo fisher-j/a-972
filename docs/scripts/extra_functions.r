@@ -12,7 +12,7 @@ group_vars <- function(by_species = FALSE) {
 }
 
 # color table by groups function, only works if table is
-# properly arranged. 
+# properly arranged.
 color_groups <- function(x, caption = "", background = "#EEE9E9", digits = 3) {
   even_groups <- x %>%
     rownames_to_column() %>%

@@ -1,3 +1,12 @@
+## 04/09/2020
+
+* Added SDI*/SDI to finished "structure" figure.
+* Completed veg figure including Species richness and combined veg cover (shrub and herb)
+* Calculated new bear damage variables for consideration:
+  - plot level, percent bear damage 
+  - cumulative bear damage
+  - "new" bear damage (including increase in severity)
+
 ## 04/02/2022
 
 * Calculated Ducey's ratio
