@@ -125,9 +125,11 @@ bd %>%
   # summarize(avg_pct_bear = mean(pct_bear)) %>% 
   ggplot(aes(year, pct_bear, color = treatment, group = plot)) + 
     geom_line(position = position_dodge(width = 0.4), size = 1, alpha = 0.6) +
+    facet_wrap(~ treatment) +
+    theme(legend.position = "none") +
     geom_point(position = position_dodge(width = 0.4)) +
     scale_x_discrete(expand = expansion(mult = 0.2)) +
-    labs(title = "Actual percent new bear damage for each plot in treatment")
+    labs(title = "Actual percent new bear damage for each treatment")
 
 bd %>%
   filter(year != "init") %>%
@@ -152,6 +154,22 @@ bd %>%
     bear_new = if_else(is.na(bear_new), FALSE, bear_new),
     plot2 = str_extract(plot, "\\d")
   ) %>%
+  group_by(treatment, year) %>%
+  summarize(bear_new = sum(bear_new)) %>%
+  ungroup() %>%
+  ggplot(aes(treatment, bear_new, fill = year)) + 
+    geom_col(position = "dodge", color = "black") +
+    labs(
+      title = "Total sum of new bear damage for each treatment",
+      y = "Count of bear damage", x = "Treatment"  
+    )
+
+bd %>%
+  filter(year != "init") %>%
+  mutate(
+    bear_new = if_else(is.na(bear_new), FALSE, bear_new),
+    plot2 = str_extract(plot, "\\d")
+  ) %>%
   group_by(treatment, year, plot, plot2) %>%
   summarize(bear_new = sum(bear_new)) %>%
   ungroup() %>%
@@ -166,4 +184,11 @@ bd %>%
 
 ```
 
+# Modeling
+
+There are several potential to modeling this data.
+
+1. It could be modeled as binary data with a zero-inflated genearlized linear model binomial regression with logit link (logistic regression). This, I think would 
+
+2. Another approach is modeling percent bear damage at the plot level.
 

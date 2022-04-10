@@ -309,6 +309,7 @@ $(document).ready(function () {
 <li><a href="#data-cleaning">data cleaning</a></li>
 <li><a href="#summary">Summary</a></li>
 </ul></li>
+<li><a href="#modeling">Modeling</a></li>
 </ul>
 </div>
 
@@ -3938,9 +3939,11 @@ anomalous in that is the only plot that sees an increase from 2008 to
   # summarize(avg_pct_bear = mean(pct_bear)) %&gt;% 
   ggplot(aes(year, pct_bear, color = treatment, group = plot)) + 
     geom_line(position = position_dodge(width = 0.4), size = 1, alpha = 0.6) +
+    facet_wrap(~ treatment) +
+    theme(legend.position = &quot;none&quot;) +
     geom_point(position = position_dodge(width = 0.4)) +
     scale_x_discrete(expand = expansion(mult = 0.2)) +
-    labs(title = &quot;Actual percent new bear damage for each plot in treatment&quot;)</code></pre>
+    labs(title = &quot;Actual percent new bear damage for each treatment&quot;)</code></pre>
 <p><img src="09_damage_files/figure-html/unnamed-chunk-7-2.png" width="672" /></p>
 <pre class="r"><code>bd %&gt;%
   filter(year != &quot;init&quot;) %&gt;%
@@ -3965,6 +3968,22 @@ anomalous in that is the only plot that sees an increase from 2008 to
     bear_new = if_else(is.na(bear_new), FALSE, bear_new),
     plot2 = str_extract(plot, &quot;\\d&quot;)
   ) %&gt;%
+  group_by(treatment, year) %&gt;%
+  summarize(bear_new = sum(bear_new)) %&gt;%
+  ungroup() %&gt;%
+  ggplot(aes(treatment, bear_new, fill = year)) + 
+    geom_col(position = &quot;dodge&quot;, color = &quot;black&quot;) +
+    labs(
+      title = &quot;Total sum of new bear damage for each treatment&quot;,
+      y = &quot;Count of bear damage&quot;, x = &quot;Treatment&quot;  
+    )</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-7-4.png" width="672" /></p>
+<pre class="r"><code>bd %&gt;%
+  filter(year != &quot;init&quot;) %&gt;%
+  mutate(
+    bear_new = if_else(is.na(bear_new), FALSE, bear_new),
+    plot2 = str_extract(plot, &quot;\\d&quot;)
+  ) %&gt;%
   group_by(treatment, year, plot, plot2) %&gt;%
   summarize(bear_new = sum(bear_new)) %&gt;%
   ungroup() %&gt;%
@@ -3976,8 +3995,19 @@ anomalous in that is the only plot that sees an increase from 2008 to
       title = &quot;Actual count new bear damage for each plot in treatment&quot;,
       y = &quot;Count of bear damage&quot;, x = &quot;Year&quot;  
     )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-7-4.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-7-5.png" width="672" /></p>
 </div>
+</div>
+<div id="modeling" class="section level1">
+<h1>Modeling</h1>
+<p>There are several potential to modeling this data.</p>
+<ol style="list-style-type: decimal">
+<li><p>It could be modeled as binary data with a zero-inflated
+genearlized linear model binomial regression with logit link (logistic
+regression). This, I think would</p></li>
+<li><p>Another approach is modeling percent bear damage at the plot
+level.</p></li>
+</ol>
 </div>
 
 
