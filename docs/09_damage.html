@@ -310,6 +310,7 @@ $(document).ready(function () {
 <li><a href="#summary">Summary</a></li>
 </ul></li>
 <li><a href="#modeling">Modeling</a></li>
+<li><a href="#logistic-regression">Logistic regression</a></li>
 </ul>
 </div>
 
@@ -322,7 +323,7 @@ $(document).ready(function () {
 <pre class="r"><code>bd &lt;- d_l %&gt;%
   filter(live) %&gt;%
   mutate(year = factor(year, ordered = FALSE)) %&gt;%
-  select(-c(h_dist, azi, x, y, cc, live, ht), -contains(&quot;inc1&quot;))</code></pre>
+  select(-c(h_dist, azi, x, y, cc, live, ht))</code></pre>
 <p>There are trees with “healed over” in the notes, most of these are in
 2008. It makes sense if these trees are subsequently listed as not bear
 damaged.</p>
@@ -425,6 +426,15 @@ ht_inc2
 ba_inc2
 </th>
 <th style="text-align:right;">
+d_inc1
+</th>
+<th style="text-align:right;">
+ht_inc1
+</th>
+<th style="text-align:right;">
+ba_inc1
+</th>
+<th style="text-align:right;">
 sdi_plot
 </th>
 <th style="text-align:right;">
@@ -488,6 +498,15 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
 1706.229
 </td>
 <td style="text-align:right;">
@@ -547,6 +566,15 @@ X
 </td>
 <td style="text-align:right;">
 0.000
+</td>
+<td style="text-align:right;">
+1.016
+</td>
+<td style="text-align:right;">
+-0.183
+</td>
+<td style="text-align:right;">
+96.882
 </td>
 <td style="text-align:right;">
 710.770
@@ -611,6 +639,15 @@ broken top (leader); connected at base with 3067
 96.882
 </td>
 <td style="text-align:right;">
+1.829
+</td>
+<td style="text-align:right;">
+0.731
+</td>
+<td style="text-align:right;">
+194.819
+</td>
+<td style="text-align:right;">
 804.925
 </td>
 <td style="text-align:right;">
@@ -671,6 +708,15 @@ NA
 </td>
 <td style="text-align:right;">
 194.819
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
 </td>
 <td style="text-align:right;">
 982.710
@@ -734,6 +780,15 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1706.229
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -795,6 +850,15 @@ X
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+0.838
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.183
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+61.799
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 710.770
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -854,6 +918,15 @@ connected at base with 3066
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 61.799
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.880
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.183
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+158.610
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 804.925
@@ -918,6 +991,15 @@ NA
 158.610
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 982.710
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -977,6 +1059,15 @@ NA
 </td>
 <td style="text-align:right;">
 NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
 </td>
 <td style="text-align:right;">
 1706.229
@@ -1040,6 +1131,15 @@ X
 0.000
 </td>
 <td style="text-align:right;">
+1.422
+</td>
+<td style="text-align:right;">
+0.305
+</td>
+<td style="text-align:right;">
+97.045
+</td>
+<td style="text-align:right;">
 710.770
 </td>
 <td style="text-align:right;">
@@ -1099,6 +1199,15 @@ NA
 </td>
 <td style="text-align:right;">
 97.045
+</td>
+<td style="text-align:right;">
+1.676
+</td>
+<td style="text-align:right;">
+0.488
+</td>
+<td style="text-align:right;">
+134.774
 </td>
 <td style="text-align:right;">
 804.925
@@ -1163,6 +1272,15 @@ NA
 134.774
 </td>
 <td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
 982.710
 </td>
 <td style="text-align:right;">
@@ -1222,6 +1340,15 @@ NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 1706.229
@@ -1285,6 +1412,15 @@ X
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+1.473
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.366
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+92.575
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 710.770
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1344,6 +1480,15 @@ bear damage healed over
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 92.575
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.727
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.036
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+130.244
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 804.925
@@ -1408,6 +1553,15 @@ NA
 130.244
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 982.710
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1467,6 +1621,15 @@ NA
 </td>
 <td style="text-align:right;">
 NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
 </td>
 <td style="text-align:right;">
 1706.229
@@ -1530,6 +1693,15 @@ X
 0.000
 </td>
 <td style="text-align:right;">
+0.508
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+36.888
+</td>
+<td style="text-align:right;">
 710.770
 </td>
 <td style="text-align:right;">
@@ -1589,6 +1761,15 @@ NA
 </td>
 <td style="text-align:right;">
 36.888
+</td>
+<td style="text-align:right;">
+2.337
+</td>
+<td style="text-align:right;">
+-0.244
+</td>
+<td style="text-align:right;">
+195.792
 </td>
 <td style="text-align:right;">
 804.925
@@ -1653,6 +1834,15 @@ NA
 195.792
 </td>
 <td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
 982.710
 </td>
 <td style="text-align:right;">
@@ -1712,6 +1902,15 @@ NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 1706.229
@@ -1775,6 +1974,15 @@ HEALED OVER
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+1.168
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.366
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+65.963
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 710.770
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1834,6 +2042,15 @@ NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 65.963
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.473
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.427
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+98.453
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 804.925
@@ -1898,6 +2115,15 @@ NA
 98.453
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 982.710
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1957,6 +2183,15 @@ NA
 </td>
 <td style="text-align:right;">
 NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
 </td>
 <td style="text-align:right;">
 1581.479
@@ -2020,6 +2255,15 @@ X
 0.000
 </td>
 <td style="text-align:right;">
+1.118
+</td>
+<td style="text-align:right;">
+0.122
+</td>
+<td style="text-align:right;">
+89.626
+</td>
+<td style="text-align:right;">
 1241.962
 </td>
 <td style="text-align:right;">
@@ -2079,6 +2323,15 @@ NA
 </td>
 <td style="text-align:right;">
 89.626
+</td>
+<td style="text-align:right;">
+1.575
+</td>
+<td style="text-align:right;">
+0.792
+</td>
+<td style="text-align:right;">
+142.942
 </td>
 <td style="text-align:right;">
 1314.530
@@ -2143,6 +2396,15 @@ NA
 142.942
 </td>
 <td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
 1425.856
 </td>
 <td style="text-align:right;">
@@ -2204,6 +2466,15 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1581.479
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2263,6 +2534,15 @@ X
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.118
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.671
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.820
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 1241.962
@@ -2327,6 +2607,15 @@ NA
 46.820
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+0.914
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.366
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+45.604
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1314.530
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2387,6 +2676,15 @@ NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 45.604
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 1425.856
@@ -2450,6 +2748,15 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
 1359.021
 </td>
 <td style="text-align:right;">
@@ -2509,6 +2816,15 @@ HEALED OVER
 </td>
 <td style="text-align:right;">
 0.000
+</td>
+<td style="text-align:right;">
+0.965
+</td>
+<td style="text-align:right;">
+0.610
+</td>
+<td style="text-align:right;">
+47.945
 </td>
 <td style="text-align:right;">
 563.961
@@ -2573,6 +2889,15 @@ NA
 47.945
 </td>
 <td style="text-align:right;">
+0.305
+</td>
+<td style="text-align:right;">
+0.427
+</td>
+<td style="text-align:right;">
+16.661
+</td>
+<td style="text-align:right;">
 659.869
 </td>
 <td style="text-align:right;">
@@ -2633,6 +2958,15 @@ NA
 </td>
 <td style="text-align:right;">
 16.661
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
 </td>
 <td style="text-align:right;">
 722.016
@@ -2696,6 +3030,15 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1204.536
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2757,6 +3100,15 @@ HEALED OVER
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+0.965
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.244
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+56.417
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 915.762
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2816,6 +3168,15 @@ NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 56.417
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.864
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.671
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+56.680
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 1019.818
@@ -2880,6 +3241,15 @@ NA
 56.680
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1108.124
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2941,6 +3311,15 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
 1297.365
 </td>
 <td style="text-align:right;">
@@ -3000,6 +3379,15 @@ HEALED OVER
 </td>
 <td style="text-align:right;">
 0.000
+</td>
+<td style="text-align:right;">
+1.219
+</td>
+<td style="text-align:right;">
+-0.853
+</td>
+<td style="text-align:right;">
+71.020
 </td>
 <td style="text-align:right;">
 1023.100
@@ -3064,6 +3452,15 @@ NA
 71.020
 </td>
 <td style="text-align:right;">
+1.626
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+112.854
+</td>
+<td style="text-align:right;">
 1032.595
 </td>
 <td style="text-align:right;">
@@ -3124,6 +3521,15 @@ NA
 </td>
 <td style="text-align:right;">
 112.854
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
 </td>
 <td style="text-align:right;">
 1105.628
@@ -3187,6 +3593,15 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1363.643
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3248,6 +3663,15 @@ LOOKS GREAT
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+1.219
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.244
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+79.776
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 570.153
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3307,6 +3731,15 @@ BD healed over
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 79.776
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.813
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.183
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-54.481
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 656.313
@@ -3371,6 +3804,15 @@ NA
 -54.481
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 612.469
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3432,6 +3874,15 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
 1422.038
 </td>
 <td style="text-align:right;">
@@ -3491,6 +3942,15 @@ X
 </td>
 <td style="text-align:right;">
 0.000
+</td>
+<td style="text-align:right;">
+1.118
+</td>
+<td style="text-align:right;">
+-0.366
+</td>
+<td style="text-align:right;">
+56.630
 </td>
 <td style="text-align:right;">
 562.503
@@ -3555,6 +4015,15 @@ NA
 56.630
 </td>
 <td style="text-align:right;">
+0.406
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+23.025
+</td>
+<td style="text-align:right;">
 597.688
 </td>
 <td style="text-align:right;">
@@ -3615,6 +4084,15 @@ NA
 </td>
 <td style="text-align:right;">
 23.025
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
 </td>
 <td style="text-align:right;">
 679.618
@@ -3678,6 +4156,15 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1422.038
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3737,6 +4224,15 @@ X
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1.270
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-2.682
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-33.696
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 562.503
@@ -3801,6 +4297,15 @@ tree split in half
 -33.696
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+0.152
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.375
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 597.688
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3863,6 +4368,15 @@ NA
 3.375
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 679.618
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3893,25 +4407,26 @@ bd &lt;- bd %&gt;%
   group_by(tree_id) %&gt;%
   mutate(
     bear_mag = as.numeric(get_cond(17, 18, 19, str = TRUE)),
-    bear_new = bear &amp; year == &quot;08&quot; | bear &amp; !lag(bear) | bear_mag &gt; lag(bear_mag)
+    bear_new = bear &amp; year == &quot;08&quot; | bear &amp; !lag(bear) | bear_mag &gt; lag(bear_mag),
+    bear_new = if_else(is.na(bear_new), FALSE, bear_new)
     ) %&gt;%
   select(-bear_mag) %&gt;%
   ungroup()
 
 bd %&gt;% filter(bear_new)</code></pre>
-<pre><code>## # A tibble: 252 x 19
-##    plot  treatment tree_id   spp   year    dbh    cr status bear  rot   notes              cond     ba d_inc2 ht_inc2 ba_inc2 sdi_plot  ht_p bear_new
-##    &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;              &lt;chr&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;   
-##  1 1H40  H40       1H40.1902 SESE3 08     37.6    40      1 TRUE  FALSE X                  &quot;&quot;    1110.  0       0         0       449. 23.2  TRUE    
-##  2 1H40  H40       1H40.1905 SESE3 08     19.3    20      1 TRUE  FALSE X                  &quot;&quot;     293.  0       0         0       449. 11.3  TRUE    
-##  3 1H40  H40       1H40.1907 SESE3 08     28.7    20      1 TRUE  FALSE Tag Sequence Break &quot;&quot;     647.  0       0         0       449. 20.4  TRUE    
-##  4 1H40  H40       1H40.1916 SESE3 08     25.4    10      1 TRUE  FALSE X                  &quot;&quot;     507.  0       0         0       449. 18.0  TRUE    
-##  5 1H40  H40       1H40.3008 PSMEM 13     32.0    30      1 TRUE  NA    &lt;NA&gt;               &quot;18&quot;   804.  0.864  -0.244    40.5     484. 22.2  TRUE    
-##  6 1H40  H40       1H40.3032 SESE3 08     45.0    35      1 TRUE  FALSE X                  &quot;&quot;    1587.  0       0         0       449. 24.1  TRUE    
-##  7 1H40  H40       1H40.3033 PISI  08     61.0    40      1 TRUE  FALSE X                  &quot;&quot;    2919.  0       0         0       449. 31.1  TRUE    
-##  8 1H80  H80       1H80.3526 PISI  08     50.0    35      1 TRUE  TRUE  X                  &quot;&quot;    1966.  0       0         0      1162. 28.0  TRUE    
-##  9 1H80  H80       1H80.3527 SESE3 08     20.3    15      1 TRUE  TRUE  X                  &quot;&quot;     324.  0       0         0      1162.  9.45 TRUE    
-## 10 1H80  H80       1H80.3528 PSMEM 08     32.5    25      1 TRUE  TRUE  X                  &quot;&quot;     830.  0       0         0      1162. 24.4  TRUE    
+<pre><code>## # A tibble: 252 x 22
+##    plot  treatment tree_id   spp   year    dbh    cr status bear  rot   notes              cond     ba d_inc2 ht_inc2 ba_inc2 d_inc1 ht_inc1 ba_inc1 sdi_plot  ht_p bear_new
+##    &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;              &lt;chr&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;   
+##  1 1H40  H40       1H40.1902 SESE3 08     37.6    40      1 TRUE  FALSE X                  &quot;&quot;    1110.  0       0         0   0.559   -0.671   34.2      449. 23.2  TRUE    
+##  2 1H40  H40       1H40.1905 SESE3 08     19.3    20      1 TRUE  FALSE X                  &quot;&quot;     293.  0       0         0   0.0508   0.427    1.55     449. 11.3  TRUE    
+##  3 1H40  H40       1H40.1907 SESE3 08     28.7    20      1 TRUE  FALSE Tag Sequence Break &quot;&quot;     647.  0       0         0   0.762    0.183   36.6      449. 20.4  TRUE    
+##  4 1H40  H40       1H40.1916 SESE3 08     25.4    10      1 TRUE  FALSE X                  &quot;&quot;     507.  0       0         0   1.02     0.366   44.6      449. 18.0  TRUE    
+##  5 1H40  H40       1H40.3008 PSMEM 13     32.0    30      1 TRUE  NA    &lt;NA&gt;               &quot;18&quot;   804.  0.864  -0.244    40.5 0.711    1.04    37.7      484. 22.2  TRUE    
+##  6 1H40  H40       1H40.3032 SESE3 08     45.0    35      1 TRUE  FALSE X                  &quot;&quot;    1587.  0       0         0   1.02     0.610   75.8      449. 24.1  TRUE    
+##  7 1H40  H40       1H40.3033 PISI  08     61.0    40      1 TRUE  FALSE X                  &quot;&quot;    2919.  0       0         0   1.88     0.122  194.       449. 31.1  TRUE    
+##  8 1H80  H80       1H80.3526 PISI  08     50.0    35      1 TRUE  TRUE  X                  &quot;&quot;    1966.  0       0         0   2.18     0.792  190.      1162. 28.0  TRUE    
+##  9 1H80  H80       1H80.3527 SESE3 08     20.3    15      1 TRUE  TRUE  X                  &quot;&quot;     324.  0       0         0   0.102    0.792    3.28    1162.  9.45 TRUE    
+## 10 1H80  H80       1H80.3528 PSMEM 08     32.5    25      1 TRUE  TRUE  X                  &quot;&quot;     830.  0       0         0   1.12     0.975   62.0     1162. 24.4  TRUE    
 ## # ... with 242 more rows</code></pre>
 </div>
 <div id="summary" class="section level2">
@@ -4003,11 +4518,228 @@ anomalous in that is the only plot that sees an increase from 2008 to
 <p>There are several potential to modeling this data.</p>
 <ol style="list-style-type: decimal">
 <li><p>It could be modeled as binary data with a zero-inflated
-genearlized linear model binomial regression with logit link (logistic
-regression). This, I think would</p></li>
+generalized linear model binomial regression with logit link (logistic
+regression). This, I think would be answering: for a random (average?)
+tree from a given treatment, what is the probability that it would be
+bear damaged? I’m not sure we have sufficient observations of damaged
+trees characterize the distribution. In the case of prediction, we may
+need to make adjustment for the <a
+href="https://stats.stackexchange.com/questions/6067/does-an-unbalanced-sample-matter-when-doing-logistic-regression">imbalance
+of response</a></p></li>
 <li><p>Another approach is modeling percent bear damage at the plot
-level.</p></li>
+level. Here linear regression may work, but theoretically, our response
+is bound by (0, 1). One recommendation here is <a
+href="https://hansjoerg.me/2019/05/10/regression-modeling-with-proportion-data-part-1/">Beta
+regression</a>.</p></li>
+<li><p>Also at the plot level, we could model counts using Poisson or
+negative binomial GLMM. This would answer the question: how many trees
+can we expect to be bear damaged given a treatment. Here it would
+probably be important to account for differences between treatments like
+diameter increment and tree size.</p></li>
 </ol>
+</div>
+<div id="logistic-regression" class="section level1">
+<h1>Logistic regression</h1>
+<p>We are modeling occurrence of new bear damage in 2013 and 2018. New
+bear damage in 2008 is not really comparable as it represents
+accumulated damage over an unspecified amount of time prior to
+treatment.</p>
+<p>My first model is additive and includes <code>treatment</code>,
+<code>year</code>, <code>d_inc2</code>, and random slopes for
+<code>plot</code>, <em>and</em> <code>tree_id</code>. This model takes a
+very long time to converge and then gives several warnings about
+convergence. In looking at the summary, a great deal of variance is
+attributed to the random slope: <code>tree_id</code>. I’m not sure what
+to make of this.</p>
+<pre class="r"><code>bdmd &lt;- subset(bd, year %in% c(&quot;13&quot;, &quot;18&quot;))
+
+library(lme4)
+bm1 &lt;- glmer(bear_new ~ treatment + year + d_inc2 + (1 | plot) + (1 | tree_id), family = binomial, data = bdmd)</code></pre>
+<pre><code>## Warning in checkConv(attr(opt, &quot;derivs&quot;), opt$par, ctrl = control$checkConv, : unable to evaluate scaled gradient</code></pre>
+<pre><code>## Warning in checkConv(attr(opt, &quot;derivs&quot;), opt$par, ctrl = control$checkConv, : Model failed to converge: degenerate Hessian with 1 negative eigenvalues</code></pre>
+<pre class="r"><code>summary(bm1)</code></pre>
+<pre><code>## Warning in vcov.merMod(object, use.hessian = use.hessian): variance-covariance matrix computed from finite-difference Hessian is
+## not positive definite or contains NA values: falling back to var-cov estimated from RX</code></pre>
+<pre><code>## Warning in vcov.merMod(object, correlation = correlation, sigm = sig): variance-covariance matrix computed from finite-difference Hessian is
+## not positive definite or contains NA values: falling back to var-cov estimated from RX</code></pre>
+<pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) [&#39;glmerMod&#39;]
+##  Family: binomial  ( logit )
+## Formula: bear_new ~ treatment + year + d_inc2 + (1 | plot) + (1 | tree_id)
+##    Data: bdmd
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##    488.8    541.5   -235.4    470.8     2559 
+## 
+## Scaled residuals: 
+##      Min       1Q   Median       3Q      Max 
+## -1.31568 -0.01163 -0.00672 -0.00507  1.75113 
+## 
+## Random effects:
+##  Groups  Name        Variance  Std.Dev.
+##  tree_id (Intercept) 62.684832 7.91738 
+##  plot    (Intercept)  0.004358 0.06601 
+## Number of obs: 2568, groups:  tree_id, 1358; plot, 20
+## 
+## Fixed effects:
+##              Estimate Std. Error z value Pr(&gt;|z|)   
+## (Intercept)  -11.4592     3.5491  -3.229  0.00124 **
+## treatmentH40   2.8611     3.8300   0.747  0.45505   
+## treatmentH80   1.2694     4.0285   0.315  0.75268   
+## treatmentL40   2.4674     4.0165   0.614  0.53900   
+## treatmentL80   0.7547     4.3540   0.173  0.86238   
+## year18         1.1741     0.3879   3.027  0.00247 **
+## d_inc2         0.4641     0.5579   0.832  0.40542   
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr) trtH40 trtH80 trtL40 trtL80 year18
+## treatmntH40 -0.916                                   
+## treatmntH80 -0.872  0.819                            
+## treatmntL40 -0.875  0.820  0.778                     
+## treatmntL80 -0.806  0.759  0.719  0.720              
+## year18      -0.067 -0.001 -0.002  0.001 -0.005       
+## d_inc2      -0.050 -0.104 -0.075 -0.063 -0.079  0.060
+## optimizer (Nelder_Mead) convergence code: 0 (OK)
+## unable to evaluate scaled gradient
+## Model failed to converge: degenerate  Hessian with 1 negative eigenvalues</code></pre>
+<p>check <code>allFit</code> output</p>
+<pre class="r"><code>bm1.all &lt;- allFit(bm1)</code></pre>
+<pre><code>## bobyqa : [OK]
+## Nelder_Mead : [OK]
+## nlminbwrap : [OK]
+## nmkbw : [OK]
+## optimx.L-BFGS-B : [OK]
+## nloptwrap.NLOPT_LN_NELDERMEAD : [OK]
+## nloptwrap.NLOPT_LN_BOBYQA : [OK]</code></pre>
+<pre class="r"><code>summary(bm1.all)</code></pre>
+<pre><code>## $which.OK
+##                        bobyqa                   Nelder_Mead                    nlminbwrap                         nmkbw               optimx.L-BFGS-B nloptwrap.NLOPT_LN_NELDERMEAD 
+##                          TRUE                          TRUE                          TRUE                          TRUE                          TRUE                          TRUE 
+##     nloptwrap.NLOPT_LN_BOBYQA 
+##                          TRUE 
+## 
+## $msgs
+## $msgs$bobyqa
+## [1] &quot;unable to evaluate scaled gradient&quot;                                        &quot;Model failed to converge: degenerate  Hessian with 1 negative eigenvalues&quot;
+## 
+## $msgs$Nelder_Mead
+## [1] &quot;unable to evaluate scaled gradient&quot;                                        &quot;Model failed to converge: degenerate  Hessian with 1 negative eigenvalues&quot;
+## 
+## $msgs$nlminbwrap
+## [1] &quot;boundary (singular) fit: see help(&#39;isSingular&#39;)&quot;
+## 
+## $msgs$nmkbw
+## [1] &quot;unable to evaluate scaled gradient&quot;                                        &quot;Model failed to converge: degenerate  Hessian with 1 negative eigenvalues&quot;
+## 
+## $msgs$`optimx.L-BFGS-B`
+## [1] &quot;boundary (singular) fit: see help(&#39;isSingular&#39;)&quot;
+## 
+## $msgs$nloptwrap.NLOPT_LN_NELDERMEAD
+## [1] &quot;Model failed to converge with max|grad| = 0.0992005 (tol = 0.002, component 1)&quot;
+## 
+## $msgs$nloptwrap.NLOPT_LN_BOBYQA
+## [1] &quot;unable to evaluate scaled gradient&quot;                                        &quot;Model failed to converge: degenerate  Hessian with 1 negative eigenvalues&quot;
+## 
+## 
+## $fixef
+##                               (Intercept) treatmentH40 treatmentH80 treatmentL40 treatmentL80   year18    d_inc2
+## bobyqa                          -10.43656     1.891629    0.2636473     1.585552   -0.4870343 1.137601 0.4407223
+## Nelder_Mead                     -11.31641     2.740296    1.1733266     2.269247    0.6786078 1.166345 0.4925342
+## nlminbwrap                      -11.33694     2.769736    1.2025412     2.300834    0.7026058 1.163023 0.4939570
+## nmkbw                           -10.59678     2.138087    0.4742121     1.701932   -0.1163359 1.111286 0.6365568
+## optimx.L-BFGS-B                 -11.38519     2.769065    1.2039961     2.304361    0.7001416 1.170227 0.4834153
+## nloptwrap.NLOPT_LN_NELDERMEAD   -11.36234     2.783368    1.2269902     2.310913    0.7104079 1.167473 0.5013033
+## nloptwrap.NLOPT_LN_BOBYQA       -10.59678     2.138087    0.4742121     1.701932   -0.1163359 1.111286 0.6365568
+## 
+## $llik
+##                        bobyqa                   Nelder_Mead                    nlminbwrap                         nmkbw               optimx.L-BFGS-B nloptwrap.NLOPT_LN_NELDERMEAD 
+##                     -235.8278                     -235.3910                     -235.3799                     -235.7357                     -235.3828                     -235.3821 
+##     nloptwrap.NLOPT_LN_BOBYQA 
+##                     -235.7357 
+## 
+## $sdcor
+##                               tree_id.(Intercept) plot.(Intercept)
+## bobyqa                                   7.849100     2.295662e-02
+## Nelder_Mead                              7.849260     7.247647e-02
+## nlminbwrap                               7.845699     3.202842e-05
+## nmkbw                                    7.391759     1.349966e-01
+## optimx.L-BFGS-B                          7.956428     0.000000e+00
+## nloptwrap.NLOPT_LN_NELDERMEAD            7.856181     3.372810e-02
+## nloptwrap.NLOPT_LN_BOBYQA                7.391759     1.349966e-01
+## 
+## $theta
+##                               tree_id.(Intercept) plot.(Intercept)
+## bobyqa                                   7.849100     2.295662e-02
+## Nelder_Mead                              7.849260     7.247647e-02
+## nlminbwrap                               7.845699     3.202842e-05
+## nmkbw                                    7.391759     1.349966e-01
+## optimx.L-BFGS-B                          7.956428     0.000000e+00
+## nloptwrap.NLOPT_LN_NELDERMEAD            7.856181     3.372810e-02
+## nloptwrap.NLOPT_LN_BOBYQA                7.391759     1.349966e-01
+## 
+## $times
+##                               user.self sys.self elapsed user.child sys.child
+## bobyqa                            23.03     0.00   23.04         NA        NA
+## Nelder_Mead                       29.73     0.03   29.78         NA        NA
+## nlminbwrap                         8.29     0.00    8.29         NA        NA
+## nmkbw                             11.15     0.00   11.17         NA        NA
+## optimx.L-BFGS-B                   33.17     0.00   33.17         NA        NA
+## nloptwrap.NLOPT_LN_NELDERMEAD     21.62     0.00   21.63         NA        NA
+## nloptwrap.NLOPT_LN_BOBYQA         10.64     0.00   10.64         NA        NA
+## 
+## $feval
+##                        bobyqa                   Nelder_Mead                    nlminbwrap                         nmkbw               optimx.L-BFGS-B nloptwrap.NLOPT_LN_NELDERMEAD 
+##                          1315                          2199                            NA                          1154                           168                          1211 
+##     nloptwrap.NLOPT_LN_BOBYQA 
+##                          1154 
+## 
+## attr(,&quot;class&quot;)
+## [1] &quot;summary.allFit&quot;</code></pre>
+<p>“Recompute gradient and Hessian with Richardson extrapolation” - from
+?convergence</p>
+<p>For model 2, I’ll remove <code>tree_id</code> and see if the warnings
+go away. They do, but the model is different.</p>
+<pre class="r"><code>bm2 &lt;- glmer(bear_new ~ treatment + year + d_inc2 + (1 | plot), family = binomial, data = bdmd)
+
+summary(bm2)</code></pre>
+<pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) [&#39;glmerMod&#39;]
+##  Family: binomial  ( logit )
+## Formula: bear_new ~ treatment + year + d_inc2 + (1 | plot)
+##    Data: bdmd
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##    556.9    603.7   -270.5    540.9     2560 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -0.9335 -0.1517 -0.1058 -0.0759 18.3631 
+## 
+## Random effects:
+##  Groups Name        Variance Std.Dev.
+##  plot   (Intercept) 0.07047  0.2655  
+## Number of obs: 2568, groups:  plot, 20
+## 
+## Fixed effects:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)   -5.8296     0.5489 -10.621  &lt; 2e-16 ***
+## treatmentH40   2.4034     0.5946   4.042 5.30e-05 ***
+## treatmentH80   1.1317     0.6062   1.867 0.061913 .  
+## treatmentL40   2.1501     0.6092   3.529 0.000417 ***
+## treatmentL80   0.7456     0.6445   1.157 0.247331    
+## year18         0.3295     0.2536   1.299 0.193931    
+## d_inc2         1.1006     0.2451   4.490 7.12e-06 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr) trtH40 trtH80 trtL40 trtL80 year18
+## treatmntH40 -0.781                                   
+## treatmntH80 -0.785  0.778                            
+## treatmntL40 -0.769  0.796  0.756                     
+## treatmntL80 -0.753  0.714  0.695  0.696              
+## year18      -0.238  0.007  0.001  0.007 -0.006       
+## d_inc2      -0.176 -0.241 -0.124 -0.217 -0.044 -0.057</code></pre>
 </div>
 
 
