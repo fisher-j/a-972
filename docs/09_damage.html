@@ -33,6 +33,8 @@
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="site_libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -641,12 +643,12 @@ summary(bm1)</code></pre>
 ## 
 ## $times
 ##                               user.self sys.self elapsed user.child sys.child
-## bobyqa                             1.61     0.00    1.61         NA        NA
-## Nelder_Mead                        3.14     0.00    3.14         NA        NA
-## nlminbwrap                         0.61     0.00    0.61         NA        NA
-## optimx.L-BFGS-B                    3.40     0.01    3.42         NA        NA
-## nloptwrap.NLOPT_LN_NELDERMEAD      4.64     0.00    4.65         NA        NA
-## nloptwrap.NLOPT_LN_BOBYQA          0.73     0.00    0.73         NA        NA
+## bobyqa                             1.62        0    1.63         NA        NA
+## Nelder_Mead                        3.16        0    3.17         NA        NA
+## nlminbwrap                         0.63        0    0.63         NA        NA
+## optimx.L-BFGS-B                    3.39        0    3.42         NA        NA
+## nloptwrap.NLOPT_LN_NELDERMEAD      4.64        0    4.66         NA        NA
+## nloptwrap.NLOPT_LN_BOBYQA          0.72        0    0.72         NA        NA
 ## 
 ## $feval
 ##                        bobyqa                   Nelder_Mead                    nlminbwrap               optimx.L-BFGS-B nloptwrap.NLOPT_LN_NELDERMEAD     nloptwrap.NLOPT_LN_BOBYQA 
@@ -654,8 +656,8 @@ summary(bm1)</code></pre>
 ## 
 ## attr(,&quot;class&quot;)
 ## [1] &quot;summary.allFit&quot;</code></pre>
-<p>For model 2, I’ll remove <code>tree_id</code> and see if the warnings
-go away. They do, but the model is different.</p>
+<p>For model 2, I’ll remove <code>tree_id</code> and see if there is any
+difference.</p>
 <pre class="r"><code>bm2 &lt;- glmer(bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot), family = binomial, data = bdmd)
 
 summary(bm2)</code></pre>
@@ -700,17 +702,155 @@ summary(bm2)</code></pre>
 ## spp2SESE3   -0.369 -0.070 -0.087  0.027 -0.045  0.020 -0.089</code></pre>
 <p>Having a look at the initial model. Including <code>tree_id</code> as
 a random effect doesn’t seem to contribute anything to the model, so I
-look at the model with <code>plot</code> only.</p>
-<pre class="r"><code>compare_performance(bm1, bm2)</code></pre>
-<pre><code>## # Comparison of Model Performance Indices
-## 
-## Name |    Model |     AIC | AIC weights |     BIC | BIC weights | R2 (cond.) | R2 (marg.) |   ICC |  RMSE | Sigma | Log_loss | Score_log | Score_spherical
-## ----------------------------------------------------------------------------------------------------------------------------------------------------------
-## bm1  | glmerMod | 511.008 |       0.269 | 569.229 |       0.020 |      0.391 |      0.386 | 0.007 | 0.155 | 1.000 |    0.098 |    -1.987 |           0.017
-## bm2  | glmerMod | 509.008 |       0.731 | 561.407 |       0.980 |      0.391 |      0.386 | 0.007 | 0.155 | 1.000 |    0.098 |    -1.987 |           0.017</code></pre>
+focus on models with <code>plot</code> only.</p>
+<pre class="r"><code>compare_performance(bm1, bm2) %&gt;% kbl2(caption = &quot;performance metrics for two initial models&quot;)</code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+performance metrics for two initial models
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Name
+</th>
+<th style="text-align:left;">
+Model
+</th>
+<th style="text-align:right;">
+AIC
+</th>
+<th style="text-align:right;">
+AIC_wt
+</th>
+<th style="text-align:right;">
+BIC
+</th>
+<th style="text-align:right;">
+BIC_wt
+</th>
+<th style="text-align:right;">
+R2_conditional
+</th>
+<th style="text-align:right;">
+R2_marginal
+</th>
+<th style="text-align:right;">
+ICC
+</th>
+<th style="text-align:right;">
+RMSE
+</th>
+<th style="text-align:right;">
+Sigma
+</th>
+<th style="text-align:right;">
+Log_loss
+</th>
+<th style="text-align:right;">
+Score_log
+</th>
+<th style="text-align:right;">
+Score_spherical
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+bm1
+</td>
+<td style="text-align:left;">
+glmerMod
+</td>
+<td style="text-align:right;">
+511.0083
+</td>
+<td style="text-align:right;">
+0.2689414
+</td>
+<td style="text-align:right;">
+569.2287
+</td>
+<td style="text-align:right;">
+0.0196271
+</td>
+<td style="text-align:right;">
+0.3908619
+</td>
+<td style="text-align:right;">
+0.3864491
+</td>
+<td style="text-align:right;">
+0.0071922
+</td>
+<td style="text-align:right;">
+0.1549596
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0.0978643
+</td>
+<td style="text-align:right;">
+-1.987352
+</td>
+<td style="text-align:right;">
+0.0165127
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+bm2
+</td>
+<td style="text-align:left;">
+glmerMod
+</td>
+<td style="text-align:right;">
+509.0083
+</td>
+<td style="text-align:right;">
+0.7310586
+</td>
+<td style="text-align:right;">
+561.4066
+</td>
+<td style="text-align:right;">
+0.9803729
+</td>
+<td style="text-align:right;">
+0.3908608
+</td>
+<td style="text-align:right;">
+0.3864473
+</td>
+<td style="text-align:right;">
+0.0071934
+</td>
+<td style="text-align:right;">
+0.1549596
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0.0978643
+</td>
+<td style="text-align:right;">
+-1.987348
+</td>
+<td style="text-align:right;">
+0.0165127
+</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code>b2_mean &lt;- emmeans(bm2, ~ treatment, type = &quot;response&quot;)
-plot(b2_mean)</code></pre>
+
+plot(b2_mean) + 
+  labs(title = &quot;Back-transformed estiamtes and CI&#39;s averaged over year and species mod 2 (no tree_id)&quot;)</code></pre>
 <p><img src="09_damage_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p>Redwood is clearly more targeted.</p>
 <pre class="r"><code>emmeans(bm2, pairwise ~ spp2, type = &quot;response&quot;)</code></pre>
 <pre><code>## $emmeans
 ##  spp2    prob      SE  df asymp.LCL asymp.UCL
@@ -727,6 +867,7 @@ plot(b2_mean)</code></pre>
 ## 
 ## Results are averaged over the levels of: treatment, year 
 ## Tests are performed on the log odds ratio scale</code></pre>
+<p>Here we can see explicit comparisons between treatments</p>
 <pre class="r"><code>pairs(b2_mean)</code></pre>
 <pre><code>##  contrast  odds.ratio     SE  df null z.ratio p.value
 ##  C / H40        0.133 0.0770 Inf    1  -3.482  0.0045
@@ -744,9 +885,7 @@ plot(b2_mean)</code></pre>
 ## P value adjustment: tukey method for comparing a family of 5 estimates 
 ## Tests are performed on the log odds ratio scale</code></pre>
 <pre class="r"><code>pwpp(b2_mean)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-12-2.png" width="672" /></p>
-<pre class="r"><code>emmip(bm2, treatment ~ d_inc2, at = list(d_inc2 = seq(-0.5, 2.8, 0.1)), type = &quot;response&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-12-3.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
 <pre class="r"><code>b2_mean %&gt;% multcomp::cld(reversed = TRUE)</code></pre>
 <pre><code>##  treatment    prob      SE  df asymp.LCL asymp.UCL .group
 ##  L40       0.05771 0.01664 Inf   0.03253    0.1004  1    
@@ -764,6 +903,10 @@ plot(b2_mean)</code></pre>
 ## NOTE: Compact letter displays can be misleading
 ##       because they show NON-findings rather than findings.
 ##       Consider using &#39;pairs()&#39;, &#39;pwpp()&#39;, or &#39;pwpm()&#39; instead.</code></pre>
+<p>Finally, here is the expected response over levels of diameter
+increment.</p>
+<pre class="r"><code>emmip(bm2, treatment ~ d_inc2, at = list(d_inc2 = seq(-0.5, 2.8, 0.1)), type = &quot;response&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
 <p>This model seems to be working. Now I’ll do more model selection,
 testing for interactions.</p>
 <div id="model-validation" class="section level2">

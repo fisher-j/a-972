@@ -240,7 +240,7 @@ summary(bm1.all)
 
 ```
 
-For model 2, I'll remove `tree_id` and see if the warnings go away. They do, but the model is different.
+For model 2, I'll remove `tree_id` and see if there is any difference.
 
 ```{r}
 bm2 <- glmer(bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot), family = binomial, data = bdmd)
@@ -248,27 +248,51 @@ bm2 <- glmer(bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot), family = 
 summary(bm2)
 ```
 
-Having a look at the initial model. Including `tree_id` as a random effect doesn't seem to contribute anything to the model, so I look at the model with `plot` only.
+Having a look at the initial model. Including `tree_id` as a random effect doesn't seem to contribute anything to the model, so I focus on models with `plot` only.
 
 ```{r}
 
-compare_performance(bm1, bm2)
+compare_performance(bm1, bm2) %>% kbl2(caption = "performance metrics for two initial models")
 
 b2_mean <- emmeans(bm2, ~ treatment, type = "response")
-plot(b2_mean)
+
+plot(b2_mean) + 
+  labs(title = "Back-transformed estiamtes and CI's averaged over year and species mod 2 (no tree_id)")
+```
+
+Redwood is clearly more targeted.
+
+```{r}
+
 emmeans(bm2, pairwise ~ spp2, type = "response")
+
+```
+
+Here we can see explicit comparisons between treatments
+
+```{r}
+
 pairs(b2_mean)
+
 pwpp(b2_mean)
 
-emmip(bm2, treatment ~ d_inc2, at = list(d_inc2 = seq(-0.5, 2.8, 0.1)), type = "response")
-
 b2_mean %>% multcomp::cld(reversed = TRUE)
+
+```
+
+Finally, here is the expected response over levels of diameter increment.
+
+```{r}
+
+emmip(bm2, treatment ~ d_inc2, at = list(d_inc2 = seq(-0.5, 2.8, 0.1)), type = "response")
 
 ```
 
 This model seems to be working. Now I'll do more model selection, testing for interactions.
 
 ```{r}
+
+
 
 ```
 

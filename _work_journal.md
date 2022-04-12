@@ -1,3 +1,9 @@
+## 04/11/2020
+
+* Switich to using 2 species categories (redwood + other)
+* Re-examine random effects of initial additive models
+* look and emmeans and predicted estimates of initial model
+
 ## 04/10/2020
 
 * Run initial logistic regression models
