@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 ```{r}
 require(tidyverse)
+library(performance)
 ```
 
 # Bear damage
@@ -65,11 +66,11 @@ bear_dropped <- bd %>%
 
 # color_groups(bear_dropped)
 
-# trees that are re-attacked
-bear_dropped %>%
-  filter(any(bear & !lag(bear))) %>%
-  mutate(id = cur_group_id(), .before = 1) %>%
-  color_groups()
+# # trees that are re-attacked
+# bear_dropped %>%
+#   filter(any(bear & !lag(bear))) %>%
+#   mutate(id = cur_group_id(), .before = 1) %>%
+#   color_groups()
 
 ```
 
@@ -91,13 +92,20 @@ bd <- bd %>%
   group_by(tree_id) %>%
   mutate(
     bear_mag = as.numeric(get_cond(17, 18, 19, str = TRUE)),
-    bear_new = bear & year == "08" | bear & !lag(bear) | bear_mag > lag(bear_mag),
+    bear_new = bear & year %in% c("init", "08") | bear & !lag(bear) | bear_mag > lag(bear_mag),
     bear_new = if_else(is.na(bear_new), FALSE, bear_new)
     ) %>%
   select(-bear_mag) %>%
   ungroup()
 
-bd %>% filter(bear_new)
+```
+
+I'm going to drop alder and hemlock from the analysis, because they are never attacked by bear. I'm also going to group Douglas-fir and spruce together as "other".
+
+```{r}
+
+bd <- filter(bd, spp %in% c("SESE3", "PSMEM", "PISI")) %>%
+  mutate(spp2 = if_else(spp == "SESE3", spp, "OTHER"))
 
 ```
 
@@ -109,15 +117,30 @@ In the H40 treatment there is a decline in percent new bear damage in two plots,
 
 ```{r}
 
+bear_plot <- function(data, var) {
+  my_dodge = position_dodge(width = 0.5)
+  ggplot(data, aes(year, {{var}}, color = treatment, group = treatment)) + 
+    geom_line(position = my_dodge) +
+    geom_point(position = my_dodge) +
+    geom_errorbar(aes(ymin = {{var}} - se, ymax = {{var}} + se), width = 0.2, position = my_dodge)
+}
+
 bd %>%
-  filter(year != "init") %>%
+  # filter(year != "init") %>%
   group_by(year, treatment, plot) %>% 
   summarize(pct_bear = sum(bear_new, na.rm = TRUE) / n()) %>% 
-  summarize(avg_pct_bear = mean(pct_bear)) %>% 
-  ggplot(aes(year, avg_pct_bear, color = treatment, group = treatment)) + 
-    geom_line() +
-    geom_point() +
-    labs(title = "Average percent new bear damage for each treatment")
+  summarize(avg_pct_bear = mean(pct_bear), se = sd(pct_bear) / sqrt(n()) ) %>% 
+  bear_plot(avg_pct_bear) +
+    labs(title = "Average percent new bear damage for each treatment ±SE")
+
+
+bd %>%
+  # filter(year != "init") %>%
+  group_by(year, treatment, plot) %>% 
+  summarize(cnt_bear = sum(bear_new, na.rm = TRUE)) %>% 
+  summarize( avg_cnt_bear = mean(cnt_bear), se = sd(cnt_bear) / sqrt(n()) ) %>% 
+  bear_plot(avg_cnt_bear) +
+    labs(title = "Average count new bear damage for each treatment ±SE")
 
 bd %>%
   filter(year != "init") %>%
@@ -134,14 +157,10 @@ bd %>%
 
 bd %>%
   filter(year != "init") %>%
-  mutate(
-    bear_new = if_else(is.na(bear_new), FALSE, bear_new),
-    plot2 = str_extract(plot, "\\d")
-  ) %>%
-  group_by(treatment, year, plot2) %>%
+  group_by(treatment, year, plot) %>%
   summarize(bear_new = sum(bear_new)) %>%
   ungroup() %>%
-  ggplot(aes(plot2, bear_new, fill = year)) + 
+  ggplot(aes(str_extract(plot, "\\d"), bear_new, fill = year)) + 
     geom_col(position = "dodge", color = "black") +
     facet_wrap(~ treatment) +
     labs(
@@ -151,30 +170,24 @@ bd %>%
 
 bd %>%
   filter(year != "init") %>%
-  mutate(
-    bear_new = if_else(is.na(bear_new), FALSE, bear_new),
-    plot2 = str_extract(plot, "\\d")
-  ) %>%
-  group_by(treatment, year) %>%
+  group_by(treatment, year, spp2) %>%
   summarize(bear_new = sum(bear_new)) %>%
   ungroup() %>%
-  ggplot(aes(treatment, bear_new, fill = year)) + 
-    geom_col(position = "dodge", color = "black") +
+  ggplot(aes(treatment, bear_new, fill = fct_relevel(spp2, "SESE3"))) + 
+    geom_col(position = "stack", color = "black") +
+    facet_wrap(~ year) +
     labs(
-      title = "Total sum of new bear damage for each treatment",
-      y = "Count of bear damage", x = "Treatment"  
+      title = "Total sum of new bear damage for each treatment/species",
+      y = "Count of bear damage",
+      x = "Treatment",
+      fill = NULL
     )
 
+
 bd %>%
-  filter(year != "init") %>%
-  mutate(
-    bear_new = if_else(is.na(bear_new), FALSE, bear_new),
-    plot2 = str_extract(plot, "\\d")
-  ) %>%
-  group_by(treatment, year, plot, plot2) %>%
+  group_by(treatment, year, plot) %>%
   summarize(bear_new = sum(bear_new)) %>%
-  ungroup() %>%
-  ggplot(aes(year, bear_new, group = plot2)) + 
+  ggplot(aes(year, bear_new, group = str_extract(plot, "\\d"))) + 
     geom_point(position = position_dodge(0.3), alpha = 0.5) +
     geom_line(position = position_dodge(0.3), size = 1, alpha = 0.5) +
     facet_wrap(~ treatment) +
@@ -185,11 +198,7 @@ bd %>%
 
 ```
 
-What about for multiple species?
-
-
-
-# Modeling
+## Modeling
 
 There are several potential to modeling this data.
 
@@ -203,13 +212,19 @@ There are several potential to modeling this data.
 
 We are modeling occurrence of new bear damage in 2013 and 2018. New bear damage in 2008 is not really comparable as it represents accumulated damage over an unspecified amount of time prior to treatment.
 
-My first model is additive and includes `treatment`, `year`, `d_inc2`, and random slopes for `plot`, *and* `tree_id`. This model takes a very long time to converge and then gives several warnings about convergence. In looking at the summary, a great deal of variance is attributed to the random slope: `tree_id`. I'm not sure what to make of this.
+My first model is additive and includes `treatment`, `year`, `d_inc2`, `spp2` and random slopes for `plot`, *and* `tree_id`.
 
-```{r, cache=TRUE, warning=TRUE}
 
-bdmd <- subset(bd, year %in% c("13", "18") & spp %in% c("SESE3", "PSMEM"))
+```{r, warning=TRUE}
 
-bm1 <- glmer(bear_new ~ treatment + year + d_inc2 + (1 | plot) + (1 | tree_id), family = binomial, data = bdmd)
+bdmd <- subset(bd, year %in% c("13", "18"))
+
+
+bm1 <- glmer(
+  bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot) + (1 | tree_id),
+  family = binomial,
+  data = bdmd
+  )
 
 summary(bm1)
 
@@ -217,7 +232,7 @@ summary(bm1)
 
 check `allFit` output
 
-```{r, cache=TRUE}
+```{r}
 
 bm1.all <- allFit(bm1)
 
@@ -228,13 +243,41 @@ summary(bm1.all)
 For model 2, I'll remove `tree_id` and see if the warnings go away. They do, but the model is different.
 
 ```{r}
-bm2 <- glmer(bear_new ~ treatment + year + d_inc2 + (1 | plot), family = binomial, data = bdmd)
+bm2 <- glmer(bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot), family = binomial, data = bdmd)
 
 summary(bm2)
 ```
 
-```{r}
-bm2 <- glmer(bear_new ~ treatment + year + d_inc2 + spp + (1 | plot), family = binomial, data = bdmd)
+Having a look at the initial model. Including `tree_id` as a random effect doesn't seem to contribute anything to the model, so I look at the model with `plot` only.
 
-summary(bm2)
+```{r}
+
+compare_performance(bm1, bm2)
+
+b2_mean <- emmeans(bm2, ~ treatment, type = "response")
+plot(b2_mean)
+emmeans(bm2, pairwise ~ spp2, type = "response")
+pairs(b2_mean)
+pwpp(b2_mean)
+
+emmip(bm2, treatment ~ d_inc2, at = list(d_inc2 = seq(-0.5, 2.8, 0.1)), type = "response")
+
+b2_mean %>% multcomp::cld(reversed = TRUE)
+
+```
+
+This model seems to be working. Now I'll do more model selection, testing for interactions.
+
+```{r}
+
+```
+
+## Model validation
+
+I can check for over dispersion, and [I don't think I need to worry about underdispersion](https://stats.stackexchange.com/questions/568407/how-to-correct-underdispersion-in-logistic-regression)
+
+```{r}
+
+compare_performance(bm1, bm2)
+
 ```
