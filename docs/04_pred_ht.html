@@ -275,6 +275,9 @@ $(document).ready(function () {
 <li>
   <a href="08_variability.html">Variability</a>
 </li>
+<li>
+  <a href="09_damage.html">Bear and other damage</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         
@@ -334,14 +337,8 @@ predicted heights</a></li>
 </ul>
 </div>
 
-<pre class="r"><code>library(lme4)</code></pre>
-<pre><code>## Loading required package: Matrix</code></pre>
-<pre><code>## 
-## Attaching package: &#39;Matrix&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
-## 
-##     expand, pack, unpack</code></pre>
-<pre class="r"><code>library(emmeans)
+<pre class="r"><code>library(lme4)
+library(emmeans)
 library(MuMIn)
 palette(&quot;Tableau 10&quot;)
 library(broom.mixed)</code></pre>
@@ -1815,14 +1812,14 @@ d_l &lt;- left_join(d_l, new_heights, by = c(&quot;tree_id&quot;, &quot;year&quo
   mutate(ht_p = if_else(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;), ht_p, ht))</code></pre>
 <pre class="r"><code>head(d_l)</code></pre>
 <pre><code>## # A tibble: 6 x 28
-##   plot  treatment tree_id   spp   h_dist   azi year    dbh    ht    cr status bear  rot   notes     cc cond  live     ba d_inc2 ht_inc2 ba_inc2 d_inc1 ht_inc1 ba_inc1      x      y sdi_plot  ht_p
-##   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;ord&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;  &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
-## 1 1H40  H40       1H40.1901 SESE3   12.9    10 init   27.4 23.5     30      1 FALSE FALSE BA_ac~    NA &quot;&quot;    TRUE   591. NA       NA      NA     0       0        0    4.10e5 4.57e6    2578. 23.5 
-## 2 1H40  H40       1H40.1901 SESE3   12.9    10 08     27.4 23.5     30      1 FALSE FALSE BA_ac~    NA &quot;&quot;    TRUE   591.  0        0       0     0.102  -3.96     4.42 4.10e5 4.57e6    2578. 23.5 
-## 3 1H40  H40       1H40.1901 SESE3   12.9    10 13     27.9  3.66     0      5 FALSE NA    Top b~    -1 &quot;3,7~ FALSE  613.  0.102   -3.96    4.42 NA      NA       NA    4.10e5 4.57e6    2578.  3.66
-## 4 1H40  H40       1H40.1901 SESE3   12.9    10 18     NA   NA       NA     -5 FALSE NA    &lt;NA&gt;      NA &quot;3,7~ FALSE   NA  NA       NA      NA    NA      NA       NA    4.10e5 4.57e6    2578. NA   
-## 5 1H40  H40       1H40.1902 SESE3   14.2    13 init   37.6 23.2     40      1 TRUE  FALSE X         NA &quot;&quot;    TRUE  1110. NA       NA      NA     0       0        0    4.10e5 4.57e6    2578. 23.2 
-## 6 1H40  H40       1H40.1902 SESE3   14.2    13 08     37.6 23.2     40      1 TRUE  FALSE X         NA &quot;&quot;    TRUE  1110.  0        0       0     0.559  -0.671   34.2  4.10e5 4.57e6    2578. 23.2</code></pre>
+##   plot  treatment tree_id   spp   h_dist   azi year    dbh    ht    cr status bear  rot   notes        cc cond  live     ba d_inc2 ht_inc2 ba_inc2 d_inc1 ht_inc1 ba_inc1      x      y sdi_plot  ht_p
+##   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;ord&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;     &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
+## 1 1H40  H40       1H40.1901 SESE3   12.9    10 init   27.4 23.5     30      1 FALSE FALSE BA_ac_ft~    NA &quot;&quot;    TRUE   591. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.5 
+## 2 1H40  H40       1H40.1901 SESE3   12.9    10 08     27.4 23.5     30      1 FALSE FALSE BA_ac_ft~    NA &quot;&quot;    TRUE   591.  0        0       0     0.102  -3.96     4.42 4.10e5 4.57e6     449. 23.5 
+## 3 1H40  H40       1H40.1901 SESE3   12.9    10 13     27.9  3.66     0      5 FALSE NA    Top blow~    -1 &quot;3,7~ FALSE  613.  0.102   -3.96    4.42 NA      NA       NA    4.10e5 4.57e6     484.  3.66
+## 4 1H40  H40       1H40.1901 SESE3   12.9    10 18     NA   NA       NA     -5 FALSE NA    &lt;NA&gt;         NA &quot;3,7~ FALSE   NA  NA       NA      NA    NA      NA       NA    4.10e5 4.57e6     556. NA   
+## 5 1H40  H40       1H40.1902 SESE3   14.2    13 init   37.6 23.2     40      1 TRUE  FALSE X            NA &quot;&quot;    TRUE  1110. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.2 
+## 6 1H40  H40       1H40.1902 SESE3   14.2    13 08     37.6 23.2     40      1 TRUE  FALSE X            NA &quot;&quot;    TRUE  1110.  0        0       0     0.559  -0.671   34.2  4.10e5 4.57e6     449. 23.2</code></pre>
 </div>
 
 

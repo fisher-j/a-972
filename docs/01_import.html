@@ -273,6 +273,9 @@ $(document).ready(function () {
 <li>
   <a href="08_variability.html">Variability</a>
 </li>
+<li>
+  <a href="09_damage.html">Bear and other damage</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         
@@ -320,11 +323,8 @@ dataset</a></li>
 
 <div id="libraries" class="section level2">
 <h2>libraries</h2>
-<pre class="r"><code>library(&quot;tidyverse&quot;)</code></pre>
-<pre><code>## Warning: package &#39;tibble&#39; was built under R version 4.1.3</code></pre>
-<pre><code>## Warning: package &#39;tidyr&#39; was built under R version 4.1.3</code></pre>
-<pre><code>## Warning: package &#39;readr&#39; was built under R version 4.1.3</code></pre>
-<pre class="r"><code>library(kableExtra)</code></pre>
+<pre class="r"><code>library(&quot;tidyverse&quot;)
+library(kableExtra)</code></pre>
 </div>
 <div id="import-data" class="section level1">
 <h1>Import Data</h1>
@@ -699,7 +699,13 @@ veg_species &lt;- filter(
 <p>For sites that list more than one dominant species, I’m only taking
 the first one.</p>
 <pre class="r"><code>veg_cover_files &lt;- dir(pattern = &quot;VegCover.*\\.txt$&quot;, recursive = TRUE)
-names(veg_cover_files) &lt;- str_replace(veg_cover_files, &quot;^.*(\\d{2})\\.txt$&quot;, &quot;\\1&quot;)
+
+names(veg_cover_files) &lt;- str_replace(
+  veg_cover_files,
+  &quot;^.*(\\d{2})\\.txt$&quot;,
+  &quot;\\1&quot;
+)
+
 veg_cover_l &lt;- lapply(veg_cover_files, read_csv)
 map(veg_cover_l, names) %&gt;% unique</code></pre>
 <pre><code>## [[1]]
@@ -719,49 +725,18 @@ map(veg_cover_l, names) %&gt;% unique</code></pre>
     dom_herb = Dom_sp_Herb
   ) %&gt;%
   filter(plot != &quot;Spare1&quot;) %&gt;%
-    mutate(treatment = str_extract(plot, treatments), .after = plot) %&gt;%
+  mutate(treatment = str_extract(plot, treatments), .after = plot) %&gt;%
   mutate(
     dom_shrub = str_replace(dom_shrub, &quot;BENE2/GASH.*|BENE2/RUSP&quot;, &quot;BENE2&quot;),
     dom_herb = str_replace(dom_herb, &quot;(\\w+)/.*&quot;, &quot;\\1&quot;)
   )</code></pre>
 <p>I convert cover classes to percent cover using the following provided
 information:</p>
-<table>
-<thead>
-<tr class="header">
-<th>CoverCode</th>
-<th align="right">Range_pct</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td align="right">No Cover</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td align="right">0&gt; Cover &lt;5</td>
-</tr>
-<tr class="odd">
-<td>2</td>
-<td align="right">6 - 25</td>
-</tr>
-<tr class="even">
-<td>3</td>
-<td align="right">26 - 50</td>
-</tr>
-<tr class="odd">
-<td>4</td>
-<td align="right">51 - 75</td>
-</tr>
-<tr class="even">
-<td>5</td>
-<td align="right">76 - 100</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>veg_cover &lt;- mutate(veg_cover, 
-  across(starts_with(&quot;cl&quot;), 
+<p>CoverCod Range_pct</p>
+<p>0 No Cover 1 0&gt; Cover &lt;5 2 6 - 25 3 26 - 50 4 51 - 75 5 76 -
+100</p>
+<pre class="r"><code>veg_cover &lt;- mutate(veg_cover,
+  across(starts_with(&quot;cl&quot;),
     ~ case_when(
       .x == 0 ~ 0,
       .x == 1 ~ 2.5,

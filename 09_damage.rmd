@@ -185,13 +185,17 @@ bd %>%
 
 ```
 
+What about for multiple species?
+
+
+
 # Modeling
 
 There are several potential to modeling this data.
 
-1. It could be modeled as binary data with a zero-inflated generalized linear model binomial regression with logit link (logistic regression). This, I think would be answering: for a random (average?) tree from a given treatment, what is the probability that it would be bear damaged? I'm not sure we have sufficient observations of damaged trees characterize the distribution. In the case of prediction, we may need to make adjustment for the [imbalance of response](https://stats.stackexchange.com/questions/6067/does-an-unbalanced-sample-matter-when-doing-logistic-regression)
+1. Probability of bear damage could be modeled as binary data with a generalized linear model binomial regression with logit link (logistic regression). This, I think would be answering: for a random (average?) tree from a given treatment, what is the probability that it would be bear damaged? I'm not sure we have sufficient observations of damaged trees characterize the distribution. In the case of prediction, we may need to make adjustment for the [imbalance of response](https://stats.stackexchange.com/questions/6067/does-an-unbalanced-sample-matter-when-doing-logistic-regression)
 
-2. Another approach is modeling percent bear damage at the plot level. Here linear regression may work, but theoretically, our response is bound by (0, 1). One recommendation here is [Beta regression](https://hansjoerg.me/2019/05/10/regression-modeling-with-proportion-data-part-1/).
+2. Another approach is modeling *percent bear damage* at the plot level. Here linear regression may work, but theoretically, our response is bound by (0, 1). One recommendation here is [Beta regression](https://hansjoerg.me/2019/05/10/regression-modeling-with-proportion-data-part-1/).
 
 3. Also at the plot level, we could model counts using Poisson or negative binomial GLMM. This would answer the question: how many trees can we expect to be bear damaged given a treatment. Here it would probably be important to account for differences between treatments like diameter increment and tree size.
 
@@ -203,9 +207,8 @@ My first model is additive and includes `treatment`, `year`, `d_inc2`, and rando
 
 ```{r, cache=TRUE, warning=TRUE}
 
-bdmd <- subset(bd, year %in% c("13", "18"))
+bdmd <- subset(bd, year %in% c("13", "18") & spp %in% c("SESE3", "PSMEM"))
 
-library(lme4)
 bm1 <- glmer(bear_new ~ treatment + year + d_inc2 + (1 | plot) + (1 | tree_id), family = binomial, data = bdmd)
 
 summary(bm1)
@@ -222,13 +225,16 @@ summary(bm1.all)
 
 ```
 
-"Recompute gradient and Hessian with Richardson extrapolation" - from ?convergence
-
-
 For model 2, I'll remove `tree_id` and see if the warnings go away. They do, but the model is different.
 
 ```{r}
 bm2 <- glmer(bear_new ~ treatment + year + d_inc2 + (1 | plot), family = binomial, data = bdmd)
+
+summary(bm2)
+```
+
+```{r}
+bm2 <- glmer(bear_new ~ treatment + year + d_inc2 + spp + (1 | plot), family = binomial, data = bdmd)
 
 summary(bm2)
 ```

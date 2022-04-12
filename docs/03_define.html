@@ -273,6 +273,9 @@ $(document).ready(function () {
 <li>
   <a href="08_variability.html">Variability</a>
 </li>
+<li>
+  <a href="09_damage.html">Bear and other damage</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         
@@ -508,9 +511,19 @@ neighbors.</p>
 <h1>Calculate plot SDI</h1>
 <p>For “live” trees only</p>
 <pre class="r"><code>d_l &lt;- d_l %&gt;%
-  group_by(plot) %&gt;%
+  group_by(plot, year) %&gt;%
   mutate(sdi_plot = sum(12.5 * (dbh * live / 25.4)^1.605, na.rm = TRUE)) %&gt;%
-  ungroup()</code></pre>
+  ungroup()
+
+sdi_r &lt;- function(dbh) {
+  qmd &lt;- sqrt(mean(dbh**2))
+  tpa &lt;- length(dbh) * 12.5
+  tpa * (qmd / 25.4)**1.605
+}
+
+sdi_sum &lt;- function(dbh) {
+  sum(12.5 * (dbh / 25.4)**1.605)
+}</code></pre>
 </div>
 <div id="standardize-crown-ratio" class="section level1">
 <h1>Standardize crown ratio</h1>

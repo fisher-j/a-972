@@ -3795,7 +3795,7 @@ my_dodge &lt;- position_dodge(0.5)
 veg %&gt;%
   relevel_treatment() %&gt;%
   mutate(year = paste0(&quot;20&quot;, year)) %&gt;%
-  ggplot(aes(year, emmean, group = treatment)) +
+ggplot(aes(year, emmean, group = treatment)) +
     geom_line(aes(linetype = treatment), position = my_dodge) +
     geom_point(aes(shape = treatment), size = 1.8, position = my_dodge) +
     geom_errorbar(
@@ -3806,7 +3806,7 @@ veg %&gt;%
     ) +
     theme_bw() +
     labs(y = NULL, x = &quot;Year&quot;) +
-    facet_wrap(~ metric, scales = &quot;free_y&quot;, strip.position = &quot;left&quot;, ncol = 1) +
+    facet_wrap(~ metric, scales = &quot;free_y&quot;, strip.position = &quot;left&quot;, ncol = 2) +
     theme(
       panel.spacing.x = unit(0, &quot;mm&quot;),
       strip.background.y = element_blank(),
@@ -3814,11 +3814,13 @@ veg %&gt;%
       strip.placement = &quot;outside&quot;,
       strip.text = element_text(size = 10),
       axis.title = element_text(size = 10),
-      legend.position = c(0.17, 0.91),
+      # legend.position = c(0.17, 0.91),
+      legend.position = &quot;bottom&quot;,
       legend.title = element_blank(),
       legend.box.margin = margin(l = 0, unit = &quot;mm&quot;),
       legend.box.spacing = unit(0, &quot;mm&quot;),
       legend.background = element_blank(),
+      legend.key.size = unit(4.8, &quot;mm&quot;),
       plot.margin = margin(1,1, unit = &quot;mm&quot;)
     ) +
     scale_linetype_manual(
@@ -3845,7 +3847,7 @@ veg %&gt;%
   filename = &quot;figs/veg_fig.pdf&quot;,
   device = cairo_pdf,
   width = 8.84,
-  height = 18,
+  height = 7,
   units = &quot;cm&quot;
 )
 

@@ -539,7 +539,7 @@ ggplot(aes(year, emmean, group = treatment)) +
     ) +
     theme_bw() +
     labs(y = NULL, x = "Year") +
-    facet_wrap(~ metric, scales = "free_y", strip.position = "left", ncol = 1) +
+    facet_wrap(~ metric, scales = "free_y", strip.position = "left", ncol = 2) +
     theme(
       panel.spacing.x = unit(0, "mm"),
       strip.background.y = element_blank(),
@@ -547,11 +547,13 @@ ggplot(aes(year, emmean, group = treatment)) +
       strip.placement = "outside",
       strip.text = element_text(size = 10),
       axis.title = element_text(size = 10),
-      legend.position = c(0.17, 0.91),
+      # legend.position = c(0.17, 0.91),
+      legend.position = "bottom",
       legend.title = element_blank(),
       legend.box.margin = margin(l = 0, unit = "mm"),
       legend.box.spacing = unit(0, "mm"),
       legend.background = element_blank(),
+      legend.key.size = unit(4.8, "mm"),
       plot.margin = margin(1,1, unit = "mm")
     ) +
     scale_linetype_manual(
@@ -578,7 +580,7 @@ ggsave(
   filename = "figs/veg_fig.pdf",
   device = cairo_pdf,
   width = 8.84,
-  height = 18,
+  height = 7,
   units = "cm"
 )
 

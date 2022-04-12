@@ -4511,13 +4511,14 @@ anomalous in that is the only plot that sees an increase from 2008 to
       y = &quot;Count of bear damage&quot;, x = &quot;Year&quot;  
     )</code></pre>
 <p><img src="09_damage_files/figure-html/unnamed-chunk-7-5.png" width="672" /></p>
+<p>What about for multiple species?</p>
 </div>
 </div>
 <div id="modeling" class="section level1">
 <h1>Modeling</h1>
 <p>There are several potential to modeling this data.</p>
 <ol style="list-style-type: decimal">
-<li><p>It could be modeled as binary data with a zero-inflated
+<li><p>Probability of bear damage could be modeled as binary data with a
 generalized linear model binomial regression with logit link (logistic
 regression). This, I think would be answering: for a random (average?)
 tree from a given treatment, what is the probability that it would be
@@ -4526,9 +4527,9 @@ trees characterize the distribution. In the case of prediction, we may
 need to make adjustment for the <a
 href="https://stats.stackexchange.com/questions/6067/does-an-unbalanced-sample-matter-when-doing-logistic-regression">imbalance
 of response</a></p></li>
-<li><p>Another approach is modeling percent bear damage at the plot
-level. Here linear regression may work, but theoretically, our response
-is bound by (0, 1). One recommendation here is <a
+<li><p>Another approach is modeling <em>percent bear damage</em> at the
+plot level. Here linear regression may work, but theoretically, our
+response is bound by (0, 1). One recommendation here is <a
 href="https://hansjoerg.me/2019/05/10/regression-modeling-with-proportion-data-part-1/">Beta
 regression</a>.</p></li>
 <li><p>Also at the plot level, we could model counts using Poisson or
@@ -4551,58 +4552,51 @@ very long time to converge and then gives several warnings about
 convergence. In looking at the summary, a great deal of variance is
 attributed to the random slope: <code>tree_id</code>. I’m not sure what
 to make of this.</p>
-<pre class="r"><code>bdmd &lt;- subset(bd, year %in% c(&quot;13&quot;, &quot;18&quot;))
+<pre class="r"><code>bdmd &lt;- subset(bd, year %in% c(&quot;13&quot;, &quot;18&quot;) &amp; spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;))
 
-library(lme4)
 bm1 &lt;- glmer(bear_new ~ treatment + year + d_inc2 + (1 | plot) + (1 | tree_id), family = binomial, data = bdmd)</code></pre>
-<pre><code>## Warning in checkConv(attr(opt, &quot;derivs&quot;), opt$par, ctrl = control$checkConv, : unable to evaluate scaled gradient</code></pre>
-<pre><code>## Warning in checkConv(attr(opt, &quot;derivs&quot;), opt$par, ctrl = control$checkConv, : Model failed to converge: degenerate Hessian with 1 negative eigenvalues</code></pre>
+<pre><code>## Warning in checkConv(attr(opt, &quot;derivs&quot;), opt$par, ctrl = control$checkConv, : Model failed to converge with max|grad| = 3.10652 (tol = 0.002, component 1)</code></pre>
 <pre class="r"><code>summary(bm1)</code></pre>
-<pre><code>## Warning in vcov.merMod(object, use.hessian = use.hessian): variance-covariance matrix computed from finite-difference Hessian is
-## not positive definite or contains NA values: falling back to var-cov estimated from RX</code></pre>
-<pre><code>## Warning in vcov.merMod(object, correlation = correlation, sigm = sig): variance-covariance matrix computed from finite-difference Hessian is
-## not positive definite or contains NA values: falling back to var-cov estimated from RX</code></pre>
 <pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) [&#39;glmerMod&#39;]
 ##  Family: binomial  ( logit )
 ## Formula: bear_new ~ treatment + year + d_inc2 + (1 | plot) + (1 | tree_id)
 ##    Data: bdmd
 ## 
 ##      AIC      BIC   logLik deviance df.resid 
-##    488.8    541.5   -235.4    470.8     2559 
+##    465.7    517.9   -223.9    447.7     2439 
 ## 
 ## Scaled residuals: 
 ##      Min       1Q   Median       3Q      Max 
-## -1.31568 -0.01163 -0.00672 -0.00507  1.75113 
+## -1.27036 -0.01434 -0.01001 -0.00686  1.86987 
 ## 
 ## Random effects:
-##  Groups  Name        Variance  Std.Dev.
-##  tree_id (Intercept) 62.684832 7.91738 
-##  plot    (Intercept)  0.004358 0.06601 
-## Number of obs: 2568, groups:  tree_id, 1358; plot, 20
+##  Groups  Name        Variance Std.Dev.
+##  tree_id (Intercept) 52.05002 7.2146  
+##  plot    (Intercept)  0.09088 0.3015  
+## Number of obs: 2448, groups:  tree_id, 1294; plot, 20
 ## 
 ## Fixed effects:
-##              Estimate Std. Error z value Pr(&gt;|z|)   
-## (Intercept)  -11.4592     3.5491  -3.229  0.00124 **
-## treatmentH40   2.8611     3.8300   0.747  0.45505   
-## treatmentH80   1.2694     4.0285   0.315  0.75268   
-## treatmentL40   2.4674     4.0165   0.614  0.53900   
-## treatmentL80   0.7547     4.3540   0.173  0.86238   
-## year18         1.1741     0.3879   3.027  0.00247 **
-## d_inc2         0.4641     0.5579   0.832  0.40542   
+##               Estimate Std. Error   z value Pr(&gt;|z|)    
+## (Intercept)  -8.942512   0.003014 -2966.939   &lt;2e-16 ***
+## treatmentH40  0.175431   0.621995     0.282   0.7779    
+## treatmentH80 -1.484620   0.839816    -1.768   0.0771 .  
+## treatmentL40 -1.258267   1.095460    -1.149   0.2507    
+## treatmentL80 -1.916792   1.065559    -1.799   0.0720 .  
+## year18        0.960535   0.002962   324.244   &lt;2e-16 ***
+## d_inc2        0.721594   0.003779   190.957   &lt;2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Correlation of Fixed Effects:
 ##             (Intr) trtH40 trtH80 trtL40 trtL80 year18
-## treatmntH40 -0.916                                   
-## treatmntH80 -0.872  0.819                            
-## treatmntL40 -0.875  0.820  0.778                     
-## treatmntL80 -0.806  0.759  0.719  0.720              
-## year18      -0.067 -0.001 -0.002  0.001 -0.005       
-## d_inc2      -0.050 -0.104 -0.075 -0.063 -0.079  0.060
+## treatmntH40 -0.004                                   
+## treatmntH80 -0.003  0.000                            
+## treatmntL40 -0.003  0.000  0.000                     
+## treatmntL80 -0.003  0.000  0.000  0.000              
+## year18      -0.049 -0.003 -0.002 -0.002 -0.002       
+## d_inc2       0.013 -0.005 -0.002 -0.003 -0.002  0.007
 ## optimizer (Nelder_Mead) convergence code: 0 (OK)
-## unable to evaluate scaled gradient
-## Model failed to converge: degenerate  Hessian with 1 negative eigenvalues</code></pre>
+## Model failed to converge with max|grad| = 3.10652 (tol = 0.002, component 1)</code></pre>
 <p>check <code>allFit</code> output</p>
 <pre class="r"><code>bm1.all &lt;- allFit(bm1)</code></pre>
 <pre><code>## bobyqa : [OK]
@@ -4696,8 +4690,6 @@ bm1 &lt;- glmer(bear_new ~ treatment + year + d_inc2 + (1 | plot) + (1 | tree_id
 ## 
 ## attr(,&quot;class&quot;)
 ## [1] &quot;summary.allFit&quot;</code></pre>
-<p>“Recompute gradient and Hessian with Richardson extrapolation” - from
-?convergence</p>
 <p>For model 2, I’ll remove <code>tree_id</code> and see if the warnings
 go away. They do, but the model is different.</p>
 <pre class="r"><code>bm2 &lt;- glmer(bear_new ~ treatment + year + d_inc2 + (1 | plot), family = binomial, data = bdmd)
@@ -4709,37 +4701,79 @@ summary(bm2)</code></pre>
 ##    Data: bdmd
 ## 
 ##      AIC      BIC   logLik deviance df.resid 
-##    556.9    603.7   -270.5    540.9     2560 
+##    522.8    569.2   -253.4    506.8     2440 
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -0.9335 -0.1517 -0.1058 -0.0759 18.3631 
+## -1.0225 -0.1488 -0.1002 -0.0754 18.7144 
 ## 
 ## Random effects:
 ##  Groups Name        Variance Std.Dev.
-##  plot   (Intercept) 0.07047  0.2655  
-## Number of obs: 2568, groups:  plot, 20
+##  plot   (Intercept) 0.1052   0.3244  
+## Number of obs: 2448, groups:  plot, 20
 ## 
 ## Fixed effects:
 ##              Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)   -5.8296     0.5489 -10.621  &lt; 2e-16 ***
-## treatmentH40   2.4034     0.5946   4.042 5.30e-05 ***
-## treatmentH80   1.1317     0.6062   1.867 0.061913 .  
-## treatmentL40   2.1501     0.6092   3.529 0.000417 ***
-## treatmentL80   0.7456     0.6445   1.157 0.247331    
-## year18         0.3295     0.2536   1.299 0.193931    
-## d_inc2         1.1006     0.2451   4.490 7.12e-06 ***
+## (Intercept)   -5.8703     0.5644 -10.402  &lt; 2e-16 ***
+## treatmentH40   2.2529     0.6173   3.649 0.000263 ***
+## treatmentH80   0.9704     0.6311   1.537 0.124178    
+## treatmentL40   2.1250     0.6244   3.403 0.000666 ***
+## treatmentL80   0.5532     0.6720   0.823 0.410380    
+## year18         0.4720     0.2643   1.786 0.074129 .  
+## d_inc2         1.1757     0.2783   4.225 2.39e-05 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Correlation of Fixed Effects:
 ##             (Intr) trtH40 trtH80 trtL40 trtL80 year18
-## treatmntH40 -0.781                                   
-## treatmntH80 -0.785  0.778                            
-## treatmntL40 -0.769  0.796  0.756                     
-## treatmntL80 -0.753  0.714  0.695  0.696              
-## year18      -0.238  0.007  0.001  0.007 -0.006       
-## d_inc2      -0.176 -0.241 -0.124 -0.217 -0.044 -0.057</code></pre>
+## treatmntH40 -0.749                                   
+## treatmntH80 -0.755  0.741                            
+## treatmntL40 -0.753  0.780  0.727                     
+## treatmntL80 -0.726  0.685  0.661  0.675              
+## year18      -0.256  0.014  0.002  0.011 -0.004       
+## d_inc2      -0.192 -0.266 -0.099 -0.213 -0.046 -0.070</code></pre>
+<pre class="r"><code>bm2 &lt;- glmer(bear_new ~ treatment + year + d_inc2 + spp + (1 | plot), family = binomial, data = bdmd)
+
+summary(bm2)</code></pre>
+<pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) [&#39;glmerMod&#39;]
+##  Family: binomial  ( logit )
+## Formula: bear_new ~ treatment + year + d_inc2 + spp + (1 | plot)
+##    Data: bdmd
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##    468.6    520.9   -225.3    450.6     2439 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -0.9132 -0.1522 -0.0594 -0.0430 30.2507 
+## 
+## Random effects:
+##  Groups Name        Variance Std.Dev.
+##  plot   (Intercept) 0.09955  0.3155  
+## Number of obs: 2448, groups:  plot, 20
+## 
+## Fixed effects:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)   -6.9011     0.6398 -10.786  &lt; 2e-16 ***
+## treatmentH40   1.9911     0.6178   3.223  0.00127 ** 
+## treatmentH80   0.5099     0.6331   0.805  0.42065    
+## treatmentL40   2.2879     0.6247   3.662  0.00025 ***
+## treatmentL80   0.3525     0.6761   0.521  0.60210    
+## year18         0.5288     0.2720   1.944  0.05186 .  
+## d_inc2         0.7043     0.2633   2.675  0.00748 ** 
+## sppSESE3       2.3879     0.3779   6.318 2.65e-10 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Correlation of Fixed Effects:
+##             (Intr) trtH40 trtH80 trtL40 trtL80 year18 d_inc2
+## treatmntH40 -0.657                                          
+## treatmntH80 -0.638  0.734                                   
+## treatmntL40 -0.696  0.762  0.716                            
+## treatmntL80 -0.633  0.683  0.659  0.670                     
+## year18      -0.270  0.031  0.001  0.033  0.002              
+## d_inc2      -0.147 -0.223 -0.056 -0.151 -0.028 -0.047       
+## sppSESE3    -0.443 -0.042 -0.084  0.031 -0.032  0.033 -0.109</code></pre>
 </div>
 
 

@@ -1,3 +1,7 @@
+## 04/10/2020
+
+* Run initial logistic regression models
+
 ## 04/09/2020
 
 * Added SDI*/SDI to finished "structure" figure.
