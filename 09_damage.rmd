@@ -1,5 +1,6 @@
 ---
 title: Bear and other damage
+bibliography: ["./reference/a972.bib"]
 ---
 
 ```{r setup, include=FALSE}
@@ -288,12 +289,53 @@ emmip(bm2, treatment ~ d_inc2, at = list(d_inc2 = seq(-0.5, 2.8, 0.1)), type = "
 
 ```
 
-This model seems to be working. Now I'll do more model selection, testing for interactions.
+This model seems to be working. Now I'll do more model selection, testing for interactions. All of these models will include `plot` as the only random effect. I compare performance metrics using the R package: performance [@ludeckePerformancePackageAssessment2021]
 
-```{r}
+```{r, warning=TRUE}
 
+fl <- list(
+    bear_new ~ treatment + year + spp2 + d_inc2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2)
+  , bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2
+  , bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2
+  , bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year
+  , bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2)
+)
 
+data.frame(form = sapply(fl, format)) %>% 
+  kbl2(row.names = TRUE,
+  caption = "Formulas testing different tree-growth variables and intereactions")
 
+bdml <- lapply(fl, \(x) {
+  glmer(
+    update(x, ~ . + (1 | plot)),
+    family = binomial(),
+    data = bdmd,
+    control = glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5))
+  )
+})
+
+do.call(compare_performance, c(bdml, rank = TRUE)) %>%
+  kbl2(digits = 3)
+```
+
+This output is interesting, but there were some warnings from the model function about models being unidentifiable, I attempted to fix this by scaling the ba_inc variable, but this didn't help. There is more advice [here](https://stackoverflow.com/questions/53834754/scaling-predictors-in-lme4-glmer-doesnt-resolve-eigenvalue-warnings-neither-do) that I need to read.
+
+```{r, eval=FALSE}
+a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
+a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2) + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
 ```
 
 ## Model validation
@@ -302,6 +344,5 @@ I can check for over dispersion, and [I don't think I need to worry about underd
 
 ```{r}
 
-compare_performance(bm1, bm2)
 
 ```

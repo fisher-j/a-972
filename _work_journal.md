@@ -3,6 +3,8 @@
 * Switich to using 2 species categories (redwood + other)
 * Re-examine random effects of initial additive models
 * look and emmeans and predicted estimates of initial model
+* produced a list of candidate models to compare with the package "performance"
+ - they run but there are errors, the "best" model is among those with errors
 
 ## 04/10/2020
 
