@@ -384,27 +384,50 @@ What is interesting here is that the high intensity thinnings lead consistently 
 ```{r}
 
 doj <- position_dodge(width = 0.5)
-veg_cover %>% filter(year != "18") %>%
+veg_cover %>% 
+  filter(year != "18") %>%
+  select(-c(cl_con, cl_hw, dom_con, dom_hw)) %>%
+  pivot_longer(-c(year, plot, treatment), names_to = c(".value", "type"), names_sep = "_") %>%
   mutate(
     plot2 = str_extract(plot, "\\d"),
-    dom_herb = spp_common_name(dom_herb)
+    dom = spp_common_name(dom),
+    type = if_else(type == "shrub", "Shrub", "Herb"),
+    year = if_else(year == "08", "2008", "2013")
   ) %>%
+  relevel_treatment() %>%
   arrange(treatment, plot2, year) %>%
-  ggplot(aes(year, dom_herb, group = plot2)) +
+  ggplot(aes(year, dom, group = plot2)) +
     geom_line(position = doj) +
-    geom_point(aes(size = cl_shrub), position = doj, alpha = 0.5) +
-    facet_wrap(~ treatment)
+    geom_point(aes(size = cl), position = doj, alpha = 0.5) +
+    facet_grid(type ~ treatment, scales = "free_y") +
+    theme_bw() +
+    theme(
+      axis.title.y = element_blank(),
+      legend.position = c(.9, .7),
+      legend.background = element_blank(),
+      legend.text = element_text(size = 8),
+      legend.title = element_text(size = 9)
+    ) +
+    scale_size_continuous(name = "Cover class (%)", breaks = c(15, 30, 60), limits = c(2.5, 62.5)) +
+    scale_x_discrete(expand = expansion(mult = 0.37)) +
+    labs(y = "Year")
 
-veg_cover %>%
-  mutate(
-    plot2 = str_extract(plot, "\\d"),
-    dom_shrub = spp_common_name(dom_shrub)
-  ) %>%
-  arrange(treatment, plot2, year) %>%
-  ggplot(aes(year, dom_shrub, group = plot2)) +
-    geom_line(position = doj) +
-    geom_point(aes(size = cl_shrub), position = doj, alpha = 0.5) +
-    facet_wrap(~ treatment)
+
+ggsave(
+  filename = "figs/understory_change.pdf",
+  device = cairo_pdf,
+  width = 18.2,
+  height = 8.6,
+  units = "cm"
+)
+
+ggsave(
+  filename = "figs/understory_change.jpg",
+  width = 18.2,
+  height = 8.6,
+  units = "cm"
+)
+
 ```
 
 change in percent cover of shrubs and herbs over time for each treatment. The fact that herb and shrub cover change so much is really confounded by the fact that sword fern (and to a lesser extent, huckleberry) are classified differently over time.
