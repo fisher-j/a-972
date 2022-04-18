@@ -3394,28 +3394,48 @@ heavy sword fern cover. Evergreen violet seems to be the most common
 herb following all treatments (except control) but the H40 and L40
 appear to be more consistent/homogenous across plots.</p>
 <pre class="r"><code>doj &lt;- position_dodge(width = 0.5)
-veg_cover %&gt;% filter(year != &quot;18&quot;) %&gt;%
+veg_cover %&gt;% 
+  filter(year != &quot;18&quot;) %&gt;%
+  select(-c(cl_con, cl_hw, dom_con, dom_hw)) %&gt;%
+  pivot_longer(-c(year, plot, treatment), names_to = c(&quot;.value&quot;, &quot;type&quot;), names_sep = &quot;_&quot;) %&gt;%
   mutate(
     plot2 = str_extract(plot, &quot;\\d&quot;),
-    dom_herb = spp_common_name(dom_herb)
+    dom = spp_common_name(dom),
+    type = if_else(type == &quot;shrub&quot;, &quot;Shrub&quot;, &quot;Herb&quot;),
+    year = if_else(year == &quot;08&quot;, &quot;2008&quot;, &quot;2013&quot;)
   ) %&gt;%
+  relevel_treatment() %&gt;%
   arrange(treatment, plot2, year) %&gt;%
-  ggplot(aes(year, dom_herb, group = plot2)) +
+  ggplot(aes(year, dom, group = plot2)) +
     geom_line(position = doj) +
-    geom_point(aes(size = cl_shrub), position = doj, alpha = 0.5) +
-    facet_wrap(~ treatment)</code></pre>
+    geom_point(aes(size = cl), position = doj, alpha = 0.5) +
+    facet_grid(type ~ treatment, scales = &quot;free_y&quot;) +
+    theme_bw() +
+    theme(
+      axis.title.y = element_blank(),
+      legend.position = c(.9, .7),
+      legend.background = element_blank(),
+      legend.text = element_text(size = 8),
+      legend.title = element_text(size = 9)
+    ) +
+    scale_size_continuous(name = &quot;Cover class (%)&quot;, breaks = c(15, 30, 60), limits = c(2.5, 62.5)) +
+    scale_x_discrete(expand = expansion(mult = 0.37)) +
+    labs(y = &quot;Year&quot;)</code></pre>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
-<pre class="r"><code>veg_cover %&gt;%
-  mutate(
-    plot2 = str_extract(plot, &quot;\\d&quot;),
-    dom_shrub = spp_common_name(dom_shrub)
-  ) %&gt;%
-  arrange(treatment, plot2, year) %&gt;%
-  ggplot(aes(year, dom_shrub, group = plot2)) +
-    geom_line(position = doj) +
-    geom_point(aes(size = cl_shrub), position = doj, alpha = 0.5) +
-    facet_wrap(~ treatment)</code></pre>
-<p><img src="08_variability_files/figure-html/unnamed-chunk-15-2.png" width="672" /></p>
+<pre class="r"><code>ggsave(
+  filename = &quot;figs/understory_change.pdf&quot;,
+  device = cairo_pdf,
+  width = 18.2,
+  height = 8.6,
+  units = &quot;cm&quot;
+)
+
+ggsave(
+  filename = &quot;figs/understory_change.jpg&quot;,
+  width = 18.2,
+  height = 8.6,
+  units = &quot;cm&quot;
+)</code></pre>
 <p>change in percent cover of shrubs and herbs over time for each
 treatment. The fact that herb and shrub cover change so much is really
 confounded by the fact that sword fern (and to a lesser extent,
@@ -3455,7 +3475,7 @@ plot.</p>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
 <p>This figure shows the same information as above, but stacked, where
 the total bar heights indicate the average shrub cover for a treatment
-and the region heigts represent proportion of plots where that species
+and the region heights represent proportion of plots where that species
 was recorded as dominant, weighted by that plots total cover.</p>
 <pre class="r"><code>veg_cover %&gt;%
   filter(year == &quot;18&quot;) %&gt;%
@@ -3488,10 +3508,10 @@ ggsave(
   height = 9,
   units = &quot;cm&quot;
 )</code></pre>
-<p>It would have been nice to show the same informtion for herb species,
-but unfortunately, the fact that sword fern is a significant component
-and it was recorded inconsistently, makes interpretation of this (and
-much of the understory data) very difficult.</p>
+<p>It would have been nice to show the same information for herb
+species, but unfortunately, the fact that sword fern is a significant
+component and it was recorded inconsistently, makes interpretation of
+this (and much of the understory data) very difficult.</p>
 <pre class="r"><code>veg_cover %&gt;%
   filter(year == &quot;18&quot;) %&gt;%
   mutate(
@@ -3853,7 +3873,7 @@ ggplot(aes(year, emmean, group = treatment)) +
 ggsave(
   filename = &quot;figs/veg_fig.jpg&quot;,
   width = 8.84,
-  height = 18,
+  height = 7,
   units = &quot;cm&quot;
 )</code></pre>
 </div>

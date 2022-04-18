@@ -649,7 +649,7 @@ non_para_dom_test <- function(metric) {
 ```
 
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, cache=TRUE}
 non_para_dom_test("dbh")
 non_para_dom_test("ba_inc2")
 non_para_dom_test("ht")

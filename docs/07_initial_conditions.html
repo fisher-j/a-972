@@ -314,18 +314,12 @@ metrics in their initial conditions. This should be apparent in some of
 the summary data for initial conditions, such as TPH, QMD and HT.</p>
 <p>First, here is the summary table with just the initial conditions.
 These do not look substantially different.</p>
-<pre class="r"><code>kbl2 &lt;- function(data, caption) {
-  data %&gt;%
-  kableExtra::kbl(caption = caption) %&gt;%
-  kableExtra::kable_styling()
-}
-
-d_l %&gt;%
+<pre class="r"><code>d_l %&gt;%
   filter(year == &quot;init&quot;) %&gt;%
   get_measures() %&gt;%
   make_summary(measures = c(&quot;dbh&quot;, &quot;ht_p&quot;, &quot;density&quot;, &quot;ba&quot;, &quot;dom_dbh&quot;)) %&gt;%
   kbl2(caption = &quot;Initial summmary for all species&quot;)</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 Initial summmary for all species
 </caption>
@@ -600,7 +594,7 @@ think anovas and t-tests are reliable with only 4 data points.</p>
   test_sum() %&gt;% 
   select(-c(Tukey, Dunn, Wilcox)) %&gt;%
   kbl2(caption = &quot;omnibus test, both species&quot;)</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 omnibus test, both species
 </caption>
@@ -685,7 +679,7 @@ qmd
   select(-c(aov_p)) %&gt;%
   unnest(c(Tukey, Dunn, Wilcox)) %&gt;% 
   kbl2(caption = &quot;Post-hoc tests, both species&quot;)</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 Post-hoc tests, both species
 </caption>
@@ -1057,7 +1051,7 @@ test didn’t detect any significance.</p>
   test_sum() %&gt;% 
   select(-c(Tukey, Dunn, Wilcox)) %&gt;%
   kbl2(caption = &quot;Omnibus tests, redwood&quot;)</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 Omnibus tests, redwood
 </caption>
@@ -1142,7 +1136,7 @@ qmd
   select(-c(aov_p)) %&gt;%
   unnest(c(Tukey, Dunn, Wilcox)) %&gt;% 
   kbl2(caption = &quot;post-hoc tests, redwood&quot;)</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 post-hoc tests, redwood
 </caption>
@@ -1182,7 +1176,7 @@ do post-hoc tests.</p>
   test_sum() %&gt;% 
   select(-c(Tukey, Dunn, Wilcox)) %&gt;%
   kbl2(caption = &quot;Omnibus tests, Douglas-fir&quot;)</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 Omnibus tests, Douglas-fir
 </caption>
@@ -1267,7 +1261,7 @@ qmd
   select(-c(aov_p)) %&gt;%
   unnest(c(Tukey, Dunn, Wilcox)) %&gt;% 
   kbl2(caption = &quot;post-hoc tests, redwood&quot;)</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 post-hoc tests, redwood
 </caption>

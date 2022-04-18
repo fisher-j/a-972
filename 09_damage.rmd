@@ -30,11 +30,13 @@ There are trees with "healed over" in the notes, most of these are in 2008. It m
 I'm assuming that any tree that goes from bear damaged in 2008 to not bear damaged in 2013 is in fact healed and that any damage in 2018 is new damage.
 
 ```{r}
+
 # # Use this to look at any "healed" trees
 # bd %>% 
 #   group_by(tree_id) %>%
 #   filter(any(str_detect(tolower(notes), "healed"))) %>%
 #   color_groups()
+
 ```
 
 In looking at notes, trees trees that have "old bear damage" recorded are treated inconsistently, some are recorded with bear damage, some without. I'll assume that trees recorded as not bear damaged are either undamaged or completely healed, and subsequent damage implies a new bear incidence of bear damage.
@@ -77,6 +79,8 @@ bear_dropped <- bd %>%
 
 I need to create another variable which indicates if the damage is new for that period, when a trees goes from undamaged to damaged. I will also count trees as new bear damage when the damage increases from one period to the next ie. when condition code increases from 17 or 18 to 19 or 20.
 
+I'll also add a variable indicating whether a tree was damaged in 2013
+
 ```{r}
 
 # # this was used for ensuring all bear damage stuck with a tree throughout its life
@@ -101,12 +105,14 @@ bd <- bd %>%
 
 ```
 
-I'm going to drop alder and hemlock from the analysis, because they are never attacked by bear. I'm also going to group Douglas-fir and spruce together as "other".
+I'm going to drop alder and hemlock, because they are never attacked by bear. I am also dropping spruce in order to be consistent with the rest of my analysis. 
+
+There were about 30 spruce trees before thinning and about half of these had bear damage. In 2013, there were 24 spruce and 4 of them received damage.
 
 ```{r}
 
-bd <- filter(bd, spp %in% c("SESE3", "PSMEM", "PISI")) %>%
-  mutate(spp2 = if_else(spp == "SESE3", spp, "OTHER"))
+bd <- filter(bd, spp %in% c("SESE3", "PSMEM")) %>%
+  mutate(spp2 = spp)
 
 ```
 
@@ -115,6 +121,8 @@ bd <- filter(bd, spp %in% c("SESE3", "PSMEM", "PISI")) %>%
 Here is percent new bear damage over time. The H40 and L40 treatments seem to have the largest increases.
 
 In the H40 treatment there is a decline in percent new bear damage in two plots, whereas for the L40 treatment, only one declines, and it is anomalous in that is the only plot that sees an increase from 2008 to 2013.
+
+Error bars represent 1 SE of mean
 
 ```{r}
 
@@ -154,29 +162,18 @@ bd %>%
     theme(legend.position = "none") +
     geom_point(position = position_dodge(width = 0.4)) +
     scale_x_discrete(expand = expansion(mult = 0.2)) +
-    labs(title = "Actual percent new bear damage for each treatment")
+    labs(title = "Actual percent new bear damage for each treatment and plot")
 
-bd %>%
-  filter(year != "init") %>%
-  group_by(treatment, year, plot) %>%
-  summarize(bear_new = sum(bear_new)) %>%
-  ungroup() %>%
-  ggplot(aes(str_extract(plot, "\\d"), bear_new, fill = year)) + 
-    geom_col(position = "dodge", color = "black") +
-    facet_wrap(~ treatment) +
-    labs(
-      title = "Actual count new bear damage for each plot in treatment",
-      y = "Count of bear damage", x = "Plot number"  
-    )
 
 bd %>%
   filter(year != "init") %>%
   group_by(treatment, year, spp2) %>%
   summarize(bear_new = sum(bear_new)) %>%
   ungroup() %>%
-  ggplot(aes(treatment, bear_new, fill = fct_relevel(spp2, "SESE3"))) + 
+  ggplot(aes(treatment, bear_new, fill = spp2)) + 
     geom_col(position = "stack", color = "black") +
     facet_wrap(~ year) +
+    scale_fill_manual(values = palette()) +
     labs(
       title = "Total sum of new bear damage for each treatment/species",
       y = "Count of bear damage",
@@ -209,17 +206,18 @@ There are several potential to modeling this data.
 
 3. Also at the plot level, we could model counts using Poisson or negative binomial GLMM. This would answer the question: how many trees can we expect to be bear damaged given a treatment. Here it would probably be important to account for differences between treatments like diameter increment and tree size.
 
-# Logistic regression
+## Logistic regression
 
 We are modeling occurrence of new bear damage in 2013 and 2018. New bear damage in 2008 is not really comparable as it represents accumulated damage over an unspecified amount of time prior to treatment.
 
 My first model is additive and includes `treatment`, `year`, `d_inc2`, `spp2` and random slopes for `plot`, *and* `tree_id`.
 
+The random effects for `tree_id` are very small, these might end up getting dropped.
+
 
 ```{r, warning=TRUE}
 
 bdmd <- subset(bd, year %in% c("13", "18"))
-
 
 bm1 <- glmer(
   bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot) + (1 | tree_id),
@@ -231,41 +229,201 @@ summary(bm1)
 
 ```
 
-check `allFit` output
+check `allFit` output to see if this model can be considered reliable: The estimated coefficients are very congruent, I think we can trust this model.
 
 ```{r}
 
 bm1.all <- allFit(bm1)
 
-summary(bm1.all)
+summary(bm1.all)$fixef
 
 ```
 
-For model 2, I'll remove `tree_id` and see if there is any difference.
+This model seems to be working. Now I'll do more model selection, testing for interactions. All of these models will include `plot` as the only random effect. I compare performance metrics using the R package: performance [@ludeckePerformancePackageAssessment2021]
+
+
+```{r, warning=TRUE, cache=TRUE}
+
+fl <- list(
+    bear_new ~ treatment + year + spp2 + d_inc2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2)
+  , bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2
+  , bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2
+  , bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year
+  , bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2)
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2 + spp2:scale(ba_inc2)
+  , bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2 + d_inc2:spp2
+)
+
+names(fl) <- seq_along(fl)
+
+make_glmm_mods <- function(dat, fl, w_tree = FALSE){
+  ran <- "~ . + (1 | plot)"
+  if (w_tree) ran <- paste(ran, "+ (1 | tree_id)")
+  eval(bquote(
+    lapply(fl, \(x) {
+      form <- update(x, ran)
+      print(paste("Evaluating: ", deparse1(x)))
+      glmer(
+        form,
+        family = binomial(),
+        data = .(substitute(dat)),
+        control = glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun=2e7))
+      )
+    })
+  ))
+}
+
+make_bglmm_mods <- function(dat, fl, w_tree = FALSE){
+  ran <- "~ . + (1 | plot)"
+  if (w_tree) ran <- paste(ran, "+ (1 | tree_id)")
+  out <- eval(bquote(
+    lapply(fl, function(x) {
+      mod0 <- glm(x, data = dat)
+      print(paste("Evaluating: ", deparse1(x)))
+      n_coef <<- length(coef(mod0))
+      form <- update(x, ran)
+      blme::bglmer(
+        form,
+        family = binomial(),
+        data = .(substitute(dat)),
+        fixef.prior = normal(cov = diag(9, n_coef)),
+        control = glmerControl(optimizer="bobyqa", optCtrl = list(maxfun=2e7))
+      )
+    })
+  ))
+  rm(n_coef, pos = .GlobalEnv)
+  return(out)
+}
+
+```
+
+Here is the list of models that I am going to test. They include different interaction terms. In addition, I can include `tree_id` as a random effect or not. Preliminary trials, showed that models were unstable when including this term. Within subject (`tree_id`) variance is perfectly correlated with outcome because most trees that are damaged are only damaged once. This seems to show up in the model as with `tree_id` absorbing most of the variance.
+
+There are also problems with complete separation, which I attempt to fix by using a bayesian framework. I tried using penalized regression with a fixed effects only glm (bias reduction). I also tried a bayesian model and specified a [prior variance for the fixed effects as a gaussian distribution with a sd of 3](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#penalizationhandling-complete-separation). Ben Bolker [says](https://bbolker.github.io/mixedmodels-misc/ecostats_chap.html#digression-complete-separation) "We can use `bglmer` from the `blme` package to impose zero-mean Normal priors on the fixed effects" 
 
 ```{r}
-bm2 <- glmer(bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot), family = binomial, data = bdmd)
-
-summary(bm2)
+# model list
+data.frame(form = sapply(fl, deparse1)) %>% 
+  kbl2(row.names = TRUE,
+  caption = "Formulas testing different tree-growth variables and intereactions")
 ```
 
-Having a look at the initial model. Including `tree_id` as a random effect doesn't seem to contribute anything to the model, so I focus on models with `plot` only.
+```{r, cache=TRUE}
+
+# run models
+bdm1 <- make_glmm_mods(bdmd, fl)
+bdm1_tree <- make_glmm_mods(bdmd, fl, w_tree = TRUE)
+
+bbdm <- make_bglmm_mods(bdmd, fl)
+bbdm_tree <- make_bglmm_mods(bdmd, fl, w_tree = TRUE)
+
+```
+
+When looking at the summaries of the models that include `tree_id`, they all fail to converge. I think there is a problem with the fact that within subject variance is perfectly correlated with our response, because trees can, in general only be damaged in one period or the other, trees that receive damage have very high variance, while those that do not have very low variance.
+
+My best guess is that it doesn't make sense to include `tree_id` because of its bimodal error.
+
+Another option could be ensuring that a tree is only damaged in one period, but here are only 3 trees that receive "new" damage in both periods. I doubt that these are having a huge effect. For the most part, trees are only damaged in one period or the other.
+
+```{r}
+examine_bdmod <- function(mod, cap) {
+  mod_list <- do.call(compare_performance, c(mod, metrics = "common")) %>%
+    arrange(AIC)
+  to_compare <- as.numeric(c(mod_list$Name[1:4], "2"))
+  print(
+    mod_list %>%
+    kbl2(digits = 3, caption = cap)
+  )
+  print(
+    sjPlot::tab_model(
+    mod[to_compare],
+    show.ci = FALSE,
+    show.aic = TRUE,
+    dv.labels = paste("Formula", to_compare),
+    title = cap
+    )
+  )
+}
+
+examine_bdmod(bdm1, "GLMM models with random plot only")
+examine_bdmod(bdm1_tree, "GLMM models with random plot and tree_id")
+examine_bdmod(bbdm, "Bayesian GLMM models with random plot only")
+examine_bdmod(bbdm_tree, "Bayesian GLMM models with random plot and tree_id")
+
+```
+
+
+I need a function for comparing models visually, with their predictions. I think that emmeans does this, but because I can't seem to be sure what I am predicting with emmeans, I will construct my own dataset to make predictions in order to clarify what emmeans are predicting.
 
 ```{r}
 
-compare_performance(bm1, bm2) %>% kbl2(caption = "performance metrics for two initial models")
+pred_bd <- function(mod) {
+  ba_incs <- seq(
+    quantile(bdmd$ba_inc2, 0.01),
+    quantile(bdmd$ba_inc2, 0.99),
+    length.out = 25
+  )
+  prediction_data <- expand.grid(
+    plot = NA,
+    spp2 = c("PSMEM", "SESE3"),
+    year = c("13", "18"),
+    treatment = c("C", "H40", "H80", "L40", "L80"),
+    ba_inc2 = ba_incs
+  )
+  if (inherits(mod, "merMod")) {
+    prediction_data <- cbind(
+      prediction_data,
+      pred = predict(mod, newdata = prediction_data, re.form = NA, type = "response")
+    )
+  } else if (inherits(mod, "glm")) {
+    prediction_data <- cbind(
+      prediction_data,
+      pred = predict(mod, newdata = prediction_data, re.form = NA, type = "response")
+    )
+  }
+  prediction_data %>%
+    ggplot(aes(ba_inc2, pred, color = treatment)) +
+    geom_line() +
+    facet_grid(spp2 ~ year)
+}
 
-b2_mean <- emmeans(bm2, ~ treatment, type = "response")
+pred_bd(bbdm[[4]])
 
-plot(b2_mean) + 
-  labs(title = "Back-transformed estiamtes and CI's averaged over year and species mod 2 (no tree_id)")
 ```
+
+Here I am able to show that the predictions from emmeans are exactly the same as those I am getting from predicting using my own function. 
+
+```{r}
+
+ba_incs <- list(
+    ba_inc2 = seq(
+      quantile(bdmd$ba_inc2, 0.01),
+      quantile(bdmd$ba_inc2, 0.99),
+      length.out = 25
+    )
+  )
+
+emmip(bbdm[[4]],
+  treatment ~ ba_inc2 | spp2 + year,
+  at = ba_incs,
+  type = "response",
+  CIs = TRUE
+) 
+
+```
+
+## Emmeans: interpreting model
 
 Redwood is clearly more targeted.
 
 ```{r}
 
-emmeans(bm2, pairwise ~ spp2, type = "response")
+emmeans(bbdm[[4]], pairwise ~ spp2, type = "response")
 
 ```
 
@@ -273,7 +431,9 @@ Here we can see explicit comparisons between treatments
 
 ```{r}
 
-pairs(b2_mean)
+mean_treat <- emmeans(bbdm[[4]], ~ treatment, type = "response")
+
+pairs(mean_treat)
 
 pwpp(b2_mean)
 
@@ -289,54 +449,7 @@ emmip(bm2, treatment ~ d_inc2, at = list(d_inc2 = seq(-0.5, 2.8, 0.1)), type = "
 
 ```
 
-This model seems to be working. Now I'll do more model selection, testing for interactions. All of these models will include `plot` as the only random effect. I compare performance metrics using the R package: performance [@ludeckePerformancePackageAssessment2021]
 
-```{r, warning=TRUE}
-
-fl <- list(
-    bear_new ~ treatment + year + spp2 + d_inc2
-  , bear_new ~ treatment + year + spp2 + scale(ba_inc2)
-  , bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2
-  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2
-  , bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2
-  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2
-  , bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year
-  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year
-  , bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2
-  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2)
-)
-
-data.frame(form = sapply(fl, format)) %>% 
-  kbl2(row.names = TRUE,
-  caption = "Formulas testing different tree-growth variables and intereactions")
-
-bdml <- lapply(fl, \(x) {
-  glmer(
-    update(x, ~ . + (1 | plot)),
-    family = binomial(),
-    data = bdmd,
-    control = glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5))
-  )
-})
-
-do.call(compare_performance, c(bdml, rank = TRUE)) %>%
-  kbl2(digits = 3)
-```
-
-This output is interesting, but there were some warnings from the model function about models being unidentifiable, I attempted to fix this by scaling the ba_inc variable, but this didn't help. There is more advice [here](https://stackoverflow.com/questions/53834754/scaling-predictors-in-lme4-glmer-doesnt-resolve-eigenvalue-warnings-neither-do) that I need to read.
-
-```{r, eval=FALSE}
-a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-a <- glmer(bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2 + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-a <- glmer(bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2) + (1 | plot), data = bdmd, family = binomial, control=glmerControl(optimizer="bobyqa",optCtrl=list(maxfun=2e5)))
-```
 
 ## Model validation
 

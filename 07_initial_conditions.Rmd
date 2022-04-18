@@ -13,12 +13,6 @@ First, here is the summary table with just the initial conditions. These do not 
 
 ```{r}
 
-kbl2 <- function(data, caption) {
-  data %>%
-  kableExtra::kbl(caption = caption) %>%
-  kableExtra::kable_styling()
-}
-
 d_l %>%
   filter(year == "init") %>%
   get_measures() %>%

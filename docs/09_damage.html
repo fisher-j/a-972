@@ -60,6 +60,28 @@ if (window.hljs) {
 
 
 
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
 
 
 
@@ -309,9 +331,9 @@ $(document).ready(function () {
 <li><a href="#data-cleaning">data cleaning</a></li>
 <li><a href="#summary">Summary</a></li>
 <li><a href="#modeling">Modeling</a></li>
-</ul></li>
-<li><a href="#logistic-regression">Logistic regression</a>
-<ul>
+<li><a href="#logistic-regression">Logistic regression</a></li>
+<li><a href="#emmeans-interpreting-model">Emmeans: interpreting
+model</a></li>
 <li><a href="#model-validation">Model validation</a></li>
 </ul></li>
 </ul>
@@ -378,6 +400,8 @@ new for that period, when a trees goes from undamaged to damaged. I will
 also count trees as new bear damage when the damage increases from one
 period to the next ie. when condition code increases from 17 or 18 to 19
 or 20.</p>
+<p>I’ll also add a variable indicating whether a tree was damaged in
+2013</p>
 <pre class="r"><code># # this was used for ensuring all bear damage stuck with a tree throughout its life
 # # I&#39;ve since decided to allow trees to &quot;completely heal,&quot; as the data seems to suggest this
 # cum_logic &lt;- function(x) {
@@ -397,11 +421,14 @@ bd &lt;- bd %&gt;%
     ) %&gt;%
   select(-bear_mag) %&gt;%
   ungroup()</code></pre>
-<p>I’m going to drop alder and hemlock from the analysis, because they
-are never attacked by bear. I’m also going to group Douglas-fir and
-spruce together as “other”.</p>
-<pre class="r"><code>bd &lt;- filter(bd, spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;, &quot;PISI&quot;)) %&gt;%
-  mutate(spp2 = if_else(spp == &quot;SESE3&quot;, spp, &quot;OTHER&quot;))</code></pre>
+<p>I’m going to drop alder and hemlock, because they are never attacked
+by bear. I am also dropping spruce in order to be consistent with the
+rest of my analysis.</p>
+<p>There were about 30 spruce trees before thinning and about half of
+these had bear damage. In 2013, there were 24 spruce and 4 of them
+received damage.</p>
+<pre class="r"><code>bd &lt;- filter(bd, spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;)) %&gt;%
+  mutate(spp2 = spp)</code></pre>
 </div>
 <div id="summary" class="section level2">
 <h2>Summary</h2>
@@ -411,6 +438,7 @@ seem to have the largest increases.</p>
 two plots, whereas for the L40 treatment, only one declines, and it is
 anomalous in that is the only plot that sees an increase from 2008 to
 2013.</p>
+<p>Error bars represent 1 SE of mean</p>
 <pre class="r"><code>bear_plot &lt;- function(data, var) {
   my_dodge = position_dodge(width = 0.5)
   ggplot(data, aes(year, {{var}}, color = treatment, group = treatment)) + 
@@ -446,36 +474,24 @@ bd %&gt;%
     theme(legend.position = &quot;none&quot;) +
     geom_point(position = position_dodge(width = 0.4)) +
     scale_x_discrete(expand = expansion(mult = 0.2)) +
-    labs(title = &quot;Actual percent new bear damage for each treatment&quot;)</code></pre>
+    labs(title = &quot;Actual percent new bear damage for each treatment and plot&quot;)</code></pre>
 <p><img src="09_damage_files/figure-html/unnamed-chunk-8-3.png" width="672" /></p>
-<pre class="r"><code>bd %&gt;%
-  filter(year != &quot;init&quot;) %&gt;%
-  group_by(treatment, year, plot) %&gt;%
-  summarize(bear_new = sum(bear_new)) %&gt;%
-  ungroup() %&gt;%
-  ggplot(aes(str_extract(plot, &quot;\\d&quot;), bear_new, fill = year)) + 
-    geom_col(position = &quot;dodge&quot;, color = &quot;black&quot;) +
-    facet_wrap(~ treatment) +
-    labs(
-      title = &quot;Actual count new bear damage for each plot in treatment&quot;,
-      y = &quot;Count of bear damage&quot;, x = &quot;Plot number&quot;  
-    )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-8-4.png" width="672" /></p>
 <pre class="r"><code>bd %&gt;%
   filter(year != &quot;init&quot;) %&gt;%
   group_by(treatment, year, spp2) %&gt;%
   summarize(bear_new = sum(bear_new)) %&gt;%
   ungroup() %&gt;%
-  ggplot(aes(treatment, bear_new, fill = fct_relevel(spp2, &quot;SESE3&quot;))) + 
+  ggplot(aes(treatment, bear_new, fill = spp2)) + 
     geom_col(position = &quot;stack&quot;, color = &quot;black&quot;) +
     facet_wrap(~ year) +
+    scale_fill_manual(values = palette()) +
     labs(
       title = &quot;Total sum of new bear damage for each treatment/species&quot;,
       y = &quot;Count of bear damage&quot;,
       x = &quot;Treatment&quot;,
       fill = NULL
     )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-8-5.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-8-4.png" width="672" /></p>
 <pre class="r"><code>bd %&gt;%
   group_by(treatment, year, plot) %&gt;%
   summarize(bear_new = sum(bear_new)) %&gt;%
@@ -487,7 +503,7 @@ bd %&gt;%
       title = &quot;Actual count new bear damage for each plot in treatment&quot;,
       y = &quot;Count of bear damage&quot;, x = &quot;Year&quot;  
     )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-8-6.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-8-5.png" width="672" /></p>
 </div>
 <div id="modeling" class="section level2">
 <h2>Modeling</h2>
@@ -514,9 +530,8 @@ probably be important to account for differences between treatments like
 diameter increment and tree size.</p></li>
 </ol>
 </div>
-</div>
-<div id="logistic-regression" class="section level1">
-<h1>Logistic regression</h1>
+<div id="logistic-regression" class="section level2">
+<h2>Logistic regression</h2>
 <p>We are modeling occurrence of new bear damage in 2013 and 2018. New
 bear damage in 2008 is not really comparable as it represents
 accumulated damage over an unspecified amount of time prior to
@@ -524,338 +539,435 @@ treatment.</p>
 <p>My first model is additive and includes <code>treatment</code>,
 <code>year</code>, <code>d_inc2</code>, <code>spp2</code> and random
 slopes for <code>plot</code>, <em>and</em> <code>tree_id</code>.</p>
+<p>The random effects for <code>tree_id</code> are very small, these
+might end up getting dropped.</p>
 <pre class="r"><code>bdmd &lt;- subset(bd, year %in% c(&quot;13&quot;, &quot;18&quot;))
-
 
 bm1 &lt;- glmer(
   bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot) + (1 | tree_id),
   family = binomial,
   data = bdmd
-  )
-
-summary(bm1)</code></pre>
+  )</code></pre>
+<pre><code>## Warning in checkConv(attr(opt, &quot;derivs&quot;), opt$par, ctrl = control$checkConv, : Model failed to converge with max|grad| = 0.00254843 (tol = 0.002, component 1)</code></pre>
+<pre class="r"><code>summary(bm1)</code></pre>
 <pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) [&#39;glmerMod&#39;]
 ##  Family: binomial  ( logit )
 ## Formula: bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot) + (1 |      tree_id)
 ##    Data: bdmd
 ## 
 ##      AIC      BIC   logLik deviance df.resid 
-##    511.0    569.2   -245.5    491.0     2485 
+##    470.6    528.7   -225.3    450.6     2438 
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -0.9624 -0.1661 -0.0721 -0.0528 24.9678 
+## -0.9134 -0.1523 -0.0594 -0.0430 30.2505 
 ## 
 ## Random effects:
-##  Groups  Name        Variance  Std.Dev. 
-##  tree_id (Intercept) 1.729e-08 0.0001315
-##  plot    (Intercept) 2.383e-02 0.1543790
-## Number of obs: 2495, groups:  tree_id, 1318; plot, 20
+##  Groups  Name        Variance  Std.Dev.
+##  tree_id (Intercept) 3.595e-06 0.001896
+##  plot    (Intercept) 9.947e-02 0.315396
+## Number of obs: 2448, groups:  tree_id, 1294; plot, 20
 ## 
 ## Fixed effects:
 ##              Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)   -6.5527     0.5888 -11.128  &lt; 2e-16 ***
-## treatmentH40   2.0192     0.5799   3.482 0.000497 ***
-## treatmentH80   0.7222     0.5883   1.228 0.219621    
-## treatmentL40   2.2082     0.5895   3.746 0.000180 ***
-## treatmentL80   0.5037     0.6304   0.799 0.424249    
-## year18         0.3485     0.2597   1.342 0.179713    
-## d_inc2         0.8155     0.2478   3.291 0.001000 ***
-## spp2SESE3      2.0051     0.3252   6.166 6.99e-10 ***
+## (Intercept)   -6.9011     0.6398 -10.786  &lt; 2e-16 ***
+## treatmentH40   1.9912     0.6178   3.223 0.001267 ** 
+## treatmentH80   0.5098     0.6331   0.805 0.420658    
+## treatmentL40   2.2874     0.6247   3.661 0.000251 ***
+## treatmentL80   0.3528     0.6761   0.522 0.601744    
+## year18         0.5289     0.2720   1.945 0.051822 .  
+## d_inc2         0.7044     0.2633   2.675 0.007465 ** 
+## spp2SESE3      2.3877     0.3779   6.317 2.66e-10 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Correlation of Fixed Effects:
 ##             (Intr) trtH40 trtH80 trtL40 trtL80 year18 d_inc2
-## treatmntH40 -0.693                                          
-## treatmntH80 -0.706  0.788                                   
-## treatmntL40 -0.730  0.801  0.761                            
-## treatmntL80 -0.679  0.724  0.709  0.706                     
-## year18      -0.251  0.024  0.005  0.026  0.001              
-## d_inc2      -0.168 -0.233 -0.068 -0.173 -0.033 -0.053       
-## spp2SESE3   -0.369 -0.070 -0.087  0.027 -0.045  0.020 -0.089</code></pre>
-<p>check <code>allFit</code> output</p>
+## treatmntH40 -0.657                                          
+## treatmntH80 -0.638  0.734                                   
+## treatmntL40 -0.696  0.762  0.716                            
+## treatmntL80 -0.633  0.683  0.659  0.670                     
+## year18      -0.270  0.031  0.001  0.033  0.002              
+## d_inc2      -0.147 -0.223 -0.056 -0.151 -0.028 -0.047       
+## spp2SESE3   -0.443 -0.042 -0.084  0.031 -0.032  0.033 -0.109
+## optimizer (Nelder_Mead) convergence code: 0 (OK)
+## Model failed to converge with max|grad| = 0.00254843 (tol = 0.002, component 1)</code></pre>
+<p>check <code>allFit</code> output to see if this model can be
+considered reliable: The estimated coefficients are very congruent, I
+think we can trust this model.</p>
 <pre class="r"><code>bm1.all &lt;- allFit(bm1)</code></pre>
 <pre><code>## bobyqa : [OK]
 ## Nelder_Mead : [OK]
 ## nlminbwrap : [OK]
-## nmkbw : [failed]
+## nmkbw : [OK]
 ## optimx.L-BFGS-B : [OK]
 ## nloptwrap.NLOPT_LN_NELDERMEAD : [OK]
 ## nloptwrap.NLOPT_LN_BOBYQA : [OK]</code></pre>
-<pre class="r"><code>summary(bm1.all)</code></pre>
-<pre><code>## $which.OK
-##                        bobyqa                   Nelder_Mead                    nlminbwrap                         nmkbw               optimx.L-BFGS-B nloptwrap.NLOPT_LN_NELDERMEAD 
-##                          TRUE                          TRUE                          TRUE                         FALSE                          TRUE                          TRUE 
-##     nloptwrap.NLOPT_LN_BOBYQA 
-##                          TRUE 
-## 
-## $msgs
-## $msgs$bobyqa
-## [1] &quot;boundary (singular) fit: see help(&#39;isSingular&#39;)&quot;
-## 
-## $msgs$Nelder_Mead
-## [1] &quot;Model failed to converge with max|grad| = 0.00411575 (tol = 0.002, component 1)&quot;
-## 
-## $msgs$nlminbwrap
-## [1] &quot;boundary (singular) fit: see help(&#39;isSingular&#39;)&quot;
-## 
-## $msgs$`optimx.L-BFGS-B`
-## [1] &quot;boundary (singular) fit: see help(&#39;isSingular&#39;)&quot;
-## 
-## $msgs$nloptwrap.NLOPT_LN_NELDERMEAD
-## [1] &quot;Model failed to converge with max|grad| = 0.004486 (tol = 0.002, component 1)&quot;
-## 
-## $msgs$nloptwrap.NLOPT_LN_BOBYQA
-## [1] &quot;boundary (singular) fit: see help(&#39;isSingular&#39;)&quot;
-## 
-## 
-## $fixef
-##                               (Intercept) treatmentH40 treatmentH80 treatmentL40 treatmentL80    year18    d_inc2 spp2SESE3
-## bobyqa                          -6.552655     2.019177    0.7221943     2.208202    0.5036991 0.3484903 0.8155291  2.005079
-## Nelder_Mead                     -6.552659     2.019241    0.7222265     2.208235    0.5038683 0.3485112 0.8155203  2.005038
-## nlminbwrap                      -6.536237     2.021616    0.7207531     2.209154    0.5024763 0.3471309 0.8098878  2.001111
-## optimx.L-BFGS-B                 -6.552820     2.019137    0.7221805     2.208211    0.5038025 0.3485291 0.8155745  2.005203
-## nloptwrap.NLOPT_LN_NELDERMEAD   -6.552724     2.019199    0.7222062     2.208253    0.5034650 0.3484457 0.8155400  2.005102
-## nloptwrap.NLOPT_LN_BOBYQA       -6.538346     2.016588    0.7218045     2.205725    0.5034200 0.3477317 0.8134501  2.002543
-## 
-## $llik
-##                        bobyqa                   Nelder_Mead                    nlminbwrap               optimx.L-BFGS-B nloptwrap.NLOPT_LN_NELDERMEAD     nloptwrap.NLOPT_LN_BOBYQA 
-##                     -245.5041                     -245.5042                     -245.5249                     -245.5041                     -245.5042                     -245.5061 
-## 
-## $sdcor
-##                               tree_id.(Intercept) plot.(Intercept)
-## bobyqa                               0.000000e+00     1.543678e-01
-## Nelder_Mead                          2.225543e-03     1.541786e-01
-## nlminbwrap                           0.000000e+00     2.567183e-06
-## optimx.L-BFGS-B                      0.000000e+00     1.544038e-01
-## nloptwrap.NLOPT_LN_NELDERMEAD        2.398934e-03     1.541111e-01
-## nloptwrap.NLOPT_LN_BOBYQA            6.565217e-08     1.470071e-01
-## 
-## $theta
-##                               tree_id.(Intercept) plot.(Intercept)
-## bobyqa                               0.000000e+00     1.543678e-01
-## Nelder_Mead                          2.225543e-03     1.541786e-01
-## nlminbwrap                           0.000000e+00     2.567183e-06
-## optimx.L-BFGS-B                      0.000000e+00     1.544038e-01
-## nloptwrap.NLOPT_LN_NELDERMEAD        2.398934e-03     1.541111e-01
-## nloptwrap.NLOPT_LN_BOBYQA            6.565217e-08     1.470071e-01
-## 
-## $times
-##                               user.self sys.self elapsed user.child sys.child
-## bobyqa                             1.62        0    1.63         NA        NA
-## Nelder_Mead                        3.16        0    3.17         NA        NA
-## nlminbwrap                         0.63        0    0.63         NA        NA
-## optimx.L-BFGS-B                    3.39        0    3.42         NA        NA
-## nloptwrap.NLOPT_LN_NELDERMEAD      4.64        0    4.66         NA        NA
-## nloptwrap.NLOPT_LN_BOBYQA          0.72        0    0.72         NA        NA
-## 
-## $feval
-##                        bobyqa                   Nelder_Mead                    nlminbwrap               optimx.L-BFGS-B nloptwrap.NLOPT_LN_NELDERMEAD     nloptwrap.NLOPT_LN_BOBYQA 
-##                           357                          1073                            NA                            36                          1715                            24 
-## 
-## attr(,&quot;class&quot;)
-## [1] &quot;summary.allFit&quot;</code></pre>
-<p>For model 2, I’ll remove <code>tree_id</code> and see if there is any
-difference.</p>
-<pre class="r"><code>bm2 &lt;- glmer(bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot), family = binomial, data = bdmd)
+<pre class="r"><code>summary(bm1.all)$fixef</code></pre>
+<pre><code>##                               (Intercept) treatmentH40 treatmentH80 treatmentL40 treatmentL80    year18    d_inc2 spp2SESE3
+## bobyqa                          -6.901056     1.991354    0.5098966     2.287555    0.3527695 0.5289334 0.7041794  2.387779
+## Nelder_Mead                     -6.901244     1.991535    0.5101163     2.287773    0.3530073 0.5289660 0.7041613  2.387763
+## nlminbwrap                      -6.901057     1.991365    0.5098965     2.287560    0.3527662 0.5289365 0.7041867  2.387764
+## nmkbw                           -6.901210     1.991552    0.5101248     2.287759    0.3528862 0.5290002 0.7040826  2.387750
+## optimx.L-BFGS-B                 -6.901063     1.991389    0.5099195     2.287576    0.3527855 0.5289183 0.7041884  2.387755
+## nloptwrap.NLOPT_LN_NELDERMEAD   -6.900983     1.991237    0.5097061     2.287448    0.3525965 0.5288553 0.7041666  2.387926
+## nloptwrap.NLOPT_LN_BOBYQA       -6.896602     1.986645    0.5062966     2.283225    0.3422869 0.5295844 0.7037227  2.388498</code></pre>
+<p>This model seems to be working. Now I’ll do more model selection,
+testing for interactions. All of these models will include
+<code>plot</code> as the only random effect. I compare performance
+metrics using the R package: performance <span class="citation">(Lüdecke
+et al. 2021)</span></p>
+<pre class="r"><code>fl &lt;- list(
+    bear_new ~ treatment + year + spp2 + d_inc2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2)
+  , bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2
+  , bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2
+  , bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year
+  , bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2)
+  , bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2 + spp2:scale(ba_inc2)
+  , bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2 + d_inc2:spp2
+)
 
-summary(bm2)</code></pre>
-<pre><code>## Generalized linear mixed model fit by maximum likelihood (Laplace Approximation) [&#39;glmerMod&#39;]
-##  Family: binomial  ( logit )
-## Formula: bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot)
-##    Data: bdmd
-## 
-##      AIC      BIC   logLik deviance df.resid 
-##    509.0    561.4   -245.5    491.0     2486 
-## 
-## Scaled residuals: 
-##     Min      1Q  Median      3Q     Max 
-## -0.9624 -0.1661 -0.0721 -0.0528 24.9674 
-## 
-## Random effects:
-##  Groups Name        Variance Std.Dev.
-##  plot   (Intercept) 0.02384  0.1544  
-## Number of obs: 2495, groups:  plot, 20
-## 
-## Fixed effects:
-##              Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)   -6.5527     0.5888 -11.130  &lt; 2e-16 ***
-## treatmentH40   2.0192     0.5798   3.482 0.000497 ***
-## treatmentH80   0.7222     0.5883   1.228 0.219588    
-## treatmentL40   2.2082     0.5895   3.746 0.000180 ***
-## treatmentL80   0.5037     0.6304   0.799 0.424271    
-## year18         0.3485     0.2597   1.342 0.179713    
-## d_inc2         0.8155     0.2478   3.291 0.001000 ***
-## spp2SESE3      2.0051     0.3252   6.167 6.98e-10 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Correlation of Fixed Effects:
-##             (Intr) trtH40 trtH80 trtL40 trtL80 year18 d_inc2
-## treatmntH40 -0.693                                          
-## treatmntH80 -0.706  0.788                                   
-## treatmntL40 -0.730  0.801  0.761                            
-## treatmntL80 -0.679  0.724  0.709  0.706                     
-## year18      -0.251  0.024  0.005  0.026  0.001              
-## d_inc2      -0.168 -0.233 -0.068 -0.173 -0.033 -0.053       
-## spp2SESE3   -0.369 -0.070 -0.087  0.027 -0.045  0.020 -0.089</code></pre>
-<p>Having a look at the initial model. Including <code>tree_id</code> as
-a random effect doesn’t seem to contribute anything to the model, so I
-focus on models with <code>plot</code> only.</p>
-<pre class="r"><code>compare_performance(bm1, bm2) %&gt;% kbl2(caption = &quot;performance metrics for two initial models&quot;)</code></pre>
-<table class="table" style="margin-left: auto; margin-right: auto;">
+names(fl) &lt;- seq_along(fl)
+
+make_glmm_mods &lt;- function(dat, fl, w_tree = FALSE){
+  ran &lt;- &quot;~ . + (1 | plot)&quot;
+  if (w_tree) ran &lt;- paste(ran, &quot;+ (1 | tree_id)&quot;)
+  eval(bquote(
+    lapply(fl, \(x) {
+      form &lt;- update(x, ran)
+      print(paste(&quot;Evaluating: &quot;, deparse1(x)))
+      glmer(
+        form,
+        family = binomial(),
+        data = .(substitute(dat)),
+        control = glmerControl(optimizer = &quot;bobyqa&quot;, optCtrl = list(maxfun=2e7))
+      )
+    })
+  ))
+}
+
+make_bglmm_mods &lt;- function(dat, fl, w_tree = FALSE){
+  ran &lt;- &quot;~ . + (1 | plot)&quot;
+  if (w_tree) ran &lt;- paste(ran, &quot;+ (1 | tree_id)&quot;)
+  out &lt;- eval(bquote(
+    lapply(fl, function(x) {
+      mod0 &lt;- glm(x, data = dat)
+      print(paste(&quot;Evaluating: &quot;, deparse1(x)))
+      n_coef &lt;&lt;- length(coef(mod0))
+      form &lt;- update(x, ran)
+      blme::bglmer(
+        form,
+        family = binomial(),
+        data = .(substitute(dat)),
+        fixef.prior = normal(cov = diag(9, n_coef)),
+        control = glmerControl(optimizer=&quot;bobyqa&quot;, optCtrl = list(maxfun=2e7))
+      )
+    })
+  ))
+  rm(n_coef, pos = .GlobalEnv)
+  return(out)
+}</code></pre>
+<p>Here is the list of models that I am going to test. They include
+different interaction terms. In addition, I can include
+<code>tree_id</code> as a random effect or not. Preliminary trials,
+showed that models were unstable when including this term. Within
+subject (<code>tree_id</code>) variance is perfectly correlated with
+outcome because most trees that are damaged are only damaged once. This
+seems to show up in the model as with <code>tree_id</code> absorbing
+most of the variance.</p>
+<p>There are also problems with complete separation, which I attempt to
+fix by using a bayesian framework. I tried using penalized regression
+with a fixed effects only glm (bias reduction). I also tried a bayesian
+model and specified a <a
+href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#penalizationhandling-complete-separation">prior
+variance for the fixed effects as a gaussian distribution with a sd of
+3</a>. Ben Bolker <a
+href="https://bbolker.github.io/mixedmodels-misc/ecostats_chap.html#digression-complete-separation">says</a>
+“We can use <code>bglmer</code> from the <code>blme</code> package to
+impose zero-mean Normal priors on the fixed effects”</p>
+<pre class="r"><code># model list
+data.frame(form = sapply(fl, deparse1)) %&gt;% 
+  kbl2(row.names = TRUE,
+  caption = &quot;Formulas testing different tree-growth variables and intereactions&quot;)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
-performance metrics for two initial models
+Formulas testing different tree-growth variables and intereactions
 </caption>
 <thead>
 <tr>
 <th style="text-align:left;">
-Name
 </th>
 <th style="text-align:left;">
-Model
-</th>
-<th style="text-align:right;">
-AIC
-</th>
-<th style="text-align:right;">
-AIC_wt
-</th>
-<th style="text-align:right;">
-BIC
-</th>
-<th style="text-align:right;">
-BIC_wt
-</th>
-<th style="text-align:right;">
-R2_conditional
-</th>
-<th style="text-align:right;">
-R2_marginal
-</th>
-<th style="text-align:right;">
-ICC
-</th>
-<th style="text-align:right;">
-RMSE
-</th>
-<th style="text-align:right;">
-Sigma
-</th>
-<th style="text-align:right;">
-Log_loss
-</th>
-<th style="text-align:right;">
-Score_log
-</th>
-<th style="text-align:right;">
-Score_spherical
+form
 </th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align:left;">
-bm1
-</td>
-<td style="text-align:left;">
-glmerMod
-</td>
-<td style="text-align:right;">
-511.0083
-</td>
-<td style="text-align:right;">
-0.2689414
-</td>
-<td style="text-align:right;">
-569.2287
-</td>
-<td style="text-align:right;">
-0.0196271
-</td>
-<td style="text-align:right;">
-0.3908619
-</td>
-<td style="text-align:right;">
-0.3864491
-</td>
-<td style="text-align:right;">
-0.0071922
-</td>
-<td style="text-align:right;">
-0.1549596
-</td>
-<td style="text-align:right;">
 1
 </td>
-<td style="text-align:right;">
-0.0978643
-</td>
-<td style="text-align:right;">
--1.987352
-</td>
-<td style="text-align:right;">
-0.0165127
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + d_inc2
 </td>
 </tr>
 <tr>
 <td style="text-align:left;">
-bm2
+2
 </td>
 <td style="text-align:left;">
-glmerMod
+bear_new ~ treatment + year + spp2 + scale(ba_inc2)
 </td>
-<td style="text-align:right;">
-509.0083
+</tr>
+<tr>
+<td style="text-align:left;">
+3
 </td>
-<td style="text-align:right;">
-0.7310586
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2
 </td>
-<td style="text-align:right;">
-561.4066
+</tr>
+<tr>
+<td style="text-align:left;">
+4
 </td>
-<td style="text-align:right;">
-0.9803729
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2
 </td>
-<td style="text-align:right;">
-0.3908608
+</tr>
+<tr>
+<td style="text-align:left;">
+5
 </td>
-<td style="text-align:right;">
-0.3864473
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2
 </td>
-<td style="text-align:right;">
-0.0071934
+</tr>
+<tr>
+<td style="text-align:left;">
+6
 </td>
-<td style="text-align:right;">
-0.1549596
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2
 </td>
-<td style="text-align:right;">
-1
+</tr>
+<tr>
+<td style="text-align:left;">
+7
 </td>
-<td style="text-align:right;">
-0.0978643
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year
 </td>
-<td style="text-align:right;">
--1.987348
+</tr>
+<tr>
+<td style="text-align:left;">
+8
 </td>
-<td style="text-align:right;">
-0.0165127
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+9
+</td>
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+10
+</td>
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + scale(ba_inc2) +
+spp2:scale(ba_inc2)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+11
+</td>
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2 +
+spp2:scale(ba_inc2)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+12
+</td>
+<td style="text-align:left;">
+bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2 + d_inc2:spp2
 </td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>b2_mean &lt;- emmeans(bm2, ~ treatment, type = &quot;response&quot;)
+<pre class="r"><code># run models
+bdm1 &lt;- make_glmm_mods(bdmd, fl)</code></pre>
+<pre><code>## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2 + spp2:scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2 + d_inc2:spp2&quot;</code></pre>
+<pre class="r"><code>bdm1_tree &lt;- make_glmm_mods(bdmd, fl, w_tree = TRUE)</code></pre>
+<pre><code>## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2 + spp2:scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2 + d_inc2:spp2&quot;</code></pre>
+<pre class="r"><code>bbdm &lt;- make_bglmm_mods(bdmd, fl)</code></pre>
+<pre><code>## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2 + spp2:scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2 + d_inc2:spp2&quot;</code></pre>
+<pre class="r"><code>bbdm_tree &lt;- make_bglmm_mods(bdmd, fl, w_tree = TRUE)</code></pre>
+<pre><code>## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + treatment:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:spp2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + treatment:year&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + treatment:year&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + spp2:d_inc2&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + spp2:scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + scale(ba_inc2) + year:spp2 + spp2:scale(ba_inc2)&quot;
+## [1] &quot;Evaluating:  bear_new ~ treatment + year + spp2 + d_inc2 + year:spp2 + d_inc2:spp2&quot;</code></pre>
+<p>When looking at the summaries of the models that include
+<code>tree_id</code>, they all fail to converge. I think there is a
+problem with the fact that within subject variance is perfectly
+correlated with our response, because trees can, in general only be
+damaged in one period or the other, trees that receive damage have very
+high variance, while those that do not have very low variance.</p>
+<p>My best guess is that it doesn’t make sense to include
+<code>tree_id</code> because of its bimodal error.</p>
+<p>Another option could be ensuring that a tree is only damaged in one
+period, but here are only 3 trees that receive “new” damage in both
+periods. I doubt that these are having a huge effect. For the most part,
+trees are only damaged in one period or the other.</p>
+<pre class="r"><code>examine_bdmod &lt;- function(mod, cap) {
+  mod_list &lt;- do.call(compare_performance, c(mod, metrics = &quot;common&quot;)) %&gt;%
+    arrange(AIC)
+  to_compare &lt;- as.numeric(c(mod_list$Name[1:4], &quot;2&quot;))
+  print(
+    mod_list %&gt;%
+    kbl2(digits = 3, caption = cap)
+  )
+  print(
+    sjPlot::tab_model(
+    mod[to_compare],
+    show.ci = FALSE,
+    show.aic = TRUE,
+    dv.labels = paste(&quot;Formula&quot;, to_compare),
+    title = cap
+    )
+  )
+}
 
-plot(b2_mean) + 
-  labs(title = &quot;Back-transformed estiamtes and CI&#39;s averaged over year and species mod 2 (no tree_id)&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+examine_bdmod(bdm1, &quot;GLMM models with random plot only&quot;)
+examine_bdmod(bdm1_tree, &quot;GLMM models with random plot and tree_id&quot;)</code></pre>
+<pre><code>## Random effect variances not available. Returned R2 does not account for random effects.
+## Random effect variances not available. Returned R2 does not account for random effects.
+## Random effect variances not available. Returned R2 does not account for random effects.
+## Random effect variances not available. Returned R2 does not account for random effects.
+## Random effect variances not available. Returned R2 does not account for random effects.
+## Random effect variances not available. Returned R2 does not account for random effects.
+## Random effect variances not available. Returned R2 does not account for random effects.
+## Random effect variances not available. Returned R2 does not account for random effects.</code></pre>
+<pre class="r"><code>examine_bdmod(bbdm, &quot;Bayesian GLMM models with random plot only&quot;)
+examine_bdmod(bbdm_tree, &quot;Bayesian GLMM models with random plot and tree_id&quot;)</code></pre>
+<p>I need a function for comparing models visually, with their
+predictions. I think that emmeans does this, but because I can’t seem to
+be sure what I am predicting with emmeans, I will construct my own
+dataset to make predictions in order to clarify what emmeans are
+predicting.</p>
+<pre class="r"><code>pred_bd &lt;- function(mod) {
+  ba_incs &lt;- seq(
+    quantile(bdmd$ba_inc2, 0.01),
+    quantile(bdmd$ba_inc2, 0.99),
+    length.out = 25
+  )
+  prediction_data &lt;- expand.grid(
+    plot = NA,
+    spp2 = c(&quot;PSMEM&quot;, &quot;SESE3&quot;),
+    year = c(&quot;13&quot;, &quot;18&quot;),
+    treatment = c(&quot;C&quot;, &quot;H40&quot;, &quot;H80&quot;, &quot;L40&quot;, &quot;L80&quot;),
+    ba_inc2 = ba_incs
+  )
+  if (inherits(mod, &quot;merMod&quot;)) {
+    prediction_data &lt;- cbind(
+      prediction_data,
+      pred = predict(mod, newdata = prediction_data, re.form = NA, type = &quot;response&quot;)
+    )
+  } else if (inherits(mod, &quot;glm&quot;)) {
+    prediction_data &lt;- cbind(
+      prediction_data,
+      pred = predict(mod, newdata = prediction_data, re.form = NA, type = &quot;response&quot;)
+    )
+  }
+  prediction_data %&gt;%
+    ggplot(aes(ba_inc2, pred, color = treatment)) +
+    geom_line() +
+    facet_grid(spp2 ~ year)
+}
+
+pred_bd(bbdm[[4]])</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<p>Here I am able to show that the predictions from emmeans are exactly
+the same as those I am getting from predicting using my own
+function.</p>
+<pre class="r"><code>ba_incs &lt;- list(
+    ba_inc2 = seq(
+      quantile(bdmd$ba_inc2, 0.01),
+      quantile(bdmd$ba_inc2, 0.99),
+      length.out = 25
+    )
+  )
+
+emmip(bbdm[[4]],
+  treatment ~ ba_inc2 | spp2 + year,
+  at = ba_incs,
+  type = &quot;response&quot;,
+  CIs = TRUE
+) </code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
+</div>
+<div id="emmeans-interpreting-model" class="section level2">
+<h2>Emmeans: interpreting model</h2>
 <p>Redwood is clearly more targeted.</p>
-<pre class="r"><code>emmeans(bm2, pairwise ~ spp2, type = &quot;response&quot;)</code></pre>
+<pre class="r"><code>emmeans(bbdm[[4]], pairwise ~ spp2, type = &quot;response&quot;)</code></pre>
 <pre><code>## $emmeans
-##  spp2    prob      SE  df asymp.LCL asymp.UCL
-##  OTHER 0.0073 0.00220 Inf   0.00404    0.0132
-##  SESE3 0.0518 0.00961 Inf   0.03587    0.0742
+##  spp2     prob      SE  df asymp.LCL asymp.UCL
+##  PSMEM 0.00266 0.00157 Inf  0.000839   0.00842
+##  SESE3 0.04829 0.01050 Inf  0.031413   0.07355
 ## 
 ## Results are averaged over the levels of: treatment, year 
 ## Confidence level used: 0.95 
@@ -863,41 +975,57 @@ plot(b2_mean) +
 ## 
 ## $contrasts
 ##  contrast      odds.ratio     SE  df null z.ratio p.value
-##  OTHER / SESE3      0.135 0.0438 Inf    1  -6.167  &lt;.0001
+##  PSMEM / SESE3     0.0526 0.0314 Inf    1  -4.936  &lt;.0001
 ## 
 ## Results are averaged over the levels of: treatment, year 
 ## Tests are performed on the log odds ratio scale</code></pre>
 <p>Here we can see explicit comparisons between treatments</p>
-<pre class="r"><code>pairs(b2_mean)</code></pre>
+<pre class="r"><code>mean_treat &lt;- emmeans(bbdm[[4]], ~ treatment, type = &quot;response&quot;)
+
+pairs(mean_treat)</code></pre>
 <pre><code>##  contrast  odds.ratio     SE  df null z.ratio p.value
-##  C / H40        0.133 0.0770 Inf    1  -3.482  0.0045
-##  C / H80        0.486 0.2857 Inf    1  -1.228  0.7352
-##  C / L40        0.110 0.0648 Inf    1  -3.746  0.0017
-##  C / L80        0.604 0.3809 Inf    1  -0.799  0.9310
-##  H40 / H80      3.658 1.3929 Inf    1   3.406  0.0059
-##  H40 / L40      0.828 0.3053 Inf    1  -0.513  0.9862
-##  H40 / L80      4.552 2.0560 Inf    1   3.355  0.0071
-##  H80 / L40      0.226 0.0921 Inf    1  -3.653  0.0024
-##  H80 / L80      1.244 0.5806 Inf    1   0.468  0.9902
-##  L40 / L80      5.499 2.5813 Inf    1   3.631  0.0026
+##  C / H40        0.171 0.1040 Inf    1  -2.903  0.0304
+##  C / H80        0.836 0.5334 Inf    1  -0.281  0.9986
+##  C / L40        0.120 0.0737 Inf    1  -3.450  0.0051
+##  C / L80        0.897 0.5978 Inf    1  -0.164  0.9998
+##  H40 / H80      4.888 2.6567 Inf    1   2.919  0.0289
+##  H40 / L40      0.701 0.3672 Inf    1  -0.678  0.9613
+##  H40 / L80      5.244 3.0995 Inf    1   2.804  0.0404
+##  H80 / L40      0.143 0.0803 Inf    1  -3.468  0.0048
+##  H80 / L80      1.073 0.6636 Inf    1   0.114  1.0000
+##  L40 / L80      7.479 4.4982 Inf    1   3.345  0.0073
 ## 
 ## Results are averaged over the levels of: year, spp2 
 ## P value adjustment: tukey method for comparing a family of 5 estimates 
 ## Tests are performed on the log odds ratio scale</code></pre>
 <pre class="r"><code>pwpp(b2_mean)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
 <pre class="r"><code>b2_mean %&gt;% multcomp::cld(reversed = TRUE)</code></pre>
-<pre><code>##  treatment    prob      SE  df asymp.LCL asymp.UCL .group
-##  L40       0.05771 0.01664 Inf   0.03253    0.1004  1    
-##  H40       0.04825 0.01379 Inf   0.02738    0.0837  1    
-##  H80       0.01367 0.00425 Inf   0.00741    0.0251   2   
-##  L80       0.01102 0.00418 Inf   0.00523    0.0231   2   
-##  C         0.00669 0.00343 Inf   0.00244    0.0182   2   
+<pre><code>##  treatment spp2  year    prob      SE  df asymp.LCL asymp.UCL .group           
+##  L40       SESE3 18   0.20048 0.06026 Inf  0.107159   0.34378  1               
+##  H40       SESE3 18   0.15709 0.04675 Inf  0.085339   0.27129  12              
+##  L40       SESE3 13   0.12874 0.04288 Inf  0.065294   0.23815  123             
+##  H40       SESE3 13   0.09896 0.03218 Inf  0.051357   0.18221  12 4            
+##  H80       SESE3 18   0.04065 0.01457 Inf  0.019967   0.08098   2345           
+##  L80       SESE3 18   0.03494 0.01482 Inf  0.015068   0.07891   23456          
+##  C         SESE3 18   0.02482 0.01334 Inf  0.008565   0.06973   2345678    C E 
+##  H80       SESE3 13   0.02436 0.00937 Inf  0.011396   0.05131     45 7 9 A     
+##  L40       PSMEM 18   0.02251 0.00986 Inf  0.009474   0.05252     45           
+##  L80       SESE3 13   0.02089 0.00934 Inf  0.008639   0.04964     456  90  CD  
+##  H40       PSMEM 18   0.01683 0.00774 Inf  0.006797   0.04104    3 567890AB    
+##  C         SESE3 13   0.01477 0.00823 Inf  0.004924   0.04347     45678    C E 
+##  L40       PSMEM 13   0.01339 0.00609 Inf  0.005468   0.03240      567890AB    
+##  H40       PSMEM 13   0.00998 0.00475 Inf  0.003915   0.02522      567890ABCDEF
+##  H80       PSMEM 18   0.00388 0.00195 Inf  0.001447   0.01034       6 8 0 BCDEF
+##  L80       PSMEM 18   0.00331 0.00176 Inf  0.001168   0.00936        78  AB  EF
+##  C         PSMEM 18   0.00233 0.00143 Inf  0.000700   0.00774          90AB D F
+##  H80       PSMEM 13   0.00229 0.00120 Inf  0.000817   0.00639              CDEF
+##  L80       PSMEM 13   0.00196 0.00108 Inf  0.000662   0.00576                EF
+##  C         PSMEM 13   0.00138 0.00087 Inf  0.000398   0.00474                 F
 ## 
-## Results are averaged over the levels of: year, spp2 
 ## Confidence level used: 0.95 
 ## Intervals are back-transformed from the logit scale 
-## P value adjustment: tukey method for comparing a family of 5 estimates 
+## P value adjustment: tukey method for comparing a family of 20 estimates 
 ## Tests are performed on the log odds ratio scale 
 ## significance level used: alpha = 0.05 
 ## NOTE: Compact letter displays can be misleading
@@ -906,21 +1034,23 @@ plot(b2_mean) +
 <p>Finally, here is the expected response over levels of diameter
 increment.</p>
 <pre class="r"><code>emmip(bm2, treatment ~ d_inc2, at = list(d_inc2 = seq(-0.5, 2.8, 0.1)), type = &quot;response&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
-<p>This model seems to be working. Now I’ll do more model selection,
-testing for interactions.</p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+</div>
 <div id="model-validation" class="section level2">
 <h2>Model validation</h2>
 <p>I can check for over dispersion, and <a
 href="https://stats.stackexchange.com/questions/568407/how-to-correct-underdispersion-in-logistic-regression">I
 don’t think I need to worry about underdispersion</a></p>
-<pre class="r"><code>compare_performance(bm1, bm2)</code></pre>
-<pre><code>## # Comparison of Model Performance Indices
-## 
-## Name |    Model |     AIC | AIC weights |     BIC | BIC weights | R2 (cond.) | R2 (marg.) |   ICC |  RMSE | Sigma | Log_loss | Score_log | Score_spherical
-## ----------------------------------------------------------------------------------------------------------------------------------------------------------
-## bm1  | glmerMod | 511.008 |       0.269 | 569.229 |       0.020 |      0.391 |      0.386 | 0.007 | 0.155 | 1.000 |    0.098 |    -1.987 |           0.017
-## bm2  | glmerMod | 509.008 |       0.731 | 561.407 |       0.980 |      0.391 |      0.386 | 0.007 | 0.155 | 1.000 |    0.098 |    -1.987 |           0.017</code></pre>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-ludeckePerformancePackageAssessment2021" class="csl-entry">
+Lüdecke, Daniel, Mattan S. Ben-Shachar, Indrajeet Patil, Philip
+Waggoner, and Dominique Makowski. 2021. <span>“<span
+class="nocase">performance</span>: <span>An R</span> Package for
+Assessment, Comparison and Testing of Statistical Models.”</span>
+<em>Journal of Open Source Software</em> 6 (60): 3139. <a
+href="https://doi.org/10.21105/joss.03139">https://doi.org/10.21105/joss.03139</a>.
+</div>
+</div>
 </div>
 </div>
 

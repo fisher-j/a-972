@@ -1,6 +1,21 @@
+## 04/15/2020
+
+* tried eliminating bear-damaged trees from second period (this has little effect)
+* compared 
+
+## 04/14/2020
+
+* explored problem of complete separation
+* fit penalized fixed effects GLM (brglm)
+* fit bayesian GLMM with priors (or penalized regression)
+
+## 04/13/2020
+
+* Omitting spruce, moving forward with model with complete separation.
+
 ## 04/11/2020
 
-* Switich to using 2 species categories (redwood + other)
+* Switch to using 2 species categories (redwood + other)
 * Re-examine random effects of initial additive models
 * look and emmeans and predicted estimates of initial model
 * produced a list of candidate models to compare with the package "performance"
