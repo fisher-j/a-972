@@ -1,5 +1,9 @@
 ## 04/20/2020
 
+* Finished bear damage prediction figures
+
+## 04/20/2020
+
 * Worked on modeled bear damage figure
 * Finished bear damage summary figure
 

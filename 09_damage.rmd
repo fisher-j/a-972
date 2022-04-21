@@ -304,7 +304,9 @@ The random effects for `tree_id` are very small, these might end up getting drop
 
 ```{r, warning=TRUE}
 
-bdmd <- subset(bd, year %in% c("13", "18"))
+bdmd <- subset(bd, year %in% c("13", "18")) %>%
+  mutate(year = factor(year))
+
 
 bm1 <- glmer(
   bear_new ~ treatment + year + d_inc2 + spp2 + (1 | plot) + (1 | tree_id),
@@ -452,7 +454,7 @@ examine_bdmod(bbdm, "Bayesian GLMM models with random plot only")
 
 I need a function for comparing models visually, with their predictions. I think that emmeans does this, but because I can't seem to be sure what I am predicting with emmeans, I will construct my own dataset to make predictions in order to clarify what emmeans are predicting.
 
-I still need to add an estimate of variance to this model, or alternatively use the variance provided by emmeans.
+I'm predicting the confidence interval using fixed effects error only. This is how emmeans does it as well. I could try including random effects variance. I followed instructions found on Ben Bolkers' [FAQ](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#predictions-andor-confidence-or-prediction-intervals-on-predictions). A more accurate solution would be to produce [bootstrapped predictions](https://stats.stackexchange.com/a/147837)
 
 ```{r}
 
@@ -464,16 +466,14 @@ pred_bd <- function(mod, limit = FALSE) {
     summarize(ba_inc2 = seq(
         0,
         quantile(ba_inc2, 0.99),
-        by = 5
+        by = 20
     )) %>%
     mutate(plot = NA, spp2 = spp)
   } else {
-    ba_incs <- list(
-      ba_inc2 = seq(
+    ba_incs <- seq(
         0,
         quantile(bdmd$ba_inc2, 0.99),
-        by = 5
-      )
+        by = 20
     )
     prediction_data <- expand.grid(
       plot = NA,
@@ -486,23 +486,170 @@ pred_bd <- function(mod, limit = FALSE) {
   if (inherits(mod, "merMod")) {
     prediction_data <- cbind(
       prediction_data,
-      pred = predict(mod, newdata = prediction_data, re.form = NA, type = "response")
+      bear_new = predict(mod, newdata = prediction_data, re.form = NA)
     )
   } else if (inherits(mod, "glm")) {
     prediction_data <- cbind(
       prediction_data,
-      pred = predict(mod, newdata = prediction_data, re.form = NA, type = "response")
+      bear_new = predict(mod, newdata = prediction_data, re.form = NA)
     )
   }
-  prediction_data     
+
+  dat <- prediction_data
+  dmat <- model.matrix(terms(mod), dat)
+  pvar1 <- diag(dmat %*% tcrossprod(vcov(mod), dmat))
+  cmult <- 1.96
+  
+  tibble(dat
+  , plo = dat$bear_new - cmult * sqrt(pvar1)
+  , phi = dat$bear_new + cmult * sqrt(pvar1)
+  ) %>% 
+  mutate(across(c(bear_new, plo, phi), ~ exp(.x) / (1 + exp(.x))))
 }
 
+```
+
+One column bear damage figure
+
+```{r}
+
+doj <- position_dodge(width = 20)
+
 pred_bd(bbdm[[4]], limit = TRUE) %>%
-ggplot(aes(ba_inc2, pred, color = treatment)) +
-    geom_line(size = 1) +
+  relevel_treatment() %>%
+   mutate(
+    year = recode(year, `13` = "2013", `18` = "2018"),
+    spp2 = recode(spp, SESE3 = "Redwood", PSMEM = "Douglas-fir")
+  ) %>%
+  ggplot(aes(ba_inc2, bear_new)) +
+    geom_ribbon(aes(ymin = plo, ymax = phi, fill = treatment), alpha = 0.4, color = NA, position = doj) +
+    geom_line(aes(linetype = treatment), size = .6, position = doj) +
+    geom_point(aes(shape = treatment), size = 1.3, position = doj) +
+    # geom_linerange(aes(ymin = plo, ymax = phi, linetype = treatment), alpha = 0.5, size = 1, position = doj) +
     facet_grid(spp2 ~ year, scales = "free", space = "free") +
-    expand_limits(y = 0.15) +
-    scale_y_continuous(breaks = c(0.1, 0.2, 0.3, 0.4, 0.5))
+    # expand_limits(y = c(-0.01, 0.19)) +
+    geom_blank(data = data.frame(ba_inc2 = 0, year = "2013", spp2 = "Douglas-fir", bear_new = c(-.03, .17))) +
+    theme_bw() +
+    theme(
+      legend.position = c(.17, .6),
+      legend.title = element_blank(),
+      legend.background = element_blank(),
+      legend.key.size = unit(5, "mm")
+    ) +
+    scale_fill_grey(aesthetics = c("color", "fill")) +
+    scale_linetype_manual(
+      values = c(
+        C40 = "solid",
+        L40 = "dashed",
+        C80 = "solid",
+        L80 = "dashed",
+        Control = "dotted"
+      )
+    ) +
+    scale_shape_manual(
+      values = c(
+        C40 = "circle",
+        L40 = "triangle",
+        C80 = "circle open",
+        L80 = "triangle open",
+        Control = "asterisk"
+      )
+    ) +
+    scale_y_continuous(breaks = seq(0, .8, .1)) +
+    labs(
+      y = "Proportion",
+      x = expression(BAI ~ cm^2 ~ year^-1),
+      fill = "Treatment",
+      shape = "Treatment",
+      linetype = "Treatment"
+    )
+
+ggsave(
+  filename = "figs/bd_pred.pdf",
+  device = cairo_pdf,
+  width = 8.84,
+  height = 10,
+  units = "cm"
+)
+
+ggsave(
+  filename = "figs/bd_pred.jpg",
+  width = 8.84,
+  height = 10,
+  units = "cm"
+)
+
+```
+
+2-column bear damage figure
+
+```{r}
+
+doj <- position_dodge(width = 20)
+
+pred_bd(bbdm[[4]], limit = TRUE) %>%
+  relevel_treatment() %>%
+   mutate(
+    year = recode(year, `13` = "2013", `18` = "2018"),
+    spp2 = recode(spp, SESE3 = "Redwood", PSMEM = "Douglas-fir")
+  ) %>%
+  ggplot(aes(ba_inc2, bear_new)) +
+    geom_ribbon(aes(ymin = plo, ymax = phi, fill = treatment), alpha = 0.4, color = NA, position = doj) +
+    geom_line(aes(linetype = treatment), size = .6, position = doj) +
+    geom_point(aes(shape = treatment), size = 1.3, position = doj) +
+    # geom_linerange(aes(ymin = plo, ymax = phi, linetype = treatment), alpha = 0.5, size = 1, position = doj) +
+    facet_grid(spp2 ~ year, scales = "free", space = "free") +
+    # expand_limits(y = c(-0.01, 0.19)) +
+    geom_blank(data = data.frame(ba_inc2 = 0, year = "2013", spp2 = "Douglas-fir", bear_new = c(-.03, .17))) +
+    theme_bw() +
+    theme(
+      legend.position = c(.1, .57),
+      legend.title = element_blank(),
+      legend.background = element_blank(),
+      # legend.key.size = unit(5, "mm")
+    ) +
+    scale_fill_grey(aesthetics = c("color", "fill")) +
+    scale_linetype_manual(
+      values = c(
+        C40 = "solid",
+        L40 = "dashed",
+        C80 = "solid",
+        L80 = "dashed",
+        Control = "dotted"
+      )
+    ) +
+    scale_shape_manual(
+      values = c(
+        C40 = "circle",
+        L40 = "triangle",
+        C80 = "circle open",
+        L80 = "triangle open",
+        Control = "asterisk"
+      )
+    ) +
+    scale_y_continuous(breaks = seq(0, .8, .1)) +
+    labs(
+      y = "Proportion",
+      x = expression(BAI ~ cm^2 ~ year^-1),
+      fill = "Treatment",
+      shape = "Treatment",
+      linetype = "Treatment"
+    )
+
+ggsave(
+  filename = "figs/bd_pred2.pdf",
+  device = cairo_pdf,
+  width = 18.2,
+  height = 11,
+  units = "cm"
+)
+
+ggsave(
+  filename = "figs/bd_pred2.jpg",
+  width = 18.2,
+  height = 11,
+  units = "cm"
+)
 
 ```
 
@@ -518,10 +665,13 @@ ba_incs <- list(
   )
 )
 
+emmeans(bbdm[[4]], ~ treatment + year + ba_inc2, at = ba_incs, type = "response")
+
 emmip(bbdm[[4]],
-  treatment ~ ba_inc2 | spp2,
+  treatment ~ ba_inc2 | spp2 + year,
   at = ba_incs,
-  type = "response"
+  type = "response",
+  CIs = TRUE
 ) 
 
 
@@ -617,6 +767,7 @@ emmip(full_interaction_cumulative[[1]], treatment ~ ba_inc2 | spp + year, type =
 I can check for over dispersion, and [I don't think I need to worry about underdispersion](https://stats.stackexchange.com/questions/568407/how-to-correct-underdispersion-in-logistic-regression)
 
 ```{r}
+
 
 
 ```
