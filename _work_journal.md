@@ -1,7 +1,21 @@
+## 04/20/2020
+
+* Worked on modeled bear damage figure
+* Finished bear damage summary figure
+
+## 04/19/2020
+
+* Explored cumulative bear damage to try to see if I could get the model to more accurately predict the proportion of bear damage we observed in our stands.
+
+## 04/18/2020
+
+* Monday meeting
+ - determined that we won't use tree_id as random effect
+
 ## 04/15/2020
 
 * tried eliminating bear-damaged trees from second period (this has little effect)
-* compared 
+* Tried to
 
 ## 04/14/2020
 
