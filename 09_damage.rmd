@@ -302,7 +302,7 @@ My first model is additive and includes `treatment`, `year`, `d_inc2`, `spp2` an
 The random effects for `tree_id` are very small, these might end up getting dropped.
 
 
-```{r, warning=TRUE}
+```{r, warning=FALSE}
 
 bdmd <- subset(bd, year %in% c("13", "18")) %>%
   mutate(year = factor(year))
@@ -320,7 +320,7 @@ summary(bm1)
 
 check `allFit` output to see if this model can be considered reliable: The estimated coefficients are very congruent, I think we can trust this model.
 
-```{r}
+```{r, cache=TRUE}
 
 bm1.all <- allFit(bm1)
 
@@ -331,7 +331,7 @@ summary(bm1.all)$fixef
 This model seems to be working. Now I'll do more model selection, testing for interactions. All of these models will include `plot` as the only random effect. I compare performance metrics using the R package: performance [@ludeckePerformancePackageAssessment2021]
 
 
-```{r, warning=TRUE, cache=TRUE}
+```{r}
 
 fl <- list(
     bear_new ~ treatment + year + spp2 + d_inc2
@@ -403,7 +403,7 @@ data.frame(form = sapply(fl, deparse1)) %>%
   caption = "Formulas testing different tree-growth variables and intereactions")
 ```
 
-```{r, cache=TRUE}
+```{r, cache=TRUE, include=FALSE}
 
 # run models
 bdm1 <- make_glmm_mods(bdmd, fl)
@@ -420,8 +420,9 @@ My best guess is that it doesn't make sense to include `tree_id` because of its 
 
 Another option could be ensuring that a tree is only damaged in one period, but here are only 3 trees that receive "new" damage in both periods. I doubt that these are having a huge effect. For the most part, trees are only damaged in one period or the other.
 
-```{r, echo=TRUE}
-examine_bdmod <- function(mod, cap) {
+```{r}
+
+show_regression_table <- function(mod, cap = cap) {
   mod_list <- do.call(compare_performance, c(mod, metrics = "common")) %>%
     arrange(AIC)
   if (nrow(mod_list) > 4) {
@@ -429,24 +430,19 @@ examine_bdmod <- function(mod, cap) {
   } else {
     to_compare <- 1:nrow(mod_list)
   }
-  print(
-    mod_list %>%
-    kbl2(digits = 3, caption = cap)
-  )
-  print(
-    sjPlot::tab_model(
-    mod[to_compare],
-    show.ci = FALSE,
-    show.aic = TRUE,
-    dv.labels = paste("Formula", to_compare),
-    title = cap
-    )
+  sjPlot::tab_model(
+  mod[to_compare],
+  show.ci = FALSE,
+  show.aic = TRUE,
+  dv.labels = paste("Formula", to_compare),
+  title = cap
   )
 }
+  
 
-examine_bdmod(bdm1, "GLMM models with random plot only")
+show_regression_table(bdm1, "GLMM models with random plot only")
 # examine_bdmod(bdm1_tree, "GLMM models with random plot and tree_id")
-examine_bdmod(bbdm, "Bayesian GLMM models with random plot only")
+show_regression_table(bbdm, "Bayesian GLMM models with random plot only")
 # examine_bdmod(bbdm_tree, "Bayesian GLMM models with random plot and tree_id")
 
 ```
@@ -455,6 +451,8 @@ examine_bdmod(bbdm, "Bayesian GLMM models with random plot only")
 I need a function for comparing models visually, with their predictions. I think that emmeans does this, but because I can't seem to be sure what I am predicting with emmeans, I will construct my own dataset to make predictions in order to clarify what emmeans are predicting.
 
 I'm predicting the confidence interval using fixed effects error only. This is how emmeans does it as well. I could try including random effects variance. I followed instructions found on Ben Bolkers' [FAQ](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#predictions-andor-confidence-or-prediction-intervals-on-predictions). A more accurate solution would be to produce [bootstrapped predictions](https://stats.stackexchange.com/a/147837)
+
+while I'm on the topic, it is also possible to get bootstrapped CIs for [model coefficients](https://stackoverflow.com/questions/26417005/odds-ratio-and-confidence-intervals-from-glmer-output)
 
 ```{r}
 
@@ -558,7 +556,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %>%
     scale_y_continuous(breaks = seq(0, .8, .1)) +
     labs(
       y = "Proportion",
-      x = expression(BAI ~ cm^2 ~ year^-1),
+      x = expression(BAI ~ (cm^2 ~ year^-1)),
       fill = "Treatment",
       shape = "Treatment",
       linetype = "Treatment"
@@ -568,14 +566,14 @@ ggsave(
   filename = "figs/bd_pred.pdf",
   device = cairo_pdf,
   width = 8.84,
-  height = 10,
+  height = 11,
   units = "cm"
 )
 
 ggsave(
   filename = "figs/bd_pred.jpg",
   width = 8.84,
-  height = 10,
+  height = 11,
   units = "cm"
 )
 
@@ -630,7 +628,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %>%
     scale_y_continuous(breaks = seq(0, .8, .1)) +
     labs(
       y = "Proportion",
-      x = expression(BAI ~ cm^2 ~ year^-1),
+      x = expression(BAI ~ (cm^2 ~ year^-1)),
       fill = "Treatment",
       shape = "Treatment",
       linetype = "Treatment"
@@ -640,14 +638,14 @@ ggsave(
   filename = "figs/bd_pred2.pdf",
   device = cairo_pdf,
   width = 18.2,
-  height = 11,
+  height = 12,
   units = "cm"
 )
 
 ggsave(
   filename = "figs/bd_pred2.jpg",
   width = 18.2,
-  height = 11,
+  height = 12,
   units = "cm"
 )
 
@@ -664,8 +662,6 @@ ba_incs <- list(
     length.out = 25
   )
 )
-
-emmeans(bbdm[[4]], ~ treatment + year + ba_inc2, at = ba_incs, type = "response")
 
 emmip(bbdm[[4]],
   treatment ~ ba_inc2 | spp2 + year,
