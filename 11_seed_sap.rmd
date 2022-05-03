@@ -1,0 +1,67 @@
+---
+title: Seedling, sapling, and ingrowth
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# Data
+
+I'm only looking at year 2018 and I'm combining the last two size classes. So we have:
+
+ 1. seedling
+ 2. [0, 3.8)
+ 3. [3.8, 6.4)
+ 4. [6.4, 10.2)
+ 5. ingrowth > 10.2
+
+
+```{r}
+
+ssd1 <- seed_sap |>
+  filter(year == "18") |>
+  mutate(cls_3 = cls_3 + cls_4, .keep = "unused")
+
+ing <- ingrowth |>
+  filter(year == "18") |>
+  group_by(treatment, plot, spp) |>
+  count(name = "ingrowth")
+
+# are all combinations of treatment, plot, spp in ingrowth already in saplings/seedlings?
+anti_join(ing, ssd1)
+
+ssd <- left_join(ssd1, ing) |> replace_na(list(ingrowth = 0)) |>
+  pivot_longer(
+    contains(c("seed", "cls", "ing")),
+    names_to = "size_class",
+    values_to = "count"
+  ) |>
+  mutate(
+    size_class = factor(
+      size_class,
+      levels = c("seedling", "cls_1", "cls_2", "cls_3", "ingrowth"),
+      labels = c("seedling", "[0, 3.8)", "[3.8, 6.4)", "[6.4, 10.2)", "ingrowth")
+    )
+  )
+
+```
+
+
+# Size class distribution by species
+
+```{r}
+
+ssd |>
+  group_by(treatment, spp, size_class) |>
+  summarise(count = sum(count) * 3.125) |>
+  ggplot(aes(size_class, count, fill = spp)) +
+    geom_col() +
+    facet_wrap(~ treatment) +
+    labs(x = "Size class", y = expression(stems %.% ha^-1))
+
+```
