@@ -13,6 +13,7 @@ library(rgl)
 setupKnitr()
 ```
 
+
 # Structural variability
 
 Here I'll explore various metrics identified in the literature for quantifying and comparing structural variability and species variability
@@ -25,7 +26,8 @@ Details for calculations can be found on the [Define new data](03_define.html) p
 
 ingrowth <- mutate(ingrowth,
   define_xy(ingrowth),
-  ba = pi * (dbh / 2)^2
+  ba = pi * (dbh / 2)^2,
+  ht_p = ht
 )
 
 sci_d <- d_l %>%
@@ -74,7 +76,7 @@ var_sig <- function(plot_data) {
 
 var_table <- function(mean_data, caption) {
   mean_data %>%
-    filter(year != "13") %>%
+    # filter(year != "13") %>%
     group_by(treatment) %>%
     arrange(treatment) %>%
     color_groups(digits = 2, caption)
@@ -174,7 +176,7 @@ var_fig(dbhsd_mean)
 
 # Shannon-Weaver index (overstory)
 
-This index calculates tree species diversity based on the number of stems and basal area [@shannonMathematicalTheoryCommunication2001]
+This index calculates tree species diversity based on the number of stems or basal area [@shannonMathematicalTheoryCommunication2001]
 
 ```{r}
 
@@ -218,7 +220,7 @@ var_fig(dbhm_mean)
 
 # Ducey's ratio
 
-Here we have Ducey's ratio of the additive method of calulating SDI and the method proposed by Reineke. Potential values depend on the truncation of the underlying distribution, our min and max are 10 and 83, which, acording to @duceyRatioAdditiveTraditional2009 suggests that our potential lower limit might be around 0.74 for a stand where 95% of the trees were 10 cm and the rest were 83.
+Here we have Ducey's ratio of the additive method of calculating SDI and the method proposed by Reineke. Potential values depend on the truncation of the underlying distribution, our min and max are 10 and 83, which, according to @duceyRatioAdditiveTraditional2009 suggests that our potential lower limit might be around 0.74 for a stand where 95% of the trees were 10 cm and the rest were 83.
 
 Our values run from about 0.95 to about 0.98. 
 
@@ -232,9 +234,67 @@ ducey_mean <- var_mean(ducey_plot)
 
 var_sig(ducey_plot)
   
-var_table(ducey_mean, caption = "Standard deviation of DBH")
+var_table(ducey_mean, caption = "Ratio of SDI* to SDI")
 
 var_fig(ducey_mean)
+```
+
+# Coefficient of variation
+
+The coefficient of variation for a plot tells us about variation in tree size relative to the mean. Plots with smaller average tree size, but similar ranges of variation should result in higher CV. 
+
+## DBH
+
+```{r}
+
+CVdbh_plot <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarize(val = sd(dbh) / mean(dbh), dfp = sum(spp == "PSMEM") / n())
+
+CVdbh_mean <- var_mean(CVdbh_plot)
+  
+var_table(CVdbh_mean, caption = "Coefficient of variation for DBH")
+
+var_fig(CVdbh_mean) + labs(title = "Coefficient of variation for DBH")
+
+var_sig(CVdbh_plot)$contrasts |> as.data.frame() |> kbl2()
+
+m1 <- lmer(val ~ treatment * year + (1 | plot), data = CVdbh_plot)
+m2 <- lmer(val ~ treatment * year + DFp + (1 | plot), data = CVdbh_plot)
+m3 <- lmer(val ~ treatment + DFp + (1 | plot), data = CVdbh_plot)
+
+fl <- map_chr(list(m1, m2, m3), ~ format(formula(.x)))
+data.frame(formula = fl) |> kbl2(row.names = TRUE)
+
+sjPlot::tab_model(m1, m2, m3, show.aic = TRUE, dv.labels = 1:3)
+
+```
+
+## Height
+
+```{r}
+
+CVht_plot <- sci_d %>%
+  group_by(treatment, year, plot) %>%
+  summarize(val = sd(ht) / mean(ht), DFp = sum(spp == "PSMEM") / n())
+
+CVht_mean <- var_mean(CVht_plot)
+  
+var_table(CVht_mean, caption = "Coefficient of variation for height")
+
+var_fig(CVht_mean) + labs(title = "Coefficient of variation for height")
+
+var_sig(CVht_plot)$contrasts |> as.data.frame() |> kbl2(digits = 3)
+
+m1 <- lmer(val ~ treatment * year + (1 | plot), data = CVht_plot)
+m2 <- lmer(val ~ treatment * year + DFp + (1 | plot), data = CVht_plot)
+m3 <- lmer(val ~ treatment + DFp + (1 | plot), data = CVht_plot)
+
+fl <- map_chr(list(m1, m2, m3), ~ format(formula(.x)))
+data.frame(formula = fl) |> kbl2(row.names = TRUE)
+
+sjPlot::tab_model(m1, m2, m3, show.aic = TRUE, dv.labels = 1:3)
+
 ```
 
 # Combined diversity figure
@@ -385,18 +445,18 @@ What is interesting here is that the high intensity thinnings lead consistently 
 
 doj <- position_dodge(width = 0.5)
 veg_cover %>% 
-  filter(year != "18") %>%
+  # filter(year != "18") %>%
   select(-c(cl_con, cl_hw, dom_con, dom_hw)) %>%
-  pivot_longer(-c(year, plot, treatment), names_to = c(".value", "type"), names_sep = "_") %>%
+  pivot_longer(-c(year, plot, treatment, note), names_to = c(".value", "type"), names_sep = "_") %>%
   mutate(
     plot2 = str_extract(plot, "\\d"),
     dom = spp_common_name(dom),
     type = if_else(type == "shrub", "Shrub", "Herb"),
-    year = if_else(year == "08", "2008", "2013")
+    year = recode(year, `08` = "2008", `13` = "2013", `18` = "2018")
   ) %>%
   relevel_treatment() %>%
-  arrange(treatment, plot2, year) %>%
-  ggplot(aes(year, dom, group = plot2)) +
+  arrange(treatment, plot, year) %>%
+  ggplot(aes(year, dom, group = plot)) +
     geom_line(position = doj) +
     geom_point(aes(size = cl), position = doj, alpha = 0.5) +
     facet_grid(type ~ treatment, scales = "free_y") +
@@ -408,8 +468,8 @@ veg_cover %>%
       legend.text = element_text(size = 8),
       legend.title = element_text(size = 9)
     ) +
-    scale_size_continuous(name = "Cover class (%)", breaks = c(15, 30, 60), limits = c(2.5, 62.5)) +
-    scale_x_discrete(expand = expansion(mult = 0.37)) +
+    scale_size_continuous(name = "Cover class (%)", breaks = c(15, 30, 60), limits = c(2.5, 87.5)) +
+    scale_x_discrete(expand = expansion(mult = 0.25)) +
     labs(y = "Year")
 
 
