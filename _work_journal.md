@@ -1,37 +1,43 @@
-## 04/20/2020
+## 05/03/2022
+
+* Brief analysis of CV dbh and ht
+* Basic ingrowth distribution
+
+
+## 04/21/2022
 
 * Finished bear damage prediction figures
 
-## 04/20/2020
+## 04/20/2022
 
 * Worked on modeled bear damage figure
 * Finished bear damage summary figure
 
-## 04/19/2020
+## 04/19/2022
 
 * Explored cumulative bear damage to try to see if I could get the model to more accurately predict the proportion of bear damage we observed in our stands.
 
-## 04/18/2020
+## 04/18/2022
 
 * Monday meeting
  - determined that we won't use tree_id as random effect
 
-## 04/15/2020
+## 04/15/2022
 
 * tried eliminating bear-damaged trees from second period (this has little effect)
 * Tried to
 
-## 04/14/2020
+## 04/14/2022
 
 * explored problem of complete separation
 * fit penalized fixed effects GLM (brglm)
 * fit bayesian GLMM with priors (or penalized regression)
 
-## 04/13/2020
+## 04/13/2022
 
 * Omitting spruce, moving forward with model with complete separation.
 
-## 04/11/2020
+## 04/11/2022
 
 * Switch to using 2 species categories (redwood + other)
 * Re-examine random effects of initial additive models
@@ -39,11 +45,11 @@
 * produced a list of candidate models to compare with the package "performance"
  - they run but there are errors, the "best" model is among those with errors
 
-## 04/10/2020
+## 04/10/2022
 
 * Run initial logistic regression models
 
-## 04/09/2020
+## 04/09/2022
 
 * Added SDI*/SDI to finished "structure" figure.
 * Completed veg figure including Species richness and combined veg cover (shrub and herb)
