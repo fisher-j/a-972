@@ -1,7 +1,7 @@
 ## 05/03/2022
 
 * Brief analysis of CV dbh and ht
-* Basic ingrowth distribution
+* Basic regen distribution
 
 
 ## 04/21/2022
