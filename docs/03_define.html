@@ -276,6 +276,12 @@ $(document).ready(function () {
 <li>
   <a href="09_damage.html">Bear and other damage</a>
 </li>
+<li>
+  <a href="10_species_dominance.html">Species dominance</a>
+</li>
+<li>
+  <a href="11_seed_sap.html">Seedling, sapling, and ingrowth</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         
@@ -340,7 +346,7 @@ alive or dead. I’ll define dead trees as:</p>
 <pre class="r"><code>d_l &lt;- d_l %&gt;%
   mutate(
     live = case_when(
-      status %in% c(5:9, -5:-9, -1)                                  ~ FALSE,
+      status %in% c(5:9, -5:-9, -1)                              ~ FALSE,
       status %in% c(30, 32)                                      ~ FALSE,
       (spp %in% c(&quot;PSMEM&quot;, &quot;PISI&quot;) &amp; status == 31)               ~ FALSE,
       (spp %in% c(&quot;SESE3&quot;, &quot;ALRU&quot;) &amp; status == 31 &amp; ht &lt; 3)      ~ FALSE,

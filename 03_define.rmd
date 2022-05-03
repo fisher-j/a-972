@@ -22,7 +22,7 @@ Status and condition codes provided do not necessarily define mortality, because
 d_l <- d_l %>%
   mutate(
     live = case_when(
-      status %in% c(5:9, -5:-9, -1)                                  ~ FALSE,
+      status %in% c(5:9, -5:-9, -1)                              ~ FALSE,
       status %in% c(30, 32)                                      ~ FALSE,
       (spp %in% c("PSMEM", "PISI") & status == 31)               ~ FALSE,
       (spp %in% c("SESE3", "ALRU") & status == 31 & ht < 3)      ~ FALSE,

@@ -249,7 +249,7 @@ The coefficient of variation for a plot tells us about variation in tree size re
 
 CVdbh_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
-  summarize(val = sd(dbh) / mean(dbh), dfp = sum(spp == "PSMEM") / n())
+  summarize(val = sd(dbh) / mean(dbh), DFp = sum(spp == "PSMEM") / n())
 
 CVdbh_mean <- var_mean(CVdbh_plot)
   

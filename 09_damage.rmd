@@ -228,13 +228,13 @@ year_labels <- c(
 )
 
 type_labels <- as_labeller(c(
-  bear_cnt = "Count~(stems^-1)",
+  bear_cnt = "Stems ~ ha^-1",
   bear_prop = "Proportion"
 ), label_parsed)
 
 bd_2 <- group_by(bd, treatment, spp2, year)
 bd_2 <- bind_rows(
-  bear_cnt = summarise(bd_2, bear_sum = sum(bear_cum)),
+  bear_cnt = summarise(bd_2, bear_sum = sum(bear_cum * 3.125)),
   bear_prop = summarise(bd_2, bear_sum = sum(bear_cum) / n()),
   .id = "sum_type"
 ) %>% relevel_treatment()
@@ -275,7 +275,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "figs/be_summary.jpg",
+  filename = "figs/bd_summary.jpg",
   width = 18.2,
   height = 9,
   units = "cm"
@@ -555,7 +555,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %>%
     ) +
     scale_y_continuous(breaks = seq(0, .8, .1)) +
     labs(
-      y = "Proportion",
+      y = "Probability",
       x = expression(BAI ~ (cm^2 ~ year^-1)),
       fill = "Treatment",
       shape = "Treatment",
@@ -627,7 +627,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %>%
     ) +
     scale_y_continuous(breaks = seq(0, .8, .1)) +
     labs(
-      y = "Proportion",
+      y = "Probability",
       x = expression(BAI ~ (cm^2 ~ year^-1)),
       fill = "Treatment",
       shape = "Treatment",
@@ -765,5 +765,7 @@ I can check for over dispersion, and [I don't think I need to worry about underd
 ```{r}
 
 
-
 ```
+
+# Wind damage and breakage
+

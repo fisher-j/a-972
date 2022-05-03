@@ -276,6 +276,12 @@ $(document).ready(function () {
 <li>
   <a href="09_damage.html">Bear and other damage</a>
 </li>
+<li>
+  <a href="10_species_dominance.html">Species dominance</a>
+</li>
+<li>
+  <a href="11_seed_sap.html">Seedling, sapling, and ingrowth</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         
@@ -317,17 +323,15 @@ dataset</a></li>
 <li><a href="#species-list">Species list</a></li>
 <li><a href="#veg-cover">Veg cover</a></li>
 </ul></li>
+<li><a href="#seedlingsapling-data">Seedling/sapling data</a></li>
 </ul></li>
 </ul>
 </div>
 
 <div id="libraries" class="section level2">
 <h2>libraries</h2>
-<pre class="r"><code>library(&quot;tidyverse&quot;)</code></pre>
-<pre><code>## Warning: package &#39;tibble&#39; was built under R version 4.1.3</code></pre>
-<pre><code>## Warning: package &#39;tidyr&#39; was built under R version 4.1.3</code></pre>
-<pre><code>## Warning: package &#39;readr&#39; was built under R version 4.1.3</code></pre>
-<pre class="r"><code>library(kableExtra)</code></pre>
+<pre class="r"><code>library(&quot;tidyverse&quot;)
+library(kableExtra)</code></pre>
 </div>
 <div id="import-data" class="section level1">
 <h1>Import Data</h1>
@@ -710,9 +714,15 @@ names(veg_cover_files) &lt;- str_replace(
 )
 
 veg_cover_l &lt;- lapply(veg_cover_files, read_csv)
+
+names(veg_cover_l[[2]]) &lt;- gsub(&quot;_revised&quot;, &quot;&quot;, names(veg_cover_l[[2]]))
+
 map(veg_cover_l, names) %&gt;% unique</code></pre>
 <pre><code>## [[1]]
-##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;    &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;       &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;     &quot;Flag&quot;</code></pre>
+##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;    &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;       &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;     &quot;Flag&quot;           
+## 
+## [[2]]
+##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;    &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;       &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;     &quot;Flag&quot;            &quot;NOTE&quot;</code></pre>
 <pre class="r"><code>veg_cover &lt;- bind_rows(veg_cover_l, .id = &quot;year&quot;) %&gt;%
   select(
     year,
@@ -724,7 +734,8 @@ map(veg_cover_l, names) %&gt;% unique</code></pre>
     dom_con = Dom_sp_CON,
     dom_hw = Dom_sp_HW,
     dom_shrub = Dom_sp_Shrub,
-    dom_herb = Dom_sp_Herb
+    dom_herb = Dom_sp_Herb,
+    note = NOTE
   ) %&gt;%
   filter(plot != &quot;Spare1&quot;) %&gt;%
   mutate(treatment = str_extract(plot, treatments), .after = plot) %&gt;%
@@ -750,6 +761,39 @@ information:</p>
   )
 )</code></pre>
 </div>
+</div>
+<div id="seedlingsapling-data" class="section level2">
+<h2>Seedling/sapling data</h2>
+<pre class="r"><code>seedling_sapling_files &lt;- dir(pattern = &quot;SeedlingSapling.*\\.txt$&quot;, recursive = TRUE)
+
+names(seedling_sapling_files) &lt;- str_replace(
+  seedling_sapling_files,
+  &quot;^.*(\\d{2})\\.txt$&quot;,
+  &quot;\\1&quot;
+)
+
+seedling_sapling_l &lt;- lapply(seedling_sapling_files, read_csv)
+map(seedling_sapling_l, names) %&gt;% unique</code></pre>
+<pre><code>## [[1]]
+##  [1] &quot;SSID&quot;          &quot;Plot ID&quot;       &quot;Species&quot;       &quot;SpecCode2&quot;     &quot;Resprouts?&quot;    &quot;Seedling&quot;      &quot;DBH class 1&quot;   &quot;DBH class 2&quot;   &quot;DBH class 3&quot;   &quot;DBH class 4&quot;   &quot;TotalStems&quot;    &quot;calc1&quot;         &quot;calcSpecCode2&quot; &quot;calc2&quot;        
+## [15] &quot;SPP&quot;           &quot;Notes&quot;</code></pre>
+<pre class="r"><code>seed_sap &lt;- bind_rows(seedling_sapling_l, .id = &quot;year&quot;) %&gt;%
+  select(
+    year,
+    ssid = SSID,
+    plot = &quot;Plot ID&quot;,
+    spp = Species,
+    seedling = Seedling,
+    cls_1 = &quot;DBH class 1&quot;,
+    cls_2 = &quot;DBH class 2&quot;,
+    cls_3 = &quot;DBH class 3&quot;,
+    cls_4 = &quot;DBH class 4&quot;,
+    total = &quot;TotalStems&quot;
+  ) %&gt;%
+  filter(plot != &quot;Spare1&quot;) %&gt;%
+  group_by(plot, spp, year) %&gt;%
+  summarise(across(contains(c(&quot;seed&quot;, &quot;cls&quot;, &quot;total&quot;)), sum)) |&gt;
+  mutate(treatment = str_extract(plot, &quot;H40|L40|H80|L80|C&quot;), .before = 1)</code></pre>
 </div>
 </div>
 

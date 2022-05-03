@@ -1,0 +1,237 @@
+---
+title: Species dominance
+bibliography: [reference/a972.bib]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+I'm interested in creating a measure of species dominance. I will select the 4 largest trees per plot and then determine what proportion of these are from each species. I will only consider and report on RW and DF. I could augment this by showing the average size of the dominant tree by species.
+
+For this two function, the four highest ranking trees (height, growth, or diameter) were selected from each plot these were aggregated at the treatment level to determine the proportion of dominant trees in each species.
+
+If I want to do hypothesis testing, I need to have two datasets, one of the raw data (counts of trees per plot) and one of the average proportion. I may want to do this with all of my metrics. The final aggregation may be able to be done with a single function, depending on how data were aggregated for each metric. Qmd is the only metric where the mean is not straight forward, as it is the square root of the mean of squared diameters.
+
+For this to make sense for heights, we will need to predict heights for missing trees because the largest trees are missing heights in many cases.
+
+Although I refer to proportions here, this is of 100 TPH, so multiplying by 100 gives TPH.
+
+```{r}
+
+spp_dom_raw <- function(data = d_l, metrics = NULL, years = NULL) {
+  if(is.null(years)) years <- c("08", "13", "18")
+  if(is.null(metrics)) metrics <- c("dbh", "ht_p", "ba_inc2")
+  raw <- data %>%
+    filter(
+      spp %in% c("SESE3", "PSMEM"),
+      live | status %in% c(15, 16),
+      year %in% years
+    ) %>%
+    select(year, treatment, spp, plot, all_of(metrics)) %>%
+    pivot_longer(cols = all_of(metrics), names_to = "measure") %>%
+    group_by(measure, year, treatment, plot) %>%
+    slice_max(order_by = value, n = 8, with_ties = FALSE) %>%
+    ungroup()
+  missing <- raw$measure[raw$value == 0 | is.na(raw$value)]
+  if(length(missing) > 0) {
+    message <- "Measures missing values (entries removed):"
+    warning(paste(message, toString(unique(missing))))
+  }
+  filter(raw, value != 0)
+}
+
+spp_dom_cnt <- function(...) {
+  spp_dom_raw(...) %>%
+  count(measure, year, treatment, plot, spp) %>%
+  ungroup() %>%
+  complete(nesting(treatment, year, plot), spp, measure, fill = list(n = 0))
+}
+
+spp_dom_pct <- function(...) {
+  spp_dom_cnt(...) %>%
+    group_by(measure, treatment, year, spp) %>%
+    summarise(n = sum(n)) %>%
+    mutate(freq = n / sum(n)) %>%
+    arrange(measure, treatment, spp, year) %>%
+    ungroup()
+}
+
+```
+
+
+## Dominance figure
+
+```{r, fig.height=3.5, fig.width=3.5}
+
+dominance_labels <- as_labeller(
+  c(
+    ba_inc2 = "BAI",
+    dbh = "DBH",
+    ht_p = "Height"
+  ),
+  label_parsed
+)
+
+make_dominance_fig <- function(...) {
+  spp_dom_pct(...) %>%
+    relevel_treatment() %>%
+    mutate(
+      measure = factor(measure, levels = c("dbh", "ht_p", "ba_inc2")),
+      year = case_when(
+        year == 13 & measure == "ba_inc2" ~2010.5,
+        year == 18 & measure == "ba_inc2" ~2015.5,
+        year == "init" ~2003,
+        year == "08" ~2008,
+        year == "13" ~2013,
+        year == "18" ~2018
+      )
+    ) %>%
+    ggplot(aes(year, freq, fill = spp)) +
+      geom_bar(position = "stack", stat = "identity", width = 4.5) +
+      facet_grid(
+        vars(measure),
+        vars(treatment),
+        labeller = labeller(measure = dominance_labels)
+      ) +
+      theme_bw() +
+      theme(
+        panel.spacing.x = unit(1.3, "mm"),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.key.size = unit(4, "mm"),
+        legend.box.spacing = element_blank(),
+        panel.grid = element_blank(),
+        # strip.background.y = element_blank(),
+        strip.placement = "outside",
+        axis.text.x = element_text(angle = 90, vjust = 0.25)
+      ) +
+      # scale_x_continuous(breaks = yr_breaks) +
+      scale_y_continuous(breaks = c(0, .5, 1)) +
+      scale_x_continuous(
+        breaks = c(2003, 2008, 2013, 2018),
+        labels = c("init", "2008", "2013", "2018")) +
+      scale_fill_manual("spp",
+       values = c(SESE3 = "black", PSMEM = "#a0a0a0"),
+       labels = c("Redwood", "Douglas-fir")
+      ) +
+      labs(y = "Proportion", x = "Year")
+}
+
+make_dominance_fig(years = c("init", "08", "13", "18"))
+
+ggsave(
+  filename = "figs/dominance_fig.pdf",
+  device = cairo_pdf,
+  width = 8.84,
+  height = 9,
+  units = "cm"
+)
+
+ggsave(
+  filename = "figs/dominance_fig.jpg",
+  width = 8.84,
+  height = 9,
+  units = "cm"
+)
+```
+
+Now I need to display the average values for these dominant species, perhaps along with their standard deviations. I think I'll just do this for each treatment in the most recent measurement period.
+
+```{r}
+
+spp_dom_raw() %>%
+  group_by(year, treatment, measure) %>%
+  summarise(average = mean(value)) %>%
+  arrange(measure, treatment, year) %>%
+  pivot_wider(names_from = treatment, values_from = average) %>%
+  relocate(measure) %>%
+  kbl2(
+    caption = "Average metrics for top 100 TPH (ranked by the respective metric)",
+    digits = 2)
+
+```
+
+## Species dominance significance test
+
+A Wilcoxon rank-sum test could be used to test if one treatment results in changes that are significantly greater than another treatment. Unfortunately, it seems like none of the treatments that show an average increase in the number of dominant SESE are significant at the alpha = 0.05 level, using a 1-sided test. One-sided permutation tests shows even larger p-values, and these I would expect to be more accurate given the number of zeros in the data. 
+
+To start, I will only test significance for dbh ranked dominance, to see if treatment effect is significant there. first I get a list of differences from 2008 to 2018 for each plot in a treatment, this represents the treatments effect on redwood dominance. Then I compare the treatments to see is ones with a larger average effect, are significantly larger than those with a smaller average effect: 1-sided non-parametric tests. Wilcox rank-sum has lower p-values, than the permutation test. The data has a lot of zeros, and very few data points, none of the one-sided differences are significant. It is too soon to tell if redwood dominance has been affected.
+
+```{r}
+
+# This is the permutation calculation
+
+new_diff <- function(d_null) {
+  new_samp <- sample(d_null)
+  mean(new_samp[5:8]) - mean(new_samp[1:4])
+}
+
+perm_test <- function(x, y, M = 1e5) {
+  obs_diff <- mean(x) - mean(y)
+  d_null <- c(x, y)
+  perm_diff <- replicate(M, new_diff(d_null))
+  sum(perm_diff >= obs_diff) / M
+}
+
+# Takes one of my dominance metrics: dbh, ht, ba_inc2
+
+non_para_dom_test <- function(metric) {
+  # only 2013 and 2018 available for basal area increment
+  if(metric == "ba_inc2") years <- c("13", "18") else years <- c("08", "18")
+  
+  # summarize differences between 2018 and 2013 for each treatment
+  # (plot differences)
+  W1 <- spp_dom_cnt(metrics = metric, years = years) %>%
+    filter(spp == "SESE3") %>%
+    group_by(plot) %>%
+    mutate(diff = n - lag(n)) %>%
+    drop_na() %>%
+    ungroup() %>%
+    select(treatment, measure, diff)
+    
+  W <- with(W1, split(diff, treatment))
+
+  # Get all combinations of treatments, where average change of treatment 1
+  # is greater than the average for treatment 2
+
+  combos <- W1 %>%
+    group_by(treatment, measure) %>%
+    nest_by() %>%
+    mutate(avg = map_dbl(data, mean)) %>%
+    expand_grid(a = ., b = .) %>%
+    mutate(diff = a$avg - b$avg) %>%
+    arrange(desc(diff)) %>%
+    filter(diff > 0) %>%
+    transmute(treat.a = a$treatment, treat.b = b$treatment)
+  
+  print(paste0("Test for ", metric, ":"))
+
+  apply(combos, 1, function(x) {
+    wilout <- wilcox.test(W[[ x[1] ]], W[[ x[2] ]], alternative = "g")
+    permout <- perm_test(W[[ x[1] ]], W[[ x[2] ]])
+    list(test = paste(x[1], ">", x[2]), Wilcox.P = wilout$p.value, Perm.P = permout)  
+  }) %>%
+    bind_rows()
+}
+```
+
+
+```{r, warning=FALSE, cache=TRUE}
+non_para_dom_test("dbh")
+non_para_dom_test("ba_inc2")
+non_para_dom_test("ht")
+```
+
+# Hui's dominance metric
+
+I first saw this metric in @motzSamplingMeasuresTree2010, where it appears to have been missapplied. There, it was given as:
+$$ U_i = \frac{1}{n} \sum^{n}_{j=1} 1 (DBH_i > DBH_j) $$
+
+But they applied it to all trees, in which case, I assume that, leaving aside the issue to ties, the average would have to be 0.5.
+
+Here I will calculate the species dominance metric separately for redwood and Douglas-fir components.

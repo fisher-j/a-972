@@ -278,6 +278,12 @@ $(document).ready(function () {
 <li>
   <a href="09_damage.html">Bear and other damage</a>
 </li>
+<li>
+  <a href="10_species_dominance.html">Species dominance</a>
+</li>
+<li>
+  <a href="11_seed_sap.html">Seedling, sapling, and ingrowth</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         
@@ -337,14 +343,8 @@ predicted heights</a></li>
 </ul>
 </div>
 
-<pre class="r"><code>library(lme4)</code></pre>
-<pre><code>## Loading required package: Matrix</code></pre>
-<pre><code>## 
-## Attaching package: &#39;Matrix&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
-## 
-##     expand, pack, unpack</code></pre>
-<pre class="r"><code>library(emmeans)
+<pre class="r"><code>library(lme4)
+library(emmeans)
 library(MuMIn)
 palette(&quot;Tableau 10&quot;)
 library(broom.mixed)</code></pre>
@@ -1342,9 +1342,6 @@ increments and thus heights</p>
   show.se = TRUE,
   show.icc = FALSE
 )</code></pre>
-<pre><code>## Registered S3 method overwritten by &#39;parameters&#39;:
-##   method                         from      
-##   format.parameters_distribution datawizard</code></pre>
 <table style="border-collapse:collapse; border:none;">
 <tr>
 <th style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm;  text-align:left; ">

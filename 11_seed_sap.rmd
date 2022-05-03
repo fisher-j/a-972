@@ -54,7 +54,7 @@ ssd <- left_join(ssd1, ing) |> replace_na(list(ingrowth = 0)) |>
 
 # Size class distribution by species
 
-```{r}
+```{r, fig.width=10, fig.height=6.5}
 
 ssd |>
   group_by(treatment, spp, size_class) |>
@@ -62,6 +62,9 @@ ssd |>
   ggplot(aes(size_class, count, fill = spp)) +
     geom_col() +
     facet_wrap(~ treatment) +
+    theme(
+      legend.position = c(.84, .22)
+    ) +
     labs(x = "Size class", y = expression(stems %.% ha^-1))
 
 ```

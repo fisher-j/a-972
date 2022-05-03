@@ -29,3 +29,7 @@ navbar:
       href: 08_variability.html
     - text: Bear and other damage
       href: 09_damage.html
+    - text: Species dominance
+      href: 10_species_dominance.html
+    - text: Seedling, sapling, and ingrowth
+      href: 11_seed_sap.html
