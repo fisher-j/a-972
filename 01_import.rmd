@@ -362,8 +362,10 @@ names(veg_cover_files) <- str_replace(
 )
 
 veg_cover_l <- lapply(veg_cover_files, read_csv)
-map(veg_cover_l, names) %>% unique
 
+names(veg_cover_l[[2]]) <- gsub("_revised", "", names(veg_cover_l[[2]]))
+
+map(veg_cover_l, names) %>% unique
 
 veg_cover <- bind_rows(veg_cover_l, .id = "year") %>%
   select(
@@ -376,7 +378,8 @@ veg_cover <- bind_rows(veg_cover_l, .id = "year") %>%
     dom_con = Dom_sp_CON,
     dom_hw = Dom_sp_HW,
     dom_shrub = Dom_sp_Shrub,
-    dom_herb = Dom_sp_Herb
+    dom_herb = Dom_sp_Herb,
+    note = NOTE
   ) %>%
   filter(plot != "Spare1") %>%
   mutate(treatment = str_extract(plot, treatments), .after = plot) %>%
@@ -411,4 +414,40 @@ veg_cover <- mutate(veg_cover,
     )
   )
 )
+```
+
+
+## Seedling/sapling data
+
+```{r}
+
+seedling_sapling_files <- dir(pattern = "SeedlingSapling.*\\.txt$", recursive = TRUE)
+
+names(seedling_sapling_files) <- str_replace(
+  seedling_sapling_files,
+  "^.*(\\d{2})\\.txt$",
+  "\\1"
+)
+
+seedling_sapling_l <- lapply(seedling_sapling_files, read_csv)
+map(seedling_sapling_l, names) %>% unique
+
+
+seed_sap <- bind_rows(seedling_sapling_l, .id = "year") %>%
+  select(
+    year,
+    ssid = SSID,
+    plot = "Plot ID",
+    spp = Species,
+    seedling = Seedling,
+    cls_1 = "DBH class 1",
+    cls_2 = "DBH class 2",
+    cls_3 = "DBH class 3",
+    cls_4 = "DBH class 4",
+    total = "TotalStems"
+  ) %>%
+  filter(plot != "Spare1") %>%
+  group_by(plot, spp, year) %>%
+  summarise(across(contains(c("seed", "cls", "total")), sum)) |>
+  mutate(treatment = str_extract(plot, "H40|L40|H80|L80|C"), .before = 1)
 ```
