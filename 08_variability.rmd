@@ -448,6 +448,7 @@ veg_cover %>%
   # filter(year != "18") %>%
   select(-c(cl_con, cl_hw, dom_con, dom_hw)) %>%
   pivot_longer(-c(year, plot, treatment, note), names_to = c(".value", "type"), names_sep = "_") %>%
+  filter(type == "shrub") %>%
   mutate(
     plot2 = str_extract(plot, "\\d"),
     dom = spp_common_name(dom),
@@ -459,32 +460,36 @@ veg_cover %>%
   ggplot(aes(year, dom, group = plot)) +
     geom_line(position = doj) +
     geom_point(aes(size = cl), position = doj, alpha = 0.5) +
-    facet_grid(type ~ treatment, scales = "free_y") +
+    facet_grid(~ treatment, scales = "free_y") +
     theme_bw() +
     theme(
+      # rect = element_rect(fill = "gray70"),
       axis.title.y = element_blank(),
-      legend.position = c(.9, .7),
+      # legend.position = c(.9, .7),
+      # legend.key.size = unit(2, "mm"),
+      legend.box.spacing = unit(0, "mm"),
+      legend.position = "bottom",
       legend.background = element_blank(),
       legend.text = element_text(size = 8),
       legend.title = element_text(size = 9)
     ) +
-    scale_size_continuous(name = "Cover class (%)", breaks = c(15, 30, 60), limits = c(2.5, 87.5)) +
+    scale_size_continuous(name = "Cover (%)") + # , breaks = c(15, 30, 60), limits = c(2.5, 87.5)) +
     scale_x_discrete(expand = expansion(mult = 0.25)) +
-    labs(y = "Year")
-
+    scale_y_discrete(expand = expansion(mult = 0.2)) +
+    labs(x = "Year")
 
 ggsave(
   filename = "figs/understory_change.pdf",
   device = cairo_pdf,
   width = 18.2,
-  height = 8.6,
+  height = 5.2,
   units = "cm"
 )
 
 ggsave(
   filename = "figs/understory_change.jpg",
   width = 18.2,
-  height = 8.6,
+  height = 5.2,
   units = "cm"
 )
 
