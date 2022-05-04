@@ -1,3 +1,8 @@
+## 05/04/2022
+
+* Updated dominant understory change figure to show only shrubs
+* Updated understory percent cover figure to show only shrubs
+
 ## 05/03/2022
 
 * Brief analysis of CV dbh and ht

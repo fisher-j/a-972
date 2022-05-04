@@ -20,6 +20,7 @@ I'm only looking at year 2018 and I'm combining the last two size classes. So we
  4. [6.4, 10.2)
  5. ingrowth > 10.2
 
+Ingrowth includes all trees that "ingrew" after treatment (both 2013 and 2018)
 
 ```{r}
 
@@ -65,6 +66,6 @@ ssd |>
     theme(
       legend.position = c(.84, .22)
     ) +
-    labs(x = "Size class", y = expression(stems %.% ha^-1))
+    labs(x = "Size class (cm)", y = expression(stems %.% ha^-1))
 
 ```

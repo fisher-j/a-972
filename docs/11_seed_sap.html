@@ -326,6 +326,8 @@ classes. So we have:</p>
 <li>[6.4, 10.2)</li>
 <li>ingrowth &gt; 10.2</li>
 </ol>
+<p>Ingrowth includes all trees that “ingrew” after treatment (both 2013
+and 2018)</p>
 <pre class="r"><code>ssd1 &lt;- seed_sap |&gt;
   filter(year == &quot;18&quot;) |&gt;
   mutate(cls_3 = cls_3 + cls_4, .keep = &quot;unused&quot;)
@@ -365,7 +367,7 @@ anti_join(ing, ssd1)</code></pre>
     theme(
       legend.position = c(.84, .22)
     ) +
-    labs(x = &quot;Size class&quot;, y = expression(stems %.% ha^-1))</code></pre>
+    labs(x = &quot;Size class (cm)&quot;, y = expression(stems %.% ha^-1))</code></pre>
 <p><img src="11_seed_sap_files/figure-html/unnamed-chunk-3-1.png" width="960" /></p>
 </div>
 

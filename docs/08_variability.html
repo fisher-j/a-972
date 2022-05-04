@@ -375,6 +375,8 @@ figure</a></li>
 <ul>
 <li><a href="#richness">Richness</a></li>
 <li><a href="#understory-cover">Understory cover</a></li>
+<li><a href="#dominant-understory-species-change">Dominant understory
+species change</a></li>
 </ul></li>
 <li><a href="#final-veg-figure">Final Veg Figure</a></li>
 <li><a href="#fun-visual-of-sci">Fun visual of SCI</a></li>
@@ -415,22 +417,18 @@ produce a plot level value is averaged at the plot level.</p>
 <pre class="r"><code>my_dodge &lt;- position_dodge(0.4)
 
 var_fig &lt;- function(data) {
-  # yr_breaks &lt;- c(2008, 2013, 2018)
   data %&gt;%
     filter(year != &quot;init&quot;) %&gt;%
     relevel_treatment() %&gt;%
-    # mutate(year = fix_year(year)) %&gt;%
     ggplot(aes(year, emmean, color = treatment, group = treatment)) +
       geom_line(size = 1, position = my_dodge) +
       geom_point(position = my_dodge) +
-    # geom_ribbon(aes(ymin = sh_n_ci_lb, ymax = sh_n_ci_ub, fill = treatment), alpha = 0.2, color = NA) +
       geom_errorbar(
         aes(ymin = emmean - SE, ymax = emmean + SE),
         width = .75,
         position = my_dodge
       ) +
       theme_bw() +
-      # scale_x_continuous(breaks = yr_breaks) +
       labs(y = NULL, x = &quot;Year&quot;)
 }
 
@@ -458,7 +456,7 @@ var_table &lt;- function(mean_data, caption) {
 the spatial variability in a given tree attribute such as DBH or height.
 It is driven by differences between neighboring trees. We can calculate
 SCI based on residual trees only, or include ingrowth. The latter would
-be expected to increase the SCI, but it is unclear wether or not this
+be expected to increase the SCI, but it is unclear whether or not this
 kind of structural diversity is of significant importance.</p>
 <p>It is important to keep in mind that SCI, for our study, refers to
 heterogeneity on the within-patch scale: at the .08 ha scale. Larger
@@ -5476,6 +5474,14 @@ AIC
 </td>
 </tr>
 </table>
+<pre class="r"><code>m2mean &lt;- emmeans(m2, ~ treatment + year) |&gt; as.data.frame()
+m1mean &lt;- emmeans(m1, ~ treatment + year) |&gt; as.data.frame()
+
+bind_rows(m1 = m1mean, m2 = m2mean, .id = &quot;mod&quot;) |&gt;
+  var_fig() +
+  facet_wrap(~ mod) +
+  labs(title = &quot;Compare m1 and m2 (w/o &amp; w DFp) for CVdbh&quot;)</code></pre>
+<p><img src="08_variability_files/figure-html/unnamed-chunk-11-2.png" width="672" /></p>
 </div>
 <div id="height" class="section level2">
 <h2>Height</h2>
@@ -7944,6 +7950,9 @@ POMU, POMU, POMU, POMU
 </tr>
 </tbody>
 </table>
+</div>
+<div id="dominant-understory-species-change" class="section level2">
+<h2>Dominant understory species change</h2>
 <p>What is interesting here is that the high intensity thinnings lead
 consistently to heavy salmon berry shrub cover and the rest lead to
 heavy sword fern cover. Evergreen violet seems to be the most common
@@ -7954,6 +7963,7 @@ veg_cover %&gt;%
   # filter(year != &quot;18&quot;) %&gt;%
   select(-c(cl_con, cl_hw, dom_con, dom_hw)) %&gt;%
   pivot_longer(-c(year, plot, treatment, note), names_to = c(&quot;.value&quot;, &quot;type&quot;), names_sep = &quot;_&quot;) %&gt;%
+  filter(type == &quot;shrub&quot;) %&gt;%
   mutate(
     plot2 = str_extract(plot, &quot;\\d&quot;),
     dom = spp_common_name(dom),
@@ -7965,31 +7975,36 @@ veg_cover %&gt;%
   ggplot(aes(year, dom, group = plot)) +
     geom_line(position = doj) +
     geom_point(aes(size = cl), position = doj, alpha = 0.5) +
-    facet_grid(type ~ treatment, scales = &quot;free_y&quot;) +
+    facet_grid(~ treatment, scales = &quot;free_y&quot;) +
     theme_bw() +
     theme(
+      # rect = element_rect(fill = &quot;gray70&quot;),
       axis.title.y = element_blank(),
-      legend.position = c(.9, .7),
+      # legend.position = c(.9, .7),
+      # legend.key.size = unit(2, &quot;mm&quot;),
+      legend.box.spacing = unit(0, &quot;mm&quot;),
+      legend.position = &quot;bottom&quot;,
       legend.background = element_blank(),
       legend.text = element_text(size = 8),
       legend.title = element_text(size = 9)
     ) +
-    scale_size_continuous(name = &quot;Cover class (%)&quot;, breaks = c(15, 30, 60), limits = c(2.5, 87.5)) +
+    scale_size_continuous(name = &quot;Cover (%)&quot;) + # , breaks = c(15, 30, 60), limits = c(2.5, 87.5)) +
     scale_x_discrete(expand = expansion(mult = 0.25)) +
-    labs(y = &quot;Year&quot;)</code></pre>
+    scale_y_discrete(expand = expansion(mult = 0.2)) +
+    labs(x = &quot;Year&quot;)</code></pre>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/understory_change.pdf&quot;,
   device = cairo_pdf,
   width = 18.2,
-  height = 8.6,
+  height = 5.2,
   units = &quot;cm&quot;
 )
 
 ggsave(
   filename = &quot;figs/understory_change.jpg&quot;,
   width = 18.2,
-  height = 8.6,
+  height = 5.2,
   units = &quot;cm&quot;
 )</code></pre>
 <p>change in percent cover of shrubs and herbs over time for each
@@ -8050,20 +8065,6 @@ was recorded as dominant, weighted by that plots total cover.</p>
       y = &quot;Cover (%)&quot;
     )</code></pre>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-20-1.png" width="336" /></p>
-<pre class="r"><code>ggsave(
-  filename = &quot;figs/shrub_fig.pdf&quot;,
-  device = cairo_pdf,
-  width = 8.84,
-  height = 9,
-  units = &quot;cm&quot;
-)
-
-ggsave(
-  filename = &quot;figs/shrub_fig.jpg&quot;,
-  width = 8.84,
-  height = 9,
-  units = &quot;cm&quot;
-)</code></pre>
 <p>It would have been nice to show the same information for herb
 species, but unfortunately, the fact that sword fern is a significant
 component and it was recorded inconsistently, makes interpretation of
@@ -8083,402 +8084,106 @@ this (and much of the understory data) very difficult.</p>
 </div>
 <div id="final-veg-figure" class="section level1">
 <h1>Final Veg Figure</h1>
-<p>We decided on one combined figure with graphs for total veg cover
-(shrub and herb combined) and trends in species richness. Richness was
-calculated above, here is total combined veg cover.</p>
-<pre class="r"><code># change in total combined percent cover of shrub and herb
-cover_veg_plot &lt;- veg_cover %&gt;%
-  group_by(treatment, year, plot) %&gt;%
-  summarize(val = sum(cl_shrub + cl_herb))
+<p>UPDATE: After getting updated understory data, with sword fern
+separated out, we can show changes in percent shrub cover separately.
+This graph tells a similar story as the figure above showing dominant
+species change over time because the circles in that figure indicate
+total percent shrub cover. This figure synthesizes that trend and makes
+it more explicit. It displays emmeans of modeled percent cover with
+<code>treatment:year</code> interaction, and random intercept for
+<code>plot</code>.</p>
+<p>Error bars represent 1 SE of emmean.</p>
+<pre class="r"><code>shrub_cover_percent &lt;- veg_cover |&gt;
+  rename(val = cl_shrub)
 
-comb_veg_cover_mean &lt;- var_mean(cover_veg_plot)
-  
-var_table(comb_veg_cover_mean, caption = &quot;Average understory species counts&quot;)</code></pre>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
-<caption>
-Average understory species counts
-</caption>
-<thead>
-<tr>
-<th style="text-align:left;">
-treatment
-</th>
-<th style="text-align:left;">
-year
-</th>
-<th style="text-align:right;">
-emmean
-</th>
-<th style="text-align:right;">
-SE
-</th>
-<th style="text-align:right;">
-df
-</th>
-<th style="text-align:right;">
-lower.CL
-</th>
-<th style="text-align:right;">
-upper.CL
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-5.00
-</td>
-<td style="text-align:right;">
-9.96
-</td>
-<td style="text-align:right;">
-31.54
-</td>
-<td style="text-align:right;">
--15.30
-</td>
-<td style="text-align:right;">
-25.30
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-11.25
-</td>
-<td style="text-align:right;">
-9.96
-</td>
-<td style="text-align:right;">
-31.54
-</td>
-<td style="text-align:right;">
--9.05
-</td>
-<td style="text-align:right;">
-31.55
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-C
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-40.62
-</td>
-<td style="text-align:right;">
-9.96
-</td>
-<td style="text-align:right;">
-31.54
-</td>
-<td style="text-align:right;">
-20.33
-</td>
-<td style="text-align:right;">
-60.92
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-08
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-11.25
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-9.96
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-31.54
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--9.05
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-31.55
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-58.75
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-9.96
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-31.54
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-38.45
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-79.05
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-H40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-82.50
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-9.96
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-31.54
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-62.20
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-102.80
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-5.00
-</td>
-<td style="text-align:right;">
-9.96
-</td>
-<td style="text-align:right;">
-31.54
-</td>
-<td style="text-align:right;">
--15.30
-</td>
-<td style="text-align:right;">
-25.30
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-20.00
-</td>
-<td style="text-align:right;">
-9.96
-</td>
-<td style="text-align:right;">
-31.54
-</td>
-<td style="text-align:right;">
--0.30
-</td>
-<td style="text-align:right;">
-40.30
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-H80
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-56.25
-</td>
-<td style="text-align:right;">
-9.96
-</td>
-<td style="text-align:right;">
-31.54
-</td>
-<td style="text-align:right;">
-35.95
-</td>
-<td style="text-align:right;">
-76.55
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-08
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-5.00
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-9.96
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-31.54
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
--15.30
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-25.30
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-13
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-44.38
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-9.96
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-31.54
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-24.08
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-64.67
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-L40
-</td>
-<td style="text-align:left;background-color: #EEE9E9 !important;">
-18
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-64.38
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-9.96
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-31.54
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-44.08
-</td>
-<td style="text-align:right;background-color: #EEE9E9 !important;">
-84.67
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:right;">
-8.13
-</td>
-<td style="text-align:right;">
-9.96
-</td>
-<td style="text-align:right;">
-31.54
-</td>
-<td style="text-align:right;">
--12.17
-</td>
-<td style="text-align:right;">
-28.42
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:right;">
-8.12
-</td>
-<td style="text-align:right;">
-9.96
-</td>
-<td style="text-align:right;">
-31.54
-</td>
-<td style="text-align:right;">
--12.17
-</td>
-<td style="text-align:right;">
-28.42
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-L80
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:right;">
-38.13
-</td>
-<td style="text-align:right;">
-9.96
-</td>
-<td style="text-align:right;">
-31.54
-</td>
-<td style="text-align:right;">
-17.83
-</td>
-<td style="text-align:right;">
-58.42
-</td>
-</tr>
-</tbody>
-</table>
-<pre class="r"><code>var_fig(comb_veg_cover_mean)</code></pre>
+mod &lt;- lmer(val ~ treatment * year + (1 | plot), data = shrub_cover_percent)
+summary(mod)</code></pre>
+<pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
+## Formula: val ~ treatment * year + (1 | plot)
+##    Data: shrub_cover_percent
+## 
+## REML criterion at convergence: 363.1
+## 
+## Scaled residuals: 
+##      Min       1Q   Median       3Q      Max 
+## -1.28996 -0.42636  0.01733  0.21956  2.13274 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  plot     (Intercept) 34.55    5.878   
+##  Residual             91.60    9.571   
+## Number of obs: 60, groups:  plot, 20
+## 
+## Fixed effects:
+##                       Estimate Std. Error t value
+## (Intercept)          2.500e+00  5.616e+00   0.445
+## treatmentH40        -4.510e-14  7.942e+00   0.000
+## treatmentH80        -3.214e-14  7.942e+00   0.000
+## treatmentL40        -3.486e-14  7.942e+00   0.000
+## treatmentL80        -3.538e-14  7.942e+00   0.000
+## year13              -4.184e-14  6.767e+00   0.000
+## year18               1.187e+01  6.767e+00   1.755
+## treatmentH40:year13  3.000e+01  9.571e+00   3.135
+## treatmentH80:year13  3.125e+00  9.571e+00   0.327
+## treatmentL40:year13  1.250e+01  9.571e+00   1.306
+## treatmentL80:year13  4.461e-14  9.571e+00   0.000
+## treatmentH40:year18  4.188e+01  9.571e+00   4.375
+## treatmentH80:year18  6.250e+00  9.571e+00   0.653
+## treatmentL40:year18  2.938e+01  9.571e+00   3.069
+## treatmentL80:year18  3.125e+00  9.571e+00   0.327</code></pre>
+<pre class="r"><code>shrub_cover_mean &lt;- var_mean(shrub_cover_percent)
+
+my_dodge &lt;- position_dodge(0.5)
+shrub_cover_mean |&gt;
+  relevel_treatment() |&gt;
+  ggplot(aes(year, emmean, group = treatment)) +
+    geom_line(aes(linetype = treatment), position = my_dodge) +
+    geom_point(aes(shape = treatment), position = my_dodge) +
+    geom_errorbar(
+      aes(ymin = emmean - SE, ymax = emmean + SE),
+      width = .4,
+      position = my_dodge,
+      alpha = 0.4
+    ) +
+    theme_bw() +
+    theme(
+      legend.title = element_blank(),
+      legend.position = c(0.17, 0.78),
+      legend.background = element_blank(),
+    ) +
+    scale_linetype_manual(
+      values = c(
+        C40 = &quot;solid&quot;,
+        L40 = &quot;dashed&quot;,
+        C80 = &quot;solid&quot;,
+        L80 = &quot;dashed&quot;,
+        Control = &quot;dotted&quot;
+      )
+    ) +
+    scale_shape_manual(
+      values = c(
+        C40 = &quot;circle&quot;,
+        L40 = &quot;triangle&quot;,
+        C80 = &quot;circle open&quot;,
+        L80 = &quot;triangle open&quot;,
+        Control = &quot;asterisk&quot;
+      )
+    ) +
+    labs(y = &quot;Cover (%)&quot;, x = &quot;Year&quot;) +
+    scale_x_discrete(
+      labels = c(&quot;2008&quot;, &quot;2013&quot;, &quot;2018&quot;),
+      expand = expansion(mult = .2)
+    )</code></pre>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
-<p>And the final understory veg figure, this should fit in one
-column.</p>
+<p>This figure inlcudes percent cover and change in species
+richness.</p>
 <pre class="r"><code>veg &lt;- bind_rows(
-  `Cover (%)` = comb_veg_cover_mean,
+  `Shrub cover (%)` = shrub_cover_mean,
   `Richness (count)` = veg_richness_mean,
-  .id = &quot;metric&quot;)
+  .id = &quot;metric&quot;) |&gt;
+  mutate(
+    metric = factor(metric, levels = c(&quot;Shrub cover (%)&quot;, &quot;Richness (count)&quot;))
+  )
 
 my_dodge &lt;- position_dodge(0.5)
 
@@ -8534,17 +8239,17 @@ ggplot(aes(year, emmean, group = treatment)) +
     scale_x_discrete(expand = expansion(mult = .2))</code></pre>
 <p><img src="08_variability_files/figure-html/unnamed-chunk-23-1.png" width="336" /></p>
 <pre class="r"><code>ggsave(
-  filename = &quot;figs/veg_fig.pdf&quot;,
+  filename = &quot;figs/shrub_cover.pdf&quot;,
   device = cairo_pdf,
   width = 8.84,
-  height = 7,
+  height = 8,
   units = &quot;cm&quot;
 )
 
 ggsave(
-  filename = &quot;figs/veg_fig.jpg&quot;,
+  filename = &quot;figs/shrub_cover.jpg&quot;,
   width = 8.84,
-  height = 7,
+  height = 8,
   units = &quot;cm&quot;
 )</code></pre>
 </div>

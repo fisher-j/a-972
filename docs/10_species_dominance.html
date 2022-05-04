@@ -829,6 +829,47 @@ There, it was given as: <span class="math display">\[ U_i = \frac{1}{n}
 leaving aside the issue to ties, the average would have to be 0.5.</p>
 <p>Here I will calculate the species dominance metric separately for
 redwood and Douglas-fir components.</p>
+<pre class="r"><code>dd &lt;- d_l |&gt;
+  filter(
+    live,
+    year != &quot;init&quot;
+  )
+
+temp &lt;- dd |&gt; filter(paste(plot, year) %in% sample(paste(plot, year), 1)) 
+
+Ui_tree &lt;- function(focus_dbh, neighbors_dbh) {
+  mean(focus_dbh &gt; neighbors_dbh)
+}
+
+calc_Ui &lt;- function(x, y, dbh) {
+  trees &lt;- data.frame(x = x, y = y)
+  idx &lt;- nearest(trees, k = 1)
+  sapply( 1:nrow(trees), function(x) Ui_tree(dbh[x], dbh[ idx[[x]] ]) )
+}
+
+
+Ui_plot &lt;- dd |&gt;
+  group_by(treatment, year, spp, plot) |&gt;
+  summarize(val = mean(calc_Ui(x, y, dbh))) |&gt;
+  filter(spp %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;))
+
+lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot) |&gt;
+  emmeans( ~ treatment + year + spp) |&gt; as.data.frame() |&gt;
+  relevel_treatment() |&gt;
+  mutate(
+    spp = factor(spp, levels = c(&quot;SESE3&quot;, &quot;PSMEM&quot;))
+  ) |&gt;
+  ggplot(aes(year, emmean, color = spp, group = spp)) +
+      geom_line(size = 1, position = my_dodge) +
+      geom_point(position = my_dodge) +
+      geom_errorbar(
+        aes(ymin = emmean - SE, ymax = emmean + SE),
+        width = .75,
+        position = my_dodge
+      ) +
+      theme_bw() +
+      facet_wrap( ~ treatment)      </code></pre>
+<p><img src="10_species_dominance_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-motzSamplingMeasuresTree2010" class="csl-entry">
 Motz, K., H. Sterba, and A. Pommerening. 2010. <span>“Sampling Measures

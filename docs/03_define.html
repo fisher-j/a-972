@@ -321,6 +321,7 @@ SCI</a></li>
 Shannon-Weaver Index</a></li>
 <li><a href="#mean-directional-index">Mean directional index</a></li>
 <li><a href="#dbh-differentiation-td">DBH differentiation (TD)</a></li>
+<li><a href="#hui-species-dominance">Hui species dominance</a></li>
 </ul></li>
 <li><a href="#calculate-plot-sdi">Calculate plot SDI</a></li>
 <li><a href="#standardize-crown-ratio">Standardize crown ratio</a>
@@ -506,11 +507,14 @@ remove coincident points here as they won’t affect the calculation, and
 I am assuming two trees that share a location are indeed closest
 neighbors.</p>
 <pre class="r"><code>calc_TD &lt;- function(x, y, dbh) {
-  DF &lt;- data.frame(x, y)
+  DF &lt;- data.frame(x = x, y = y)
   idx &lt;- as.numeric(nearest(DF, k = 1)[1, ])
   DBH_ij &lt;- matrix(c(dbh, dbh[idx]), ncol = 2)
   apply(DBH_ij, 1, function(x) 1 - min(x) / max(x))
 }</code></pre>
+</div>
+<div id="hui-species-dominance" class="section level2">
+<h2>Hui species dominance</h2>
 </div>
 </div>
 <div id="calculate-plot-sdi" class="section level1">

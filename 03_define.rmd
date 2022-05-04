@@ -186,11 +186,17 @@ Here i'll define the single neighbor version of the TD, this may help to reduce 
 ```{r}
 
 calc_TD <- function(x, y, dbh) {
-  DF <- data.frame(x, y)
+  DF <- data.frame(x = x, y = y)
   idx <- as.numeric(nearest(DF, k = 1)[1, ])
   DBH_ij <- matrix(c(dbh, dbh[idx]), ncol = 2)
   apply(DBH_ij, 1, function(x) 1 - min(x) / max(x))
 }
+
+```
+
+## Hui species dominance
+
+```{r}
 
 ```
 

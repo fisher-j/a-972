@@ -235,3 +235,49 @@ $$ U_i = \frac{1}{n} \sum^{n}_{j=1} 1 (DBH_i > DBH_j) $$
 But they applied it to all trees, in which case, I assume that, leaving aside the issue to ties, the average would have to be 0.5.
 
 Here I will calculate the species dominance metric separately for redwood and Douglas-fir components.
+
+```{r}
+
+dd <- d_l |>
+  filter(
+    live,
+    year != "init"
+  )
+
+temp <- dd |> filter(paste(plot, year) %in% sample(paste(plot, year), 1)) 
+
+Ui_tree <- function(focus_dbh, neighbors_dbh) {
+  mean(focus_dbh > neighbors_dbh)
+}
+
+calc_Ui <- function(x, y, dbh) {
+  trees <- data.frame(x = x, y = y)
+  idx <- nearest(trees, k = 1)
+  sapply( 1:nrow(trees), function(x) Ui_tree(dbh[x], dbh[ idx[[x]] ]) )
+}
+
+
+Ui_plot <- dd |>
+  group_by(treatment, year, spp, plot) |>
+  summarize(val = mean(calc_Ui(x, y, dbh))) |>
+  filter(spp %in% c("PSMEM", "SESE3"))
+
+lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot) |>
+  emmeans( ~ treatment + year + spp) |> as.data.frame() |>
+  relevel_treatment() |>
+  mutate(
+    spp = factor(spp, levels = c("SESE3", "PSMEM"))
+  ) |>
+  ggplot(aes(year, emmean, color = spp, group = spp)) +
+      geom_line(size = 1, position = my_dodge) +
+      geom_point(position = my_dodge) +
+      geom_errorbar(
+        aes(ymin = emmean - SE, ymax = emmean + SE),
+        width = .75,
+        position = my_dodge
+      ) +
+      theme_bw() +
+      facet_wrap( ~ treatment)      
+
+
+```
