@@ -252,7 +252,7 @@ Ui_tree <- function(focus_dbh, neighbors_dbh) {
 
 calc_Ui <- function(x, y, dbh) {
   trees <- data.frame(x = x, y = y)
-  idx <- nearest(trees, k = 1)
+  idx <- nearest(trees, k = 4)
   sapply( 1:nrow(trees), function(x) Ui_tree(dbh[x], dbh[ idx[[x]] ]) )
 }
 
