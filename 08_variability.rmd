@@ -45,22 +45,18 @@ Here is the graphing function and emmeans generating function I'll use for visua
 my_dodge <- position_dodge(0.4)
 
 var_fig <- function(data) {
-  # yr_breaks <- c(2008, 2013, 2018)
   data %>%
     filter(year != "init") %>%
     relevel_treatment() %>%
-    # mutate(year = fix_year(year)) %>%
     ggplot(aes(year, emmean, color = treatment, group = treatment)) +
       geom_line(size = 1, position = my_dodge) +
       geom_point(position = my_dodge) +
-    # geom_ribbon(aes(ymin = sh_n_ci_lb, ymax = sh_n_ci_ub, fill = treatment), alpha = 0.2, color = NA) +
       geom_errorbar(
         aes(ymin = emmean - SE, ymax = emmean + SE),
         width = .75,
         position = my_dodge
       ) +
       theme_bw() +
-      # scale_x_continuous(breaks = yr_breaks) +
       labs(y = NULL, x = "Year")
 }
 
@@ -86,7 +82,7 @@ var_table <- function(mean_data, caption) {
 
 # Structural complexity index
 
-SCI [@zennerNewMethodModeling2000] measures the spatial variability in a given tree attribute such as DBH or height. It is driven by differences between neighboring trees. We can calculate SCI based on residual trees only, or include ingrowth. The latter would be expected to increase the SCI, but it is unclear wether or not this kind of structural diversity is of significant importance.
+SCI [@zennerNewMethodModeling2000] measures the spatial variability in a given tree attribute such as DBH or height. It is driven by differences between neighboring trees. We can calculate SCI based on residual trees only, or include ingrowth. The latter would be expected to increase the SCI, but it is unclear whether or not this kind of structural diversity is of significant importance.
 
 It is important to keep in mind that SCI, for our study, refers to heterogeneity on the within-patch scale: at the .08 ha scale. Larger plots would be needed if we are to characterize structural variability at greater scales.
 
@@ -268,6 +264,14 @@ data.frame(formula = fl) |> kbl2(row.names = TRUE)
 
 sjPlot::tab_model(m1, m2, m3, show.aic = TRUE, dv.labels = 1:3)
 
+m2mean <- emmeans(m2, ~ treatment + year) |> as.data.frame()
+m1mean <- emmeans(m1, ~ treatment + year) |> as.data.frame()
+
+bind_rows(m1 = m1mean, m2 = m2mean, .id = "mod") |>
+  var_fig() +
+  facet_wrap(~ mod) +
+  labs(title = "Compare m1 and m2 (w/o & w DFp) for CVdbh")
+
 ```
 
 ## Height
@@ -439,6 +443,8 @@ veg_cover %>%
 
 ```
 
+## Dominant understory species change
+
 What is interesting here is that the high intensity thinnings lead consistently to heavy salmon berry shrub cover and the rest lead to heavy sword fern cover. Evergreen violet seems to be the most common herb following all treatments (except control) but the H40 and L40 appear to be more consistent/homogenous across plots.
 
 ```{r}
@@ -555,20 +561,6 @@ veg_cover %>%
       y = "Cover (%)"
     )
 
-ggsave(
-  filename = "figs/shrub_fig.pdf",
-  device = cairo_pdf,
-  width = 8.84,
-  height = 9,
-  units = "cm"
-)
-
-ggsave(
-  filename = "figs/shrub_fig.jpg",
-  width = 8.84,
-  height = 9,
-  units = "cm"
-)
 ```
 
 It would have been nice to show the same information for herb species, but unfortunately, the fact that sword fern is a significant component and it was recorded inconsistently, makes interpretation of this (and much of the understory data) very difficult.
@@ -588,28 +580,76 @@ veg_cover %>%
 
 # Final Veg Figure
 
-We decided on one combined figure with graphs for total veg cover (shrub and herb combined) and trends in species richness. Richness was calculated above, here is total combined veg cover.
+UPDATE: After getting updated understory data, with sword fern separated out, we can show changes in percent shrub cover separately. This graph tells a similar story as the figure above showing dominant species change over time because the circles in that figure indicate total percent shrub cover. This figure synthesizes that trend and makes it more explicit. It displays emmeans of modeled percent cover with `treatment:year` interaction, and random intercept for `plot`.
+
+Error bars represent 1 SE of emmean.
 
 ```{r}
-# change in total combined percent cover of shrub and herb
-cover_veg_plot <- veg_cover %>%
-  group_by(treatment, year, plot) %>%
-  summarize(val = sum(cl_shrub + cl_herb))
 
-comb_veg_cover_mean <- var_mean(cover_veg_plot)
-  
-var_table(comb_veg_cover_mean, caption = "Average understory species counts")
+shrub_cover_percent <- veg_cover |>
+  rename(val = cl_shrub)
 
-var_fig(comb_veg_cover_mean)
+mod <- lmer(val ~ treatment * year + (1 | plot), data = shrub_cover_percent)
+summary(mod)
+
+shrub_cover_mean <- var_mean(shrub_cover_percent)
+
+my_dodge <- position_dodge(0.5)
+shrub_cover_mean |>
+  relevel_treatment() |>
+  ggplot(aes(year, emmean, group = treatment)) +
+    geom_line(aes(linetype = treatment), position = my_dodge) +
+    geom_point(aes(shape = treatment), position = my_dodge) +
+    geom_errorbar(
+      aes(ymin = emmean - SE, ymax = emmean + SE),
+      width = .4,
+      position = my_dodge,
+      alpha = 0.4
+    ) +
+    theme_bw() +
+    theme(
+      legend.title = element_blank(),
+      legend.position = c(0.17, 0.78),
+      legend.background = element_blank(),
+    ) +
+    scale_linetype_manual(
+      values = c(
+        C40 = "solid",
+        L40 = "dashed",
+        C80 = "solid",
+        L80 = "dashed",
+        Control = "dotted"
+      )
+    ) +
+    scale_shape_manual(
+      values = c(
+        C40 = "circle",
+        L40 = "triangle",
+        C80 = "circle open",
+        L80 = "triangle open",
+        Control = "asterisk"
+      )
+    ) +
+    labs(y = "Cover (%)", x = "Year") +
+    scale_x_discrete(
+      labels = c("2008", "2013", "2018"),
+      expand = expansion(mult = .2)
+    )
+
+
 ```
 
-And the final understory veg figure, this should fit in one column.
 
-```{r, fig.width=3.5, fig.height=7.1}
+This figure inlcudes percent cover and change in species richness.
+
+```{r, fig.width=3.5, fig.height=4}
 veg <- bind_rows(
-  `Cover (%)` = comb_veg_cover_mean,
+  `Shrub cover (%)` = shrub_cover_mean,
   `Richness (count)` = veg_richness_mean,
-  .id = "metric")
+  .id = "metric") |>
+  mutate(
+    metric = factor(metric, levels = c("Shrub cover (%)", "Richness (count)"))
+  )
 
 my_dodge <- position_dodge(0.5)
 
@@ -665,17 +705,17 @@ ggplot(aes(year, emmean, group = treatment)) +
     scale_x_discrete(expand = expansion(mult = .2))
 
 ggsave(
-  filename = "figs/veg_fig.pdf",
+  filename = "figs/shrub_cover.pdf",
   device = cairo_pdf,
   width = 8.84,
-  height = 7,
+  height = 8,
   units = "cm"
 )
 
 ggsave(
-  filename = "figs/veg_fig.jpg",
+  filename = "figs/shrub_cover.jpg",
   width = 8.84,
-  height = 7,
+  height = 8,
   units = "cm"
 )
 ```
