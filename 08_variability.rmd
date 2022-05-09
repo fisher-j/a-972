@@ -196,9 +196,10 @@ var_table(sh_mean_ba, caption = "Basal area based average Shannon-Weaver index")
 
 ```
 
+
 # Mean DBH (DBHm)
 
-Another metric we were going to look at is DBHm, I had previously presented this as a boxplot of trees aggregated at the treatment level. This is different than all of our other analysys which base inference off of plot-level averages, or otherwise control for the variance between plots. Here I'll look at mean dbh following the same analysis format used for the other structural variables.
+Another metric we were going to look at is DBHm, I had previously presented this as a boxplot of trees aggregated at the treatment level. This is different than all of our other analysis which base inference off of plot-level averages, or otherwise control for the variance between plots. Here I'll look at mean dbh following the same analysis format used for the other structural variables.
 
 ```{r}
 
@@ -308,13 +309,13 @@ structural_all <- bind_rows(
   SCI = sci_mean,
   MDI = mdi_mean,
   TD = TD_mean,
-  SH = sh_mean,
+  DBHcv = CVdbh_mean,
   DBHsd = dbhsd_mean,
   `SDI*/SDI` = ducey_mean,
   .id = "metric"
 ) %>%
   mutate(metric = factor(metric,
-    levels = c("SDI*/SDI", "DBHsd", "SH", "SCI", "MDI", "TD")
+    levels = c("SDI*/SDI", "DBHsd", "DBHcv", "SCI", "MDI", "TD")
   ))
 ```
 
@@ -582,7 +583,7 @@ veg_cover %>%
 
 UPDATE: After getting updated understory data, with sword fern separated out, we can show changes in percent shrub cover separately. This graph tells a similar story as the figure above showing dominant species change over time because the circles in that figure indicate total percent shrub cover. This figure synthesizes that trend and makes it more explicit. It displays emmeans of modeled percent cover with `treatment:year` interaction, and random intercept for `plot`.
 
-Error bars represent 1 SE of emmean.
+Error bars represent 1 SE of emmean. This figure includes only shrub cover.
 
 ```{r}
 
