@@ -829,30 +829,47 @@ There, it was given as: <span class="math display">\[ U_i = \frac{1}{n}
 leaving aside the issue to ties, the average would have to be 0.5.</p>
 <p>Here I will calculate the species dominance metric separately for
 redwood and Douglas-fir components.</p>
-<pre class="r"><code>dd &lt;- d_l |&gt;
+<p>A stand composed of a single species should have an average Ui of
+0.5</p>
+<p>A species with more shade tolerance might have a lower Ui, because
+there are more trees in the understory, brining down average Ui.</p>
+<p>Ui for redwood decreases in the control. This would suggest that the
+number of trees of other species out-competing (by diameter growth)
+redwoods is increasing, assuming the 4 nearest trees are in competition
+with any given tree. Because this metric is expressed as an average, it
+doesn’t account for the density of the species.</p>
+<pre class="r"><code># Use live trees
+dd &lt;- d_l |&gt;
   filter(
     live,
     year != &quot;init&quot;
-  )
+  ) |&gt;
+  mutate(year = factor(year, ordered = FALSE)) |&gt;
+  droplevels()
 
-temp &lt;- dd |&gt; filter(paste(plot, year) %in% sample(paste(plot, year), 1)) 
-
-Ui_tree &lt;- function(focus_dbh, neighbors_dbh) {
+# calculate Ui for one observation, given observation number, dbh list and neighbors list
+Ui_tree &lt;- function(x, dbh, k_indices) {
+  focus_dbh &lt;- dbh[x]
+  neighbors_dbh &lt;- dbh[ k_indices[[x]] ]
   mean(focus_dbh &gt; neighbors_dbh)
 }
 
+# Ui for all observations
 calc_Ui &lt;- function(x, y, dbh) {
-  trees &lt;- data.frame(x = x, y = y)
-  idx &lt;- nearest(trees, k = 4)
-  sapply( 1:nrow(trees), function(x) Ui_tree(dbh[x], dbh[ idx[[x]] ]) )
+  xy &lt;- data.frame(x = x, y = y)
+  k_indices &lt;- nearest(xy, k = 4)
+  sapply( 1:nrow(xy), Ui_tree, dbh, k_indices)
 }
 
 
 Ui_plot &lt;- dd |&gt;
-  group_by(treatment, year, spp, plot) |&gt;
-  summarize(val = mean(calc_Ui(x, y, dbh))) |&gt;
+  group_by(treatment, year, plot) |&gt;
+  mutate(val = calc_Ui(x, y, dbh)) |&gt;
+  group_by(treatment, year, plot, spp) |&gt;
+  summarize(val = mean(val)) |&gt;
   filter(spp %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;))
 
+  
 lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot) |&gt;
   emmeans( ~ treatment + year + spp) |&gt; as.data.frame() |&gt;
   relevel_treatment() |&gt;
@@ -868,8 +885,647 @@ lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot) |&gt;
         position = my_dodge
       ) +
       theme_bw() +
-      facet_wrap( ~ treatment)      </code></pre>
+      facet_wrap( ~ treatment)     </code></pre>
 <p><img src="10_species_dominance_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>First, I’ll show the average number of trees and standard deviation
+of each species in the top 100 TPH.</p>
+<pre class="r"><code>dd |&gt;
+  group_by(treatment, year, plot) |&gt;
+  slice_max(n = 8, order_by = dbh, with_ties = TRUE) |&gt;
+  group_by(treatment, year, spp) |&gt;
+  count(plot) |&gt;
+  summarize(avg_cnt = mean(n), sd = sd(n)) |&gt;
+  filter(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;)) |&gt;
+  color_groups(digits = 2, caption = &quot;Average count and sd of number of DF or RW trees in the to 100 TPH per treatment/year&quot;)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+Average count and sd of number of DF or RW trees in the to 100 TPH per
+treatment/year
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+treatment
+</th>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:left;">
+spp
+</th>
+<th style="text-align:right;">
+avg_cnt
+</th>
+<th style="text-align:right;">
+sd
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+3.75
+</td>
+<td style="text-align:right;">
+1.71
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+3.75
+</td>
+<td style="text-align:right;">
+2.06
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.75
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.71
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.75
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.06
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+3.50
+</td>
+<td style="text-align:right;">
+1.91
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+4.00
+</td>
+<td style="text-align:right;">
+2.45
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.00
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.73
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.75
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.75
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+3.67
+</td>
+<td style="text-align:right;">
+2.31
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+5.25
+</td>
+<td style="text-align:right;">
+3.30
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.67
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.31
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5.00
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.94
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+3.67
+</td>
+<td style="text-align:right;">
+1.53
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+3.75
+</td>
+<td style="text-align:right;">
+2.36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.67
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.53
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.00
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.83
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+3.33
+</td>
+<td style="text-align:right;">
+1.15
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+3.75
+</td>
+<td style="text-align:right;">
+2.36
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5.75
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.87
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.67
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.53
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+6.25
+</td>
+<td style="text-align:right;">
+2.06
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+2.00
+</td>
+<td style="text-align:right;">
+1.41
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+6.25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.06
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.00
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.41
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+4.50
+</td>
+<td style="text-align:right;">
+2.65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+3.25
+</td>
+<td style="text-align:right;">
+2.87
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.75
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.22
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.22
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+4.00
+</td>
+<td style="text-align:right;">
+2.16
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+3.75
+</td>
+<td style="text-align:right;">
+1.71
+</td>
+</tr>
+</tbody>
+</table>
+<p>Here I plot the average Ui of RW or DF trees that are in the top 100
+TPH.</p>
+<pre class="r"><code>Ui_plot2 &lt;- dd |&gt;
+  group_by(treatment, year, plot) |&gt;
+  mutate(val = calc_Ui(x, y, dbh)) |&gt;
+  slice_max(n = 8, order_by = dbh, with_ties = TRUE) |&gt;
+  group_by(treatment, year, plot, spp) |&gt;
+  summarize(val = mean(val)) |&gt;
+  filter(spp %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;))
+
+  
+Ui_mod2 &lt;- lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot2)
+
+emmeans(Ui_mod2, pairwise ~ spp | treatment + year)$contrasts</code></pre>
+<pre><code>## treatment = C, year = 08:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3  0.01562 0.0549 64.2   0.285  0.7768
+## 
+## treatment = H40, year = 08:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3  0.05269 0.0601 66.6   0.877  0.3837
+## 
+## treatment = H80, year = 08:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3 -0.00672 0.0601 66.6  -0.112  0.9112
+## 
+## treatment = L40, year = 08:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3 -0.09803 0.0601 66.6  -1.631  0.1075
+## 
+## treatment = L80, year = 08:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3  0.04539 0.0549 64.2   0.827  0.4113
+## 
+## treatment = C, year = 13:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3  0.01562 0.0549 64.2   0.285  0.7768
+## 
+## treatment = H40, year = 13:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3  0.14892 0.0601 66.6   2.478  0.0157
+## 
+## treatment = H80, year = 13:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3 -0.04058 0.0601 66.6  -0.675  0.5018
+## 
+## treatment = L40, year = 13:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3 -0.15194 0.0692 68.7  -2.197  0.0314
+## 
+## treatment = L80, year = 13:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3  0.07827 0.0549 64.2   1.426  0.1587
+## 
+## treatment = C, year = 18:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3  0.13021 0.0549 64.2   2.372  0.0207
+## 
+## treatment = H40, year = 18:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3  0.15255 0.0601 66.6   2.539  0.0135
+## 
+## treatment = H80, year = 18:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3 -0.05033 0.0601 66.6  -0.837  0.4053
+## 
+## treatment = L40, year = 18:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3 -0.13371 0.0692 68.7  -1.934  0.0573
+## 
+## treatment = L80, year = 18:
+##  contrast      estimate     SE   df t.ratio p.value
+##  PSMEM - SESE3  0.02500 0.0549 64.2   0.456  0.6503
+## 
+## Degrees-of-freedom method: kenward-roger</code></pre>
+<pre class="r"><code>emmeans(Ui_mod2, ~ treatment + year + spp) |&gt; 
+  as.data.frame() |&gt;
+  relevel_treatment() |&gt;
+  mutate(
+    spp = factor(spp, levels = c(&quot;SESE3&quot;, &quot;PSMEM&quot;))
+  ) |&gt;
+  ggplot(aes(year, emmean, color = spp, group = spp)) +
+      geom_line(size = 1, position = my_dodge) +
+      geom_point(position = my_dodge) +
+      geom_errorbar(
+        aes(ymin = emmean - SE, ymax = emmean + SE),
+        width = .75,
+        position = my_dodge
+      ) +
+      theme_bw() +
+      facet_wrap( ~ treatment)      </code></pre>
+<p><img src="10_species_dominance_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-motzSamplingMeasuresTree2010" class="csl-entry">
 Motz, K., H. Sterba, and A. Pommerening. 2010. <span>“Sampling Measures

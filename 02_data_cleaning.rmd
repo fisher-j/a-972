@@ -561,3 +561,39 @@ p_h %>%
   select(-c(azi, h_dist, treatment)) %>%
   color_groups()
 ```
+
+## Damage codes
+
+Manual damage code from notes
+
+```{r}
+
+d_l[d_l$tree_id == "C3.4444" & d_l$year %in% c("init", "08"), "cond"] <- "31"
+d_l[d_l$tree_id == "C3.4444" & d_l$year %in% c("13"), "cond"] <- "18,31"
+
+badrow <- with(d_l, tree_id == "2H40.3064" & year %in% c("13", "18"))
+oldval <- d_l$cond[badrow]
+newval <- paste0(oldval, ",31")
+d_l$cond[badrow] <- newval
+
+```
+
+Trees with status code 30, 31, 32 but no condition code: ensure condition code reflects status code as well.
+look for condition 33
+
+```{r}
+options(vsc.viewer = FALSE)
+
+d_l |>
+  group_by(tree_id) |>
+  filter(any(status %in% c(30, 31, 32) & !get_cond(30, 31, 32))) |>
+  color_groups()
+
+d_l <- d_l |>
+  mutate(cond = case_when(
+    status %in% c(30, 31, 32) & !get_cond(30, 31, 32) & cond == "" ~ as.character(status),
+    status %in% c(30, 31, 32) & !get_cond(30, 31, 32) & cond != "" ~ paste0(cond, ",", status),
+    TRUE ~ cond
+  ))
+
+```

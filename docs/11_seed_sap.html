@@ -352,23 +352,101 @@ anti_join(ing, ssd1)</code></pre>
     size_class = factor(
       size_class,
       levels = c(&quot;seedling&quot;, &quot;cls_1&quot;, &quot;cls_2&quot;, &quot;cls_3&quot;, &quot;ingrowth&quot;),
-      labels = c(&quot;seedling&quot;, &quot;[0, 3.8)&quot;, &quot;[3.8, 6.4)&quot;, &quot;[6.4, 10.2)&quot;, &quot;ingrowth&quot;)
+      labels = c(&quot;&lt;0&quot;, &quot;0-3.8&quot;, &quot;3.8-6.4&quot;, &quot;6.4-10.2&quot;, &quot;Ingrowth&quot;)
     )
   )</code></pre>
 </div>
 <div id="size-class-distribution-by-species" class="section level1">
 <h1>Size class distribution by species</h1>
-<pre class="r"><code>ssd |&gt;
+<pre class="r"><code># To control the order of each stacked bar, create each bar separately from a 
+# subset of the data, order the common factor in each bar separately with &quot;reorder&quot;
+
+library(ggpattern)
+
+my_patterns &lt;- c(
+  ALRU2 = &quot;crosshatch&quot;,
+  CONF = &quot;none&quot;,
+  PISI = &quot;stripe&quot;,
+  PSMEM = &quot;wave&quot;,
+  SESE3 = &quot;stripe&quot;,
+  TSHE = &quot;stripe&quot;
+)
+
+my_angles &lt;- c(
+  ALRU2 = 30,
+  CONF = 30,
+  PISI = 30,
+  PSMEM = 30,
+  SESE3 = -30,
+  TSHE = 90
+)
+
+my_labels &lt;- c(
+  ALRU2 = &quot;red alder&quot;,
+  CONF = &quot;conifer&quot;,
+  PISI = &quot;Sitka spruce&quot;,
+  PSMEM = &quot;Douglas-fir&quot;,
+  SESE3 = &quot;redwood&quot;,
+  TSHE = &quot;western hemlock&quot;
+)
+
+ssdd &lt;- ssd |&gt;
+  filter(count &gt; 0) |&gt;
   group_by(treatment, spp, size_class) |&gt;
   summarise(count = sum(count) * 3.125) |&gt;
-  ggplot(aes(size_class, count, fill = spp)) +
-    geom_col() +
-    facet_wrap(~ treatment) +
-    theme(
-      legend.position = c(.84, .22)
-    ) +
-    labs(x = &quot;Size class (cm)&quot;, y = expression(stems %.% ha^-1))</code></pre>
+  relevel_treatment() |&gt;
+  arrange(-count)
+
+unique_cases &lt;- unique(paste(ssdd$treatment, ssdd$size_class))
+
+bars &lt;- map(
+  unique_cases, 
+  ~geom_col_pattern(
+    data = filter(ssdd, paste(treatment, size_class) == .x),
+    aes(pattern_angle = reorder(spp, count), pattern = reorder(spp, count)),
+    colour = &quot;black&quot;,
+    fill = &quot;gray80&quot;,
+    pattern_density = 0.09,
+    pattern_spacing = 0.05,
+    pattern_key_scale_factor = .32
+  )
+)
+
+ggplot(mapping = aes(size_class, count)) +
+  bars +
+  facet_wrap(~ treatment, nrow = 1) +
+  theme_bw() +
+  theme(
+    legend.position = c(.907, .79),
+    legend.background = element_blank(),
+    legend.key.size = unit(4, &quot;mm&quot;),
+    legend.key = element_rect(size = .8, color = &quot;black&quot;)
+  ) +
+  labs(
+    x = &quot;DBH size class (cm)&quot;,
+    y = expression(Stems ~ ha^-1),
+    pattern = NULL,
+    pattern_angle = NULL
+  ) + 
+  guides(x = guide_axis(angle = -60)) +
+  scale_pattern_manual(values = my_patterns, labels = my_labels) +
+  scale_pattern_angle_manual(values = my_angles, labels = my_labels) +
+  scale_y_continuous(expand = c(0, 0, .05, 0))</code></pre>
 <p><img src="11_seed_sap_files/figure-html/unnamed-chunk-3-1.png" width="960" /></p>
+<pre class="r"><code>ggsave(
+  filename = &quot;figs/regen.pdf&quot;,
+  device = cairo_pdf,
+  width = 18.2,
+  height = 9,
+  units = &quot;cm&quot;
+)
+
+ggsave(
+  filename = &quot;figs/regen.jpg&quot;,
+  width = 18.2,
+  height = 9,
+  units = &quot;cm&quot;
+)</code></pre>
 </div>
 
 

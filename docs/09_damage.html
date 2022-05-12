@@ -336,11 +336,18 @@ $(document).ready(function () {
 <ul>
 <li><a href="#data-cleaning">data cleaning</a></li>
 <li><a href="#summary">Summary</a></li>
+</ul></li>
+<li><a href="#the-problem-with-the-bear-bars">The problem with the bear
+bars</a>
+<ul>
+<li><a href="#bear-bar-figure-for-publication">Bear bar figure for
+publication</a></li>
 <li><a href="#modeling">Modeling</a></li>
 <li><a href="#logistic-regression">Logistic regression</a></li>
 <li><a href="#emmeans-interpreting-model">Emmeans: interpreting
 model</a></li>
-<li><a href="#cumulative-bear-damage">Cumulative bear damage</a></li>
+<li><a href="#compare-model-predictions-to-observed">Compare model
+predictions to observed</a></li>
 <li><a href="#model-validation">Model validation</a></li>
 </ul></li>
 <li><a href="#wind-damage-and-breakage">Wind damage and
@@ -354,11 +361,17 @@ library(performance)</code></pre>
 <h1>Bear damage</h1>
 <div id="data-cleaning" class="section level2">
 <h2>data cleaning</h2>
-<p>I’ll only consider live trees.</p>
+<p>I previously only looked at live trees, this underestimates damage
+because observations are ommited from counts of cumulative damage. I’m
+leaving dead, bear damaged trees in now, so they are properly counted. I
+will still omit dead trees that were not bear damaged because these are
+not contributing to overall density. If a tree died without bear damage,
+it gets removed from data but if a tree dies from stem snap or
+windthrow, but had bear damage, I include it.</p>
 <pre class="r"><code>bd &lt;- d_l %&gt;%
-  filter(live) %&gt;%
+  filter(live | !live &amp; bear) %&gt;%
   mutate(year = factor(year, ordered = FALSE)) %&gt;%
-  select(-c(h_dist, azi, x, y, cc, live, ht))</code></pre>
+  select(-c(h_dist, azi, x, y))</code></pre>
 <p>There are trees with “healed over” in the notes, most of these are in
 2008. It makes sense if these trees are subsequently listed as not bear
 damaged.</p>
@@ -383,7 +396,7 @@ incidence of bear damage.</p>
 <p>Are there trees that are recorded as bear damaged in one period and
 then not in the next period? Put another way, are bear damaged trees
 dropped from the list for one reason or another?</p>
-<p>There are 64 trees that are dropped (all in 2013), of these, 14 are
+<p>There are 61 trees that are dropped (all in 2013), of these, 14 are
 subsequently listed as damaged (all in 2018). As stated above, I will
 consider these valid occurrences of new damage.</p>
 <pre class="r"><code>bear_dropped &lt;- bd %&gt;%
@@ -399,11 +412,4543 @@ consider these valid occurrences of new damage.</p>
 
 # color_groups(bear_dropped)
 
-# # trees that are re-attacked
-# bear_dropped %&gt;%
-#   filter(any(bear &amp; !lag(bear))) %&gt;%
-#   mutate(id = cur_group_id(), .before = 1) %&gt;%
-#   color_groups()</code></pre>
+# trees that are re-attacked
+bear_dropped %&gt;%
+  filter(any(bear &amp; !lag(bear))) %&gt;%
+  mutate(id = cur_group_id(), .before = 1) %&gt;%
+  color_groups()</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+</caption>
+<thead>
+<tr>
+<th style="text-align:right;">
+id
+</th>
+<th style="text-align:left;">
+plot
+</th>
+<th style="text-align:left;">
+treatment
+</th>
+<th style="text-align:left;">
+tree_id
+</th>
+<th style="text-align:left;">
+spp
+</th>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:right;">
+dbh
+</th>
+<th style="text-align:right;">
+ht
+</th>
+<th style="text-align:right;">
+cr
+</th>
+<th style="text-align:right;">
+status
+</th>
+<th style="text-align:left;">
+bear
+</th>
+<th style="text-align:left;">
+rot
+</th>
+<th style="text-align:left;">
+notes
+</th>
+<th style="text-align:right;">
+cc
+</th>
+<th style="text-align:left;">
+cond
+</th>
+<th style="text-align:left;">
+live
+</th>
+<th style="text-align:right;">
+ba
+</th>
+<th style="text-align:right;">
+d_inc2
+</th>
+<th style="text-align:right;">
+ht_inc2
+</th>
+<th style="text-align:right;">
+ba_inc2
+</th>
+<th style="text-align:right;">
+d_inc1
+</th>
+<th style="text-align:right;">
+ht_inc1
+</th>
+<th style="text-align:right;">
+ba_inc1
+</th>
+<th style="text-align:right;">
+sdi_plot
+</th>
+<th style="text-align:right;">
+ht_p
+</th>
+<th style="text-align:left;">
+bear_dropped
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3066
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+58.166
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+2657.225
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1706.229
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3066
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+58.166
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+2657.225
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1.016
+</td>
+<td style="text-align:right;">
+-0.183
+</td>
+<td style="text-align:right;">
+96.882
+</td>
+<td style="text-align:right;">
+710.770
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3066
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+63.246
+</td>
+<td style="text-align:right;">
+24.992
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+broken top (leader); connected at base with 3067
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+3,6
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+3141.637
+</td>
+<td style="text-align:right;">
+1.016
+</td>
+<td style="text-align:right;">
+-0.183
+</td>
+<td style="text-align:right;">
+96.882
+</td>
+<td style="text-align:right;">
+1.829
+</td>
+<td style="text-align:right;">
+0.731
+</td>
+<td style="text-align:right;">
+194.819
+</td>
+<td style="text-align:right;">
+804.925
+</td>
+<td style="text-align:right;">
+24.992
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3066
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+72.390
+</td>
+<td style="text-align:right;">
+28.650
+</td>
+<td style="text-align:right;">
+50
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+3,6,17
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+4115.731
+</td>
+<td style="text-align:right;">
+1.829
+</td>
+<td style="text-align:right;">
+0.731
+</td>
+<td style="text-align:right;">
+194.819
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+982.710
+</td>
+<td style="text-align:right;">
+28.650
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3067
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+44.830
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.516
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1578.437
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1706.229
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.516
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3067
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+44.830
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.516
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1578.437
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.838
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.183
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+61.799
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+710.770
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.516
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3067
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+49.022
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.431
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+connected at base with 3066
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1887.435
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.838
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.183
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+61.799
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.880
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.183
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+158.610
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+804.925
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.431
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3067
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+58.420
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.516
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+17
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2680.483
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.880
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.183
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+158.610
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+982.710
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.516
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3068
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+39.878
+</td>
+<td style="text-align:right;">
+27.126
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1248.983
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1706.229
+</td>
+<td style="text-align:right;">
+27.126
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3068
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+39.878
+</td>
+<td style="text-align:right;">
+27.126
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1248.983
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1.422
+</td>
+<td style="text-align:right;">
+0.305
+</td>
+<td style="text-align:right;">
+97.045
+</td>
+<td style="text-align:right;">
+710.770
+</td>
+<td style="text-align:right;">
+27.126
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3068
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+46.990
+</td>
+<td style="text-align:right;">
+28.650
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1734.206
+</td>
+<td style="text-align:right;">
+1.422
+</td>
+<td style="text-align:right;">
+0.305
+</td>
+<td style="text-align:right;">
+97.045
+</td>
+<td style="text-align:right;">
+1.676
+</td>
+<td style="text-align:right;">
+0.488
+</td>
+<td style="text-align:right;">
+134.774
+</td>
+<td style="text-align:right;">
+804.925
+</td>
+<td style="text-align:right;">
+28.650
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3068
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+55.372
+</td>
+<td style="text-align:right;">
+31.088
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+19
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+2408.077
+</td>
+<td style="text-align:right;">
+1.676
+</td>
+<td style="text-align:right;">
+0.488
+</td>
+<td style="text-align:right;">
+134.774
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+982.710
+</td>
+<td style="text-align:right;">
+31.088
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3070
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+36.322
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.907
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1036.166
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1706.229
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.907
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3070
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+36.322
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.907
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1036.166
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.473
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.366
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+92.575
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+710.770
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.907
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3070
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+43.688
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.735
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+bear damage healed over
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1499.043
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.473
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.366
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+92.575
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.727
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.036
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+130.244
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+804.925
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.735
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3070
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+52.324
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32.917
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+17
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2150.264
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.727
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.036
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+130.244
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+982.710
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32.917
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3080
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+44.958
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1587.464
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1706.229
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3080
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+44.958
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1587.464
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.508
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+36.888
+</td>
+<td style="text-align:right;">
+710.770
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3080
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+47.498
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1771.905
+</td>
+<td style="text-align:right;">
+0.508
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+36.888
+</td>
+<td style="text-align:right;">
+2.337
+</td>
+<td style="text-align:right;">
+-0.244
+</td>
+<td style="text-align:right;">
+195.792
+</td>
+<td style="text-align:right;">
+804.925
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3080
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+59.182
+</td>
+<td style="text-align:right;">
+24.688
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+19
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+2750.864
+</td>
+<td style="text-align:right;">
+2.337
+</td>
+<td style="text-align:right;">
+-0.244
+</td>
+<td style="text-align:right;">
+195.792
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+982.710
+</td>
+<td style="text-align:right;">
+24.688
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+6
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3090
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+33.020
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.773
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+HEALED OVER
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+856.336
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1706.229
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.773
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+6
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3090
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+33.020
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.773
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+HEALED OVER
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+856.336
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.168
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.366
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+65.963
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+710.770
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.773
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+6
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3090
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+38.862
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.602
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1186.152
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.168
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.366
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+65.963
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.473
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.427
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+98.453
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+804.925
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.602
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+6
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3090
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.228
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.735
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+19
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1678.418
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.473
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.427
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+98.453
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+982.710
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.735
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3149
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+48.260
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1829.214
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1581.479
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3149
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+48.260
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1829.214
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1.118
+</td>
+<td style="text-align:right;">
+0.122
+</td>
+<td style="text-align:right;">
+89.626
+</td>
+<td style="text-align:right;">
+1241.962
+</td>
+<td style="text-align:right;">
+25.907
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3149
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+53.848
+</td>
+<td style="text-align:right;">
+26.516
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+2277.346
+</td>
+<td style="text-align:right;">
+1.118
+</td>
+<td style="text-align:right;">
+0.122
+</td>
+<td style="text-align:right;">
+89.626
+</td>
+<td style="text-align:right;">
+1.575
+</td>
+<td style="text-align:right;">
+0.792
+</td>
+<td style="text-align:right;">
+142.942
+</td>
+<td style="text-align:right;">
+1314.530
+</td>
+<td style="text-align:right;">
+26.516
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3149
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+61.722
+</td>
+<td style="text-align:right;">
+30.479
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+17
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+2992.057
+</td>
+<td style="text-align:right;">
+1.575
+</td>
+<td style="text-align:right;">
+0.792
+</td>
+<td style="text-align:right;">
+142.942
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+1425.856
+</td>
+<td style="text-align:right;">
+30.479
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3184
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.876
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.725
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+447.727
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1581.479
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.725
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3184
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.876
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.725
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+447.727
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.118
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.671
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.820
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1241.962
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.725
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3184
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.464
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1,7
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+681.826
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.118
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.671
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+46.820
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.914
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.366
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+45.604
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1314.530
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3184
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+34.036
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.907
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1,7,19
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+909.844
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.914
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.366
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+45.604
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1425.856
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.907
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:left;">
+2L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+2L40.3516
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+29.210
+</td>
+<td style="text-align:right;">
+18.897
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+HEALED OVER
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+670.121
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1359.021
+</td>
+<td style="text-align:right;">
+18.897
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:left;">
+2L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+2L40.3516
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+29.210
+</td>
+<td style="text-align:right;">
+18.897
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+HEALED OVER
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+670.121
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.965
+</td>
+<td style="text-align:right;">
+0.610
+</td>
+<td style="text-align:right;">
+47.945
+</td>
+<td style="text-align:right;">
+563.961
+</td>
+<td style="text-align:right;">
+18.897
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:left;">
+2L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+2L40.3516
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+34.036
+</td>
+<td style="text-align:right;">
+21.945
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+909.844
+</td>
+<td style="text-align:right;">
+0.965
+</td>
+<td style="text-align:right;">
+0.610
+</td>
+<td style="text-align:right;">
+47.945
+</td>
+<td style="text-align:right;">
+0.305
+</td>
+<td style="text-align:right;">
+0.427
+</td>
+<td style="text-align:right;">
+16.661
+</td>
+<td style="text-align:right;">
+659.869
+</td>
+<td style="text-align:right;">
+21.945
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:left;">
+2L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+2L40.3516
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+35.560
+</td>
+<td style="text-align:right;">
+24.078
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+1,19
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+993.147
+</td>
+<td style="text-align:right;">
+0.305
+</td>
+<td style="text-align:right;">
+0.427
+</td>
+<td style="text-align:right;">
+16.661
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+722.016
+</td>
+<td style="text-align:right;">
+24.078
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80.3767
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+34.798
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.859
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+HEALED OVER
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+951.039
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1204.536
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.859
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80.3767
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+34.798
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.859
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+HEALED OVER
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+951.039
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.965
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.244
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+56.417
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+915.762
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.859
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80.3767
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+39.624
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1233.123
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.965
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.244
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+56.417
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.864
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.671
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+56.680
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1019.818
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L80.3767
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+43.942
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.431
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+35
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+19
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1516.525
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.864
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.671
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+56.680
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1108.124
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.431
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:left;">
+3H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+3H80.3872
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+34.036
+</td>
+<td style="text-align:right;">
+26.516
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+HEALED OVER
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+909.844
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1297.365
+</td>
+<td style="text-align:right;">
+26.516
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:left;">
+3H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+3H80.3872
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+34.036
+</td>
+<td style="text-align:right;">
+26.516
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+HEALED OVER
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+909.844
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1.219
+</td>
+<td style="text-align:right;">
+-0.853
+</td>
+<td style="text-align:right;">
+71.020
+</td>
+<td style="text-align:right;">
+1023.100
+</td>
+<td style="text-align:right;">
+26.516
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:left;">
+3H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+3H80.3872
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+40.132
+</td>
+<td style="text-align:right;">
+22.249
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+3
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1264.945
+</td>
+<td style="text-align:right;">
+1.219
+</td>
+<td style="text-align:right;">
+-0.853
+</td>
+<td style="text-align:right;">
+71.020
+</td>
+<td style="text-align:right;">
+1.626
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+112.854
+</td>
+<td style="text-align:right;">
+1032.595
+</td>
+<td style="text-align:right;">
+22.249
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:left;">
+3H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+3H80.3872
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+48.260
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+3,19
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1829.214
+</td>
+<td style="text-align:right;">
+1.626
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+112.854
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+1105.628
+</td>
+<td style="text-align:right;">
+24.287
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+12
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40.3926
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+38.608
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+LOOKS GREAT
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1170.697
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1363.643
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+12
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40.3926
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+38.608
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+LOOKS GREAT
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1170.697
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.219
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.244
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+79.776
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+570.153
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+12
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40.3926
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+44.704
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.297
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+BD healed over
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1569.577
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1.219
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.244
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+79.776
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.813
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.183
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-54.481
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+656.313
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25.297
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+12
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4H40.3926
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40.640
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.212
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+100% bear girdle; 90% crown mortality
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+19
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1297.171
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-0.813
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.183
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-54.481
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+612.469
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.212
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3251
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+29.464
+</td>
+<td style="text-align:right;">
+22.249
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+681.826
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1422.038
+</td>
+<td style="text-align:right;">
+22.249
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3251
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+29.464
+</td>
+<td style="text-align:right;">
+22.249
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+681.826
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1.118
+</td>
+<td style="text-align:right;">
+-0.366
+</td>
+<td style="text-align:right;">
+56.630
+</td>
+<td style="text-align:right;">
+562.503
+</td>
+<td style="text-align:right;">
+22.249
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3251
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+35.052
+</td>
+<td style="text-align:right;">
+20.421
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+2008 data reversed with 3250 except distance and azimuth
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+3
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+964.974
+</td>
+<td style="text-align:right;">
+1.118
+</td>
+<td style="text-align:right;">
+-0.366
+</td>
+<td style="text-align:right;">
+56.630
+</td>
+<td style="text-align:right;">
+0.406
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+23.025
+</td>
+<td style="text-align:right;">
+597.688
+</td>
+<td style="text-align:right;">
+20.421
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3251
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+37.084
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+3,18
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:right;">
+1080.098
+</td>
+<td style="text-align:right;">
+0.406
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+23.025
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+679.618
+</td>
+<td style="text-align:right;">
+22.382
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3255
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.066
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+17.068
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+316.236
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1422.038
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+17.068
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3255
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.066
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+17.068
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+316.236
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.000
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1.270
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-2.682
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-33.696
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+562.503
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+17.068
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3255
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.716
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.657
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+tree split in half
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3,6,8,31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+147.756
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1.270
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-2.682
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-33.696
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.152
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.375
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+597.688
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.657
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3255
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.478
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+60
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3,6,8,18,31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+164.629
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0.152
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.375
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+679.618
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.776
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+</tr>
+</tbody>
+</table>
 <p>I need to create another variable which indicates if the damage is
 new for that period, when a trees goes from undamaged to damaged. I will
 also count trees as new bear damage when the damage increases from one
@@ -437,8 +4982,16 @@ rest of my analysis.</p>
 <p>There were about 30 spruce trees before thinning and about half of
 these had bear damage. In 2013, there were 24 spruce and 4 of them
 received damage.</p>
-<pre class="r"><code>bd &lt;- filter(bd, spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;)) %&gt;%
-  mutate(spp2 = spp)</code></pre>
+<pre class="r"><code>bd &lt;- mutate(bd, spp2 = spp)</code></pre>
+<p>Trees killed just by bears.</p>
+<p>Bear damaged trees that were alive in 2008 and subsequently died
+without being broken or uprooted</p>
+<pre class="r"><code>bd |&gt;
+  group_by(tree_id) |&gt;
+  filter( any((bear | lag(bear)) &amp; !live &amp; lag(live) &amp; !get_cond(30, 31, 32)) ) |&gt;
+  pull(tree_id) |&gt;
+  n_distinct()</code></pre>
+<pre><code>## [1] 10</code></pre>
 </div>
 <div id="summary" class="section level2">
 <h2>Summary</h2>
@@ -460,29 +5013,29 @@ anomalous in that is the only plot that sees an increase from 2008 to
 bd %&gt;%
   # filter(year != &quot;init&quot;) %&gt;%
   group_by(year, treatment, plot) %&gt;% 
-  summarize(pct_bear = sum(bear_new, na.rm = TRUE) / n()) %&gt;% 
+  summarize(pct_bear = mean(bear_new)) %&gt;% 
   summarize(avg_pct_bear = mean(pct_bear), se = sd(pct_bear) / sqrt(n()) ) %&gt;% 
   bear_plot(avg_pct_bear) +
     labs(title = &quot;Average percent new bear damage for each treatment ±SE&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 <pre class="r"><code>bd %&gt;%
   # filter(year != &quot;init&quot;) %&gt;%
   group_by(year, treatment, plot) %&gt;% 
-  summarize(cnt_bear = sum(bear_new, na.rm = TRUE)) %&gt;% 
+  summarize(cnt_bear = sum(bear_new)) %&gt;% 
   summarize( avg_cnt_bear = mean(cnt_bear), se = sd(cnt_bear) / sqrt(n()) ) %&gt;% 
   bear_plot(avg_cnt_bear) +
     labs(title = &quot;Average count new bear damage for each treatment ±SE&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-8-2.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
 <p>Here is the same data for individual plots, showing their
 trajectories</p>
-<pre class="r"><code>bd_plot_fig &lt;- function(prop = FALSE) {
-  my_sum &lt;- function(d) summarise(d, var = sum(bear_new))
+<pre class="r"><code>bd_plot_fig &lt;- function(data, var = bear_new, prop = FALSE) {
+  my_sum &lt;- function(d) summarise(d, var = sum( {{var}} ))
   lab_word &lt;- &quot;Count&quot;
   if (prop) {
-    my_sum &lt;- function(d) summarise(d, var = sum(bear_new) / n())
+    my_sum &lt;- function(d) summarise(d, var = sum( {{var}} ) / n())
     lab_word &lt;- &quot;Proportion&quot;
   }
-  bd %&gt;%
+  data %&gt;%
     group_by(year, treatment, plot) %&gt;% 
     my_sum %&gt;% 
     ggplot(aes(year, var, color = treatment, group = plot)) + 
@@ -497,43 +5050,124 @@ trajectories</p>
       )
 }
 
-bd_plot_fig()</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
-<pre class="r"><code>bd_plot_fig(prop = TRUE)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
+bd_plot_fig(bd, bear_new)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre class="r"><code>bd_plot_fig(bd, bear_new, prop = TRUE)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
 <p>Bear bar charts</p>
-<pre class="r"><code>basic_bear_bar &lt;- function(cum, prop) {
-  var &lt;- quote(bear_new)
-  if (cum) var &lt;- quote(bear_cum)
-  my_sum &lt;- function(d) summarise(d, var = sum(eval(var)))
-  if (prop) my_sum &lt;- function(d) summarise(d, var = sum(eval(var)) / n())
-  calc &lt;- if_else(prop, &quot;Proportion &quot;, &quot;Count &quot;)
-  variable &lt;- if_else(cum, &quot;cumulative &quot;, &quot;&quot;)
-    
-  group_by(bd, treatment, year, spp2) %&gt;%
-    my_sum %&gt;%
-    ggplot(aes(treatment, eval(var), fill = spp2)) +
-       geom_col(position = &quot;stack&quot;, color = &quot;black&quot;) +
-    facet_wrap(~ year, nrow = 1) +
-    scale_fill_manual(values = palette()) +
-    labs(
-      title = paste0(calc, &quot;of &quot;, variable, &quot;new bear damage&quot;),
-      y = calc,
-      x = &quot;Treatment&quot;,
-      fill = NULL
-    )
+<pre class="r"><code># This funtion is using &quot;spp2&quot; instead of &quot;spp&quot;, this was originally to allow grouping of species
+
+treat_bar &lt;- function(d, var, type) {
+  if (type == &quot;pct&quot;) {
+    my_sum &lt;- function(d) d |&gt; summarize(var1 = mean( {{var}} ))
+  } else if (type == &quot;cnt&quot;) {
+    my_sum &lt;- function(d) d |&gt; summarise(var1 = sum( {{var}} ))
+  }
+  d |&gt;
+  group_by(treatment, year, plot) |&gt;
+  my_sum() |&gt;
+  summarise(avg = mean(var1), SE = sd(var1) / sqrt(n()))
+} 
+
+spp_bar &lt;- function(d, var, type) {
+  if (type == &quot;pct&quot;) {
+    my_sum &lt;- function(d) {
+      d |&gt;
+      summarize(spp_true = sum( {{var}} ), n = n()) |&gt;
+      mutate(spp_plot = spp_true / sum(n))
+    }
+  } else if (type == &quot;cnt&quot;) {
+    my_sum &lt;- function(d) {
+      d |&gt; summarise(spp_plot = sum( {{var}} ))
+    }
+  }
+  d |&gt;
+  group_by(treatment, year, plot, spp2) |&gt;
+  my_sum() |&gt;
+  group_by(treatment, year, spp2) |&gt;
+  summarise(avg_spp = sum(spp_plot) / 4) |&gt;
+  filter(avg_spp &gt; 0)
 }
 
-basic_bear_bar(cum = TRUE, prop = FALSE)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
-<pre class="r"><code>basic_bear_bar(cum = TRUE, prop = TRUE)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
-<p>Bear bar chart for publication</p>
+dam_bar1 &lt;- function(d, var, type, title, error = FALSE, nospruce = FALSE) {
+  
+  spp_d &lt;- spp_bar(d = d, var = {{var}}, type = type)
+  if(nospruce) spp_d &lt;- filter(spp_d, spp2 != &quot;PISI&quot;)
+  err_d &lt;- treat_bar(d, var = {{var}}, type = type)
+
+  ggplot(spp_d, aes(x = treatment)) +
+    geom_col(aes(y = avg_spp, fill = spp2), position = &quot;stack&quot;, color = &quot;black&quot;) +
+    {if (error) geom_errorbar(data = err_d, aes(y = avg, ymin = avg - SE, ymax = avg + SE), width = 0.2)} +
+    facet_wrap(~ year, nrow = 1) +
+    scale_fill_manual(values = palette()) +
+    labs(title = title, y = type, x = &quot;Treatment&quot;, fill = NULL)
+
+}
+
+# The first way ###################################
+dam_bar0 &lt;- function(data, var, type = &quot;cnt&quot;, title = &quot;&quot;) {
+  if (type == &quot;cnt&quot;) {
+    my_sum &lt;- function(d) {
+    summarise(d, var = sum( {{var}} ))
+    } 
+  } else if (type == &quot;pct&quot;) {
+    my_sum &lt;- function(d) {
+      summarise(d, var = sum( {{var}} ), ntree = n()) |&gt;
+      mutate(var = var / sum(ntree))
+    } 
+  }
+
+  data |&gt;  
+    group_by(treatment, year, spp2) |&gt;
+    my_sum() |&gt;
+    filter(var &gt; 0) |&gt;
+    ggplot(aes(treatment, var, fill = spp2)) +
+      geom_col(position = &quot;stack&quot;, color = &quot;black&quot;) +
+      facet_wrap(~ year, nrow = 1) +
+      scale_fill_manual(values = palette()) +
+      labs(title = title, y = type, x = &quot;Treatment&quot;, fill = NULL)
+}</code></pre>
+</div>
+</div>
+<div id="the-problem-with-the-bear-bars" class="section level1">
+<h1>The problem with the bear bars</h1>
+<p>After thinking about it some more I found a couple things.</p>
+<p>First, there is a subtle difference between aggregating at the
+treatment level (simple sum of bear damage across plots), and averaging
+plot level sums.</p>
+<pre class="r"><code>dam_bar0(bd, bear_new, type = &quot;pct&quot;,
+  title = &quot;Aggregated percent new bear damage pre and post treatment&quot;) +
+  scale_y_continuous(limits = c(0, .20))</code></pre>
+<pre class="r"><code>dam_bar1(bd, bear_new, type = &quot;pct&quot;,
+  title = &quot;Average percent new bear damage pre and post treatment&quot;)+
+  scale_y_continuous(limits = c(0, .20))</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-12-.gif" width="672" /></p>
+<pre class="r"><code>dam_bar0(bd, bear_cum, type = &quot;pct&quot;,
+  title = &quot;Aggregated cumulative percent new bear damage pre and post treatment&quot;)</code></pre>
+<pre class="r"><code>dam_bar1(bd, bear_cum, type = &quot;pct&quot;,
+  title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-13-.gif" width="672" /></p>
+<p>The other thing I figured out is that we can put error bars on the
+top of the bar indicating the variation in total damage across plots,
+but in this case we would need to include spruce, otherwise the error
+bar be centered in empty space.</p>
+<pre class="r"><code>dam_bar1(bd, bear_cum, type = &quot;pct&quot;, error = TRUE,
+  title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;)</code></pre>
+<pre class="r"><code>dam_bar1(bd, bear_cum, type = &quot;pct&quot;, error = TRUE, nospruce = TRUE,
+  title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;) +
+  scale_fill_manual(values = palette()[2:3])</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-14-.gif" width="672" /></p>
+<p>I think that after talking today, I would want to leave off the
+spruce as well as the error bars, but I wanted to check in to be
+sure.</p>
+<div id="bear-bar-figure-for-publication" class="section level2">
+<h2>Bear bar figure for publication</h2>
 <pre class="r"><code>year_labels &lt;- c(
   init = &quot;Pretreatment damage\nbefore thin&quot;,
   `08` = &quot;Pretreatment damage\nafter thin&quot;,
   `13` = &quot;Posttreatment damage\n2008 - 2013&quot;,
-  `18` = &quot;Posttreatment damage\n2008 - 2018&quot;
+  `18` = &quot;Posttreatment damage\n2008 - 2018&quot;,
+  final = &quot;Observed bear damage\n2018&quot;
 )
 
 type_labels &lt;- as_labeller(c(
@@ -541,15 +5175,30 @@ type_labels &lt;- as_labeller(c(
   bear_prop = &quot;Proportion&quot;
 ), label_parsed)
 
-bd_2 &lt;- group_by(bd, treatment, spp2, year)
+
+bd_2 &lt;- group_by(bd, treatment, year, spp2) |&gt; filter(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;))
+
+bd_3 &lt;- filter(bd_2, year == &quot;18&quot;) |&gt; mutate(year = &quot;final&quot;)
+
+bd_3 &lt;- bind_rows(
+  bear_cnt = summarise(bd_3, bear_sum = sum(bear * 3.125)),
+  bear_prop = summarise(bd_3, bear_sum = sum(bear), ntree = n()) |&gt; 
+    mutate(bear_sum = bear_sum / sum(ntree)),
+  .id = &quot;sum_type&quot;
+)
+
 bd_2 &lt;- bind_rows(
   bear_cnt = summarise(bd_2, bear_sum = sum(bear_cum * 3.125)),
-  bear_prop = summarise(bd_2, bear_sum = sum(bear_cum) / n()),
+  bear_prop = summarise(bd_2, bear_sum = sum(bear_cum), ntree = n()) |&gt; 
+    mutate(bear_sum = bear_sum / sum(ntree)),
   .id = &quot;sum_type&quot;
-) %&gt;% relevel_treatment()
+)
 
+bd_pub &lt;- bind_rows(bd_2, bd_3) |&gt; 
+  mutate(year = factor(year, levels = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;, &quot;final&quot;))) |&gt; 
+  relevel_treatment()
 
-bd_2 %&gt;%
+bd_pub %&gt;%
   ggplot(aes(treatment, bear_sum, fill = spp2)) +
     geom_col(position = &quot;stack&quot;) +
     facet_grid(
@@ -574,7 +5223,7 @@ bd_2 %&gt;%
     ) + 
     scale_y_continuous(expand = c(0.0, 0, 0.08, 0)) +
     labs(x = &quot;Treatment&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-11-1.png" width="687.36" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-15-1.png" width="687.36" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bd_summary.pdf&quot;,
   device = cairo_pdf,
@@ -626,8 +5275,14 @@ treatment.</p>
 slopes for <code>plot</code>, <em>and</em> <code>tree_id</code>.</p>
 <p>The random effects for <code>tree_id</code> are very small, these
 might end up getting dropped.</p>
-<pre class="r"><code>bdmd &lt;- subset(bd, year %in% c(&quot;13&quot;, &quot;18&quot;)) %&gt;%
-  mutate(year = factor(year))
+<p><em>I’m removing dead trees for modeling, because we want to better
+estiamte probability of a live tree being damaged</em></p>
+<pre class="r"><code>bdmd &lt;- bd |&gt;
+  group_by(treatment, plot) |&gt;
+  mutate(pbear_init = sum(year == &quot;init&quot; &amp; bear)) |&gt; 
+  ungroup() |&gt;
+  filter(year %in% c(&quot;13&quot;, &quot;18&quot;), live, spp %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;)) |&gt;
+  droplevels()
 
 
 bm1 &lt;- glmer(
@@ -2396,6 +7051,7 @@ coefficients</a></p>
     )
   }
 
+  # This is the part where I get the std error as per GLMM FAQ instructions
   dat &lt;- prediction_data
   dmat &lt;- model.matrix(terms(mod), dat)
   pvar1 &lt;- diag(dmat %*% tcrossprod(vcov(mod), dmat))
@@ -2405,7 +7061,7 @@ coefficients</a></p>
   , plo = dat$bear_new - cmult * sqrt(pvar1)
   , phi = dat$bear_new + cmult * sqrt(pvar1)
   ) %&gt;% 
-  mutate(across(c(bear_new, plo, phi), ~ exp(.x) / (1 + exp(.x))))
+  mutate(across( c(bear_new, plo, phi), ~ exp(.x) / (1 + exp(.x)) ))
 }</code></pre>
 <p>One column bear damage figure</p>
 <pre class="r"><code>doj &lt;- position_dodge(width = 20)
@@ -2458,7 +7114,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %&gt;%
       shape = &quot;Treatment&quot;,
       linetype = &quot;Treatment&quot;
     )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bd_pred.pdf&quot;,
   device = cairo_pdf,
@@ -2524,7 +7180,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %&gt;%
       shape = &quot;Treatment&quot;,
       linetype = &quot;Treatment&quot;
     )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bd_pred2.pdf&quot;,
   device = cairo_pdf,
@@ -2556,7 +7212,7 @@ emmip(bbdm[[4]],
   type = &quot;response&quot;,
   CIs = TRUE
 ) </code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-21-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
 </div>
 <div id="emmeans-interpreting-model" class="section level2">
 <h2>Emmeans: interpreting model</h2>
@@ -2610,7 +7266,7 @@ pairs(mean_treat)</code></pre>
 ## P value adjustment: tukey method for comparing a family of 5 estimates 
 ## Tests are performed on the log odds ratio scale</code></pre>
 <pre class="r"><code>pwpp(mean_treat)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
 <pre class="r"><code>mean_treat %&gt;% multcomp::cld(reversed = TRUE)</code></pre>
 <pre><code>##  treatment    prob      SE  df asymp.LCL asymp.UCL .group
 ##  L40       0.04042 0.01780 Inf   0.01684    0.0938  1    
@@ -2631,51 +7287,108 @@ pairs(mean_treat)</code></pre>
 <p>Finally, here is the expected response over levels of diameter
 increment.</p>
 <pre class="r"><code>emmip(bbdm[[4]], treatment ~ ba_inc2 | spp2 + year, at = ba_incs, CIs = TRUE, type = &quot;response&quot;) + labs(title = &quot;bayesian new bear damage model&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
 </div>
-<div id="cumulative-bear-damage" class="section level2">
-<h2>Cumulative bear damage</h2>
-<p>Formulas</p>
-<pre class="r"><code>fl2 &lt;- list(
-  bear_cum ~ treatment + spp + scale(ba_inc2)
- , bear_cum ~ treatment + spp + scale(ba_inc2) + treatment:spp
- , bear_cum ~ treatment + spp + scale(ba_inc2) + scale(ba_inc2):spp
-)
-names(fl2) &lt;- seq_along(fl2)</code></pre>
-<pre class="r"><code>bdmd1 &lt;- filter(bdmd, year == &quot;13&quot;)
-bdmd2 &lt;- filter(bdmd, year == &quot;18&quot;)
+<div id="compare-model-predictions-to-observed" class="section level2">
+<h2>Compare model predictions to observed</h2>
+<p>First I show amount of bear damage predicted (sum of predicted
+probabilities) for each time period compared to observed.</p>
+<pre class="r"><code>##### Predict new bear damage #######
+
+make_pred_bar_chart &lt;- function() {
+  
+  pred &lt;- predict(bbdm[[4]], type = &quot;response&quot;)
+  
+  data1 &lt;- cbind(bdmd, pred = pred)
+
+  a &lt;- data1 %&gt;%
+    group_by(treatment, year, spp2) %&gt;%
+    summarize(pred = sum(pred)) %&gt;%
+    ungroup() %&gt;%
+    ggplot(aes(treatment, pred, fill = spp2)) + 
+      geom_col(position = &quot;stack&quot;, color = &quot;black&quot;) +
+      facet_wrap(~ year) +
+      scale_fill_manual(values = palette()) +
+      labs(
+        title = &quot;predicted sum of DF and RW trees with bear damage&quot;,
+        y = &quot;count&quot;,
+        x = &quot;Treatment&quot;,
+        fill = NULL
+      ) +
+      theme(legend.position = &quot;none&quot;) +
+      scale_y_continuous(limits = c(0, 17))
+
+  b &lt;- bd %&gt;%
+    filter(year %in% c(&quot;13&quot;, &quot;18&quot;)) %&gt;%
+    group_by(treatment, year, spp2) %&gt;%
+    summarize(bear_new = sum(bear_new)) %&gt;%
+    ungroup() %&gt;%
+    ggplot(aes(treatment, bear_new, fill = spp2)) + 
+      geom_col(position = &quot;stack&quot;, color = &quot;black&quot;) +
+      facet_wrap(~ year) +
+      scale_fill_manual(values = palette()) +
+      labs(
+        title = &quot;Total sum of new bear damage for each treatment/species&quot;,
+        y = &quot;Count of bear damage&quot;,
+        x = &quot;Treatment&quot;,
+        fill = NULL
+      ) +
+      scale_y_continuous(limits = c(0, 17))
+
+  a + b
+}
+
+make_pred_bar_chart()</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<p>This figure compares the cumulative (post treatment) predicted amount
+of bear damage to the cumulative observed.</p>
+<pre class="r"><code>####### Cumulative prediction from new bear damage model #########
+
+make_pred_bar_chart2 &lt;- function() {
+
+  data1 &lt;- cbind(bdmd, pred1 = predict(bbdm[[4]], type = &quot;response&quot;)) %&gt;%
+    group_by(tree_id) %&gt;%
+    mutate(pred = if_else(year == &quot;18&quot;, sum(pred1), pred1))
 
 
-# Seperate years, only models that don&#39;t include year
-# 2013
-cbdm1 &lt;- make_bglmm_mods(bdmd1, fl2)
-examine_bdmod(cbdm1, &quot;bglmm models cumulative bear damage 2013&quot;)
-# 2018
-cbdm2 &lt;- make_bglmm_mods(bdmd2, fl2)
-examine_bdmod(cbdm2, &quot;bglmm models cumulative new bear damage 2018&quot;)
-emmip(cbdm2[[2]], treatment ~ ba_inc2 | spp, at = ba_incs, type = &quot;response&quot;) + labs(title = &quot;bglmm cumulative new bear damage 2018&quot;)
+  p1 &lt;- data1 %&gt;%
+    group_by(treatment, year, spp2) %&gt;%
+    summarize(pred = sum(pred)) %&gt;%
+    ungroup() %&gt;%
+    ggplot(aes(treatment, pred, fill = spp2)) + 
+      geom_col(position = &quot;stack&quot;, color = &quot;black&quot;) +
+      facet_wrap(~ year, ncol = 6) +
+      scale_fill_manual(values = palette()) +
+      labs(
+        title = &quot;predicted sum of DF and RW trees with bear damage&quot;,
+        y = &quot;count&quot;,
+        x = &quot;Treatment&quot;,
+        fill = NULL
+      ) +
+      theme(legend.position = &quot;none&quot;) +
+      scale_y_continuous(limits = c(0, 25))
 
+  p2 &lt;- bdmd %&gt;%
+    group_by(treatment, year, spp2) %&gt;%
+    summarize(bear_cum = sum(bear_cum)) %&gt;%
+    ungroup() %&gt;%
+    ggplot(aes(treatment, bear_cum, fill = spp2)) + 
+      geom_col(position = &quot;stack&quot;, color = &quot;black&quot;) +
+      facet_wrap(~ year) +
+      scale_fill_manual(values = palette()) +
+      labs(
+        title = &quot;cumulative (after treatment) new bear damage for each treatment/species&quot;,
+        y = &quot;Count of bear damage&quot;,
+        x = &quot;Treatment&quot;,
+        fill = NULL
+      ) +
+      scale_y_continuous(limits = c(0, 25))
 
+  p1 + p2
+}
 
-
-
-# all interactions with year: new
-full_interaction_new &lt;- make_bglmm_mods(bdmd, list(new = 
-  bear_new ~ spp + treatment + scale(ba_inc2) + year:spp + year:treatment + year:scale(ba_inc2)
-))
-
-# all interactions with year: cumulative
-full_interaction_cumulative &lt;- make_bglmm_mods(bdmd, list(cumulative = 
-  bear_cum ~ spp + treatment + scale(ba_inc2) + year:spp + year:treatment + year:scale(ba_inc2)
-))
-
-examine_bdmod(c(full_interaction_cumulative, full_interaction_new), cap = &quot;Cumulative and new bear damage full interaction with year&quot;)
-
-
-emmip(cbdm2[[2]], treatment ~ ba_inc2 | spp, type = &quot;response&quot;) + labs(title = &quot;glmm cumulative new bear damage 2018&quot;)
-
-emmip(full_interaction_new[[1]], treatment ~ ba_inc2 | spp + year, at = ba_incs, type = &quot;response&quot;)
-emmip(full_interaction_cumulative[[1]], treatment ~ ba_inc2 | spp + year, type = &quot;response&quot;)</code></pre>
+make_pred_bar_chart2()</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
 </div>
 <div id="model-validation" class="section level2">
 <h2>Model validation</h2>
@@ -2684,8 +7397,139 @@ href="https://stats.stackexchange.com/questions/568407/how-to-correct-underdispe
 don’t think I need to worry about underdispersion</a></p>
 </div>
 </div>
-<div id="wind-damage-and-breakage" class="section level1 unnumbered">
-<h1 class="unnumbered">Wind damage and breakage</h1>
+<div id="wind-damage-and-breakage" class="section level1">
+<h1>Wind damage and breakage</h1>
+<p>Wind damage and breakage are characterized by condition codes:</p>
+<pre><code>2          = dead top
+3          = broken top
+12         = broken top - operational damage
+30, 31     = broken stem (below and above dbh)
+32         = windthrow (uprooted)</code></pre>
+<p>there is only 1 code 12, I think we can ignore it</p>
+<pre class="r"><code>wd &lt;- d_l |&gt;
+  mutate(spp2 = spp, year = factor(year, ordered = FALSE)) |&gt;
+  select(-c(h_dist, azi, x, y, contains(&quot;inc1&quot;))) 
+
+wd &lt;- wd %&gt;%
+  group_by(tree_id) %&gt;%
+  mutate(
+    bt_new = get_cond(3) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(3) &amp; !lag(get_cond(3)),
+    bt_new = if_else(is.na(bt_new), FALSE, bt_new),
+    bt_cum = if_else(year == &quot;18&quot; &amp; lag(bt_new), TRUE, bt_new),
+    
+    bs_new = get_cond(30, 31) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(30, 31) &amp; !lag(get_cond(30, 31)),
+    bs_new = if_else(is.na(bs_new), FALSE, bs_new),
+    bs_cum = if_else(year == &quot;18&quot; &amp; lag(bs_new), TRUE, bs_new),
+    
+    wt_new = get_cond(32) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(32) &amp; !lag(get_cond(32)),
+    wt_new = if_else(is.na(wt_new), FALSE, wt_new),
+    wt_cum = if_else(year == &quot;18&quot; &amp; lag(wt_new), TRUE, wt_new),
+    ) %&gt;%
+  ungroup()</code></pre>
+<p>Some damaged trees are listed as damaged and subsequently
+unlisted.</p>
+<p>for code 3, there are 5 dropped trees most of them due to death for
+codes 30 and 31 there are 6. Most of these die, others are recorded
+differently, ie 31 to 3 for code 32, there are 2, both are dead at the
+start</p>
+<pre class="r"><code>get_dropped &lt;- function(dat, test_condition) {
+  dat %&gt;%
+    group_by(tree_id) %&gt;%
+    mutate( dropped = lag({{test_condition}}) &amp; !{{test_condition}} ) %&gt;%
+    filter(any(dropped)) %&gt;%
+    mutate(id = cur_group_id()) %&gt;%
+    relocate(id) %&gt;%
+    arrange(id)
+}
+
+
+get_dropped(wd, get_cond(2)) </code></pre>
+<pre><code>## # A tibble: 8 x 30
+## # Groups:   tree_id [2]
+##      id plot  treatment tree_id spp   year    dbh    ht    cr status bear  rot   notes         cc cond     live     ba  d_inc2 ht_inc2 ba_inc2 sdi_plot  ht_p spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
+##   &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;      &lt;int&gt; &lt;chr&gt;    &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
+## 1     1 C1    C         C1.4204 SESE3 init   38.9  10.7    10      1 TRUE  FALSE SNAGTOP       NA &quot;&quot;       TRUE  1186. NA       NA       NA       1186.  10.7 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+## 2     1 C1    C         C1.4204 SESE3 08     38.9  10.7    10      1 TRUE  FALSE SNAGTOP       NA &quot;2&quot;      TRUE  1186.  0        0        0       1186.  10.7 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+## 3     1 C1    C         C1.4204 SESE3 13     38.9  10.7    15      1 TRUE  NA    &lt;NA&gt;           4 &quot;2,7,18&quot; TRUE  1186.  0        0        0       1248.  10.7 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+## 4     1 C1    C         C1.4204 SESE3 18     38.6  10.7    NA      1 TRUE  NA    &lt;NA&gt;          NA &quot;3,4,18&quot; TRUE  1171. -0.0508   0       -3.09    1250.  10.7 SESE3 TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  TRUE   
+## 5     2 C3    C         C3.4567 SESE3 init   26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;          NA &quot;&quot;       TRUE   569. NA       NA       NA       1441.  22.2 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+## 6     2 C3    C         C3.4567 SESE3 08     26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;          NA &quot;&quot;       TRUE   569.  0        0        0       1441.  22.2 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+## 7     2 C3    C         C3.4567 SESE3 13     30.2  20.1    20      1 FALSE NA    &lt;NA&gt;           4 &quot;1,2,4&quot;  TRUE   718.  0.660   -0.427   29.6     1416.  20.1 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+## 8     2 C3    C         C3.4567 SESE3 18     32.5  21.3    20      1 FALSE NA    Broken Top    NA &quot;3&quot;      TRUE   830.  0.457    0.244   22.5     1358.  21.3 SESE3 TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  TRUE</code></pre>
+<pre class="r"><code>get_dropped(wd, get_cond(3)) </code></pre>
+<pre><code>## # A tibble: 20 x 30
+## # Groups:   tree_id [5]
+##       id plot  treatment tree_id   spp   year    dbh    ht    cr status bear  rot   notes                                    cc cond     live     ba  d_inc2 ht_inc2 ba_inc2 sdi_plot  ht_p spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
+##    &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;                                 &lt;int&gt; &lt;chr&gt;    &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
+##  1     1 1H40  H40       1H40.1908 SESE3 init   16.8  4.27     5      1 FALSE FALSE BROKEN TOP                               NA &quot;&quot;       TRUE   221. NA       NA       NA       1090.  4.27 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+##  2     1 1H40  H40       1H40.1908 SESE3 08     16.8  4.27     5     31 FALSE FALSE BROKEN TOP                               NA &quot;3,31&quot;   TRUE   221.  0        0        0        449.  4.27 SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
+##  3     1 1H40  H40       1H40.1908 SESE3 13     16.5 NA       NA      5 FALSE NA    dead, no sprouts                         -1 &quot;&quot;       FALSE  214. -0.0508  NA       -1.33     484. NA    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  TRUE   
+##  4     1 1H40  H40       1H40.1908 SESE3 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                                     NA &quot;&quot;       FALSE   NA  NA       NA       NA        556. NA    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+##  5     2 2H40  H40       2H40.3064 SESE3 init   34.3 24.1     15      1 TRUE  FALSE X                                        NA &quot;&quot;       TRUE   923. NA       NA       NA       1706. 24.1  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+##  6     2 2H40  H40       2H40.3064 SESE3 08     34.3 24.1     15      1 TRUE  FALSE X                                        NA &quot;&quot;       TRUE   923.  0        0        0        711. 24.1  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+##  7     2 2H40  H40       2H40.3064 SESE3 13     34.5  4.88     0      6 FALSE NA    Broken tops dead; measured under bark    -1 &quot;8,3,31&quot; FALSE  937.  0.0508  -3.84     2.75     805.  4.88 SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
+##  8     2 2H40  H40       2H40.3064 SESE3 18     NA   NA       NA      6 FALSE NA    &lt;NA&gt;                                     NA &quot;8,31&quot;   FALSE   NA  NA       NA       NA        983. NA    SESE3 FALSE  TRUE   FALSE  TRUE   FALSE  FALSE  TRUE   
+##  9     3 4H80  H80       4H80.3975 PSMEM init   19.8 18.9     15      1 FALSE FALSE X                                        NA &quot;&quot;       TRUE   308. NA       NA       NA       1345. 18.9  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+## 10     3 4H80  H80       4H80.3975 PSMEM 08     19.8 18.9     15      1 FALSE FALSE X                                        NA &quot;&quot;       TRUE   308.  0        0        0       1063. 18.9  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+## 11     3 4H80  H80       4H80.3975 PSMEM 13     19.6 13.7      0      6 FALSE NA    &lt;NA&gt;                                     -1 &quot;3&quot;      FALSE  300. -0.0508  -1.04    -1.57    1162. 13.7  PSMEM TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  FALSE  
+## 12     3 4H80  H80       4H80.3975 PSMEM 18     NA   NA       NA      6 FALSE NA    &lt;NA&gt;                                     NA &quot;&quot;       FALSE   NA  NA       NA       NA       1264. NA    PSMEM FALSE  TRUE   FALSE  FALSE  FALSE  FALSE  TRUE   
+## 13     4 4H80  H80       4H80.4027 PSMEM init   14.2 17.7     15      1 FALSE FALSE X                                        NA &quot;&quot;       TRUE   159. NA       NA       NA       1345. 17.7  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+## 14     4 4H80  H80       4H80.4027 PSMEM 08     14.2 17.7     15      1 FALSE FALSE X                                        NA &quot;&quot;       TRUE   159.  0        0        0       1063. 17.7  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+## 15     4 4H80  H80       4H80.4027 PSMEM 13     14.5 12.8      0      5 FALSE NA    &lt;NA&gt;                                     -1 &quot;3&quot;      FALSE  165.  0.0508  -0.975    1.15    1162. 12.8  PSMEM TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  FALSE  
+## 16     4 4H80  H80       4H80.4027 PSMEM 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                                     NA &quot;&quot;       FALSE   NA  NA       NA       NA       1264. NA    PSMEM FALSE  TRUE   FALSE  FALSE  FALSE  FALSE  TRUE   
+## 17     5 C2    C         C2.4295   PSMEM init   30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;                                     NA &quot;&quot;       TRUE   730. NA       NA       NA       1192. 24.4  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+## 18     5 C2    C         C2.4295   PSMEM 08     30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;                                     NA &quot;&quot;       TRUE   730.  0        0        0       1192. 24.4  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+## 19     5 C2    C         C2.4295   PSMEM 13     32.5 22.6     15      1 FALSE NA    frass; potential broken top               3 &quot;3&quot;      TRUE   830.  0.406   -0.366   20.1     1246. 22.6  PSMEM TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  FALSE  
+## 20     5 C2    C         C2.4295   PSMEM 18     34.0 NA       NA      1 FALSE NA    &lt;NA&gt;                                     NA &quot;&quot;       TRUE   910.  0.305   NA       15.9     1217. NA    PSMEM FALSE  TRUE   FALSE  FALSE  FALSE  FALSE  TRUE</code></pre>
+<pre class="r"><code>get_dropped(wd, get_cond(30, 31)) </code></pre>
+<pre><code>## # A tibble: 24 x 30
+## # Groups:   tree_id [6]
+##       id plot  treatment tree_id   spp   year    dbh    ht    cr status bear  rot   notes               cc cond       live     ba  d_inc2 ht_inc2 ba_inc2 sdi_plot  ht_p spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
+##    &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;            &lt;int&gt; &lt;chr&gt;      &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
+##  1     1 1H40  H40       1H40.1908 SESE3 init   16.8  4.27     5      1 FALSE FALSE BROKEN TOP          NA &quot;&quot;         TRUE   221. NA       NA       NA       1090.  4.27 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+##  2     1 1H40  H40       1H40.1908 SESE3 08     16.8  4.27     5     31 FALSE FALSE BROKEN TOP          NA &quot;3,31&quot;     TRUE   221.  0        0        0        449.  4.27 SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
+##  3     1 1H40  H40       1H40.1908 SESE3 13     16.5 NA       NA      5 FALSE NA    dead, no sprouts    -1 &quot;&quot;         FALSE  214. -0.0508  NA       -1.33     484. NA    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  TRUE   
+##  4     1 1H40  H40       1H40.1908 SESE3 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                NA &quot;&quot;         FALSE   NA  NA       NA       NA        556. NA    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+##  5     2 1H80  H80       1H80.3625 SESE3 init   17.0 16.2     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   227. NA       NA       NA       1480. 16.2  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+##  6     2 1H80  H80       1H80.3625 SESE3 08     17.0 16.2     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   227.  0        0        0       1162. 16.2  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+##  7     2 1H80  H80       1H80.3625 SESE3 13     17.0  4.27    10     31 FALSE NA    &lt;NA&gt;                 4 &quot;3,4,8,31&quot; TRUE   227.  0       -2.38     0       1284.  4.27 SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
+##  8     2 1H80  H80       1H80.3625 SESE3 18     16.5  5.49    NA      1 FALSE NA    &lt;NA&gt;                NA &quot;3,4,8&quot;    TRUE   214. -0.102    0.244   -2.68    1441.  5.49 SESE3 FALSE  TRUE   FALSE  TRUE   FALSE  FALSE  TRUE   
+##  9     3 2H40  H40       2H40.3085 SESE3 init   21.8 21.6     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   375. NA       NA       NA       1706. 21.6  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
+## 10     3 2H40  H40       2H40.3085 SESE3 08     21.8 21.6     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   375.  0        0        0        711. 21.6  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+## # ... with 14 more rows</code></pre>
+<pre class="r"><code>get_dropped(wd, get_cond(32))</code></pre>
+<pre><code>## # A tibble: 7 x 30
+## # Groups:   tree_id [2]
+##      id plot  treatment tree_id   spp   year    dbh    ht    cr status bear  rot   notes                      cc cond  live     ba d_inc2  ht_inc2 ba_inc2 sdi_plot  ht_p spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
+##   &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;                   &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
+## 1     1 4L40  L40       4L40.3246 SESE3 init   27.4 20.1     20     32 FALSE FALSE Blow down                  NA &quot;32&quot;  FALSE  591.     NA NA            NA    1422. 20.1  SESE3 FALSE  FALSE  FALSE  FALSE  TRUE   TRUE   FALSE  
+## 2     1 4L40  L40       4L40.3246 SESE3 08     27.4 20.1     20     32 FALSE FALSE Blow down                  NA &quot;32&quot;  FALSE  591.      0  0             0     563. 20.1  SESE3 FALSE  FALSE  FALSE  FALSE  TRUE   TRUE   FALSE  
+## 3     1 4L40  L40       4L40.3246 SESE3 13     NA   NA       NA     30 FALSE NA    &lt;NA&gt;                       -1 &quot;30&quot;  FALSE   NA      NA NA            NA     598. NA    SESE3 FALSE  FALSE  TRUE   TRUE   FALSE  FALSE  TRUE   
+## 4     2 4L40  L40       4L40.3283 PSMEM init   33.3 24.1     30     32 FALSE FALSE Blow down                  NA &quot;32&quot;  FALSE  870.     NA NA            NA    1422. 24.1  PSMEM FALSE  FALSE  FALSE  FALSE  TRUE   TRUE   FALSE  
+## 5     2 4L40  L40       4L40.3283 PSMEM 08     33.3  8.5     30     31 FALSE FALSE Blow down                  NA &quot;31&quot;  FALSE  870.      0 -3.12          0     563.  8.5  PSMEM FALSE  FALSE  TRUE   TRUE   FALSE  FALSE  TRUE   
+## 6     2 4L40  L40       4L40.3283 PSMEM 13     33.3  8.53     0      5 FALSE NA    frass; broken top; dead    -1 &quot;&quot;    FALSE  870.      0  0.00680       0     598.  8.53 PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
+## 7     2 4L40  L40       4L40.3283 PSMEM 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                       NA &quot;&quot;    FALSE   NA      NA NA            NA     680. NA    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE</code></pre>
+<p>Basically I want to know how many trees ended up being damaged over
+the 10 years since thinning. It might also be useful to compare this to
+initial damage rates.</p>
+<pre class="r"><code>wd %&gt;%
+  # filter(year != &quot;init&quot;) %&gt;%
+  group_by(year, treatment, plot) %&gt;% 
+  summarize(pct = sum(bt_new, na.rm = TRUE) / n()) %&gt;% 
+  summarize(avg = mean(pct), se = sd(pct) / sqrt(n()) ) %&gt;% 
+  bear_plot(avg) +
+    labs(title = &quot;Average percent new broken tops for each treatment ±SE&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
+<pre class="r"><code>basic_bear_bar(wd, bt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all trees with broken tops&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
+<pre class="r"><code>basic_bear_bar(wd, bs_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all trees with broken stems&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-35-2.png" width="672" /></p>
+<pre class="r"><code>basic_bear_bar(wd, wt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all uprooted trees&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-35-3.png" width="672" /></p>
+<pre class="r"><code>wd |&gt;
+  filter(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;)) |&gt;
+  basic_bear_bar(bt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of DF and RW trees with broken tops for RW &amp; DF&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-35-4.png" width="672" /></p>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-ludeckePerformancePackageAssessment2021" class="csl-entry">
 Lüdecke, Daniel, Mattan S. Ben-Shachar, Indrajeet Patil, Philip

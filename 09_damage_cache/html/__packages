@@ -16,7 +16,8 @@ MuMIn
 broom.mixed
 patchwork
 rgl
-numDeriv
 performance
+numDeriv
 blme
 ROCR
+ggpattern

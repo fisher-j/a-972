@@ -329,6 +329,7 @@ heights</a></li>
 <li><a href="#short-fat-trees">Short fat trees?</a></li>
 </ul></li>
 <li><a href="#trees-with-extreme-lean">Trees with extreme lean</a></li>
+<li><a href="#damage-codes">Damage codes</a></li>
 </ul></li>
 </ul>
 </div>
@@ -11329,6 +11330,6577 @@ NA
 </tr>
 </tbody>
 </table>
+</div>
+<div id="damage-codes" class="section level2">
+<h2>Damage codes</h2>
+<p>Manual damage code from notes</p>
+<pre class="r"><code>d_l[d_l$tree_id == &quot;C3.4444&quot; &amp; d_l$year %in% c(&quot;init&quot;, &quot;08&quot;), &quot;cond&quot;] &lt;- &quot;31&quot;
+d_l[d_l$tree_id == &quot;C3.4444&quot; &amp; d_l$year %in% c(&quot;13&quot;), &quot;cond&quot;] &lt;- &quot;18,31&quot;
+
+badrow &lt;- with(d_l, tree_id == &quot;2H40.3064&quot; &amp; year %in% c(&quot;13&quot;, &quot;18&quot;))
+oldval &lt;- d_l$cond[badrow]
+newval &lt;- paste0(oldval, &quot;,31&quot;)
+d_l$cond[badrow] &lt;- newval</code></pre>
+<p>Trees with status code 30, 31, 32 but no condition code look for
+condition 33</p>
+<pre class="r"><code>options(vsc.viewer = FALSE)
+
+d_l |&gt;
+  group_by(tree_id) |&gt;
+  filter(any(status %in% c(30, 31, 32) &amp; !get_cond(30, 31, 32))) |&gt;
+  color_groups()</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<caption>
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+plot
+</th>
+<th style="text-align:left;">
+treatment
+</th>
+<th style="text-align:left;">
+tree_id
+</th>
+<th style="text-align:left;">
+spp
+</th>
+<th style="text-align:right;">
+h_dist
+</th>
+<th style="text-align:right;">
+azi
+</th>
+<th style="text-align:left;">
+year
+</th>
+<th style="text-align:right;">
+dbh
+</th>
+<th style="text-align:right;">
+ht
+</th>
+<th style="text-align:right;">
+cr
+</th>
+<th style="text-align:right;">
+status
+</th>
+<th style="text-align:left;">
+bear
+</th>
+<th style="text-align:left;">
+rot
+</th>
+<th style="text-align:left;">
+notes
+</th>
+<th style="text-align:right;">
+cc
+</th>
+<th style="text-align:left;">
+cond
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+1H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+1H40.1908
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+14.173
+</td>
+<td style="text-align:right;">
+52
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+16.764
+</td>
+<td style="text-align:right;">
+4.267
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+BROKEN TOP
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+1H40.1908
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+14.173
+</td>
+<td style="text-align:right;">
+52
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+16.764
+</td>
+<td style="text-align:right;">
+4.267
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+BROKEN TOP
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+1H40.1908
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+14.173
+</td>
+<td style="text-align:right;">
+52
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+16.510
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+dead, no sprouts
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+1H40.1908
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+14.173
+</td>
+<td style="text-align:right;">
+52
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H80.3581
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.894
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+202
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.716
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.934
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H80.3581
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.894
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+202
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.716
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.934
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H80.3581
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.894
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+202
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.970
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.106
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+5,7
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1H80.3581
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.894
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+202
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.224
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.572
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+5,7
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+1H80.3625
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+5.791
+</td>
+<td style="text-align:right;">
+335
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+17.018
+</td>
+<td style="text-align:right;">
+16.154
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+1H80.3625
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+5.791
+</td>
+<td style="text-align:right;">
+335
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+17.018
+</td>
+<td style="text-align:right;">
+16.154
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+1H80.3625
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+5.791
+</td>
+<td style="text-align:right;">
+335
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+17.018
+</td>
+<td style="text-align:right;">
+4.267
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+3,4,8
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+1H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+1H80.3625
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+5.791
+</td>
+<td style="text-align:right;">
+335
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+16.510
+</td>
+<td style="text-align:right;">
+5.486
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+3,4,8
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3677
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+9.235
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+355
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+41.148
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.821
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3677
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+9.235
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+355
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+41.148
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.821
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+1L40.3677
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+9.235
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+355
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+Down wind and BD (dbh?)
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3035
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+10.881
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+12.954
+</td>
+<td style="text-align:right;">
+16.763
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3035
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+10.881
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+12.954
+</td>
+<td style="text-align:right;">
+16.763
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3035
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+10.881
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Uprooted
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3046
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.168
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+67
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.938
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.506
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3046
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.168
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+67
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.938
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.506
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3046
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.168
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+67
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3052
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+16.001
+</td>
+<td style="text-align:right;">
+85
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+10.668
+</td>
+<td style="text-align:right;">
+19.811
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3052
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+16.001
+</td>
+<td style="text-align:right;">
+85
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+10.668
+</td>
+<td style="text-align:right;">
+19.811
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3052
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+16.001
+</td>
+<td style="text-align:right;">
+85
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+can’t find (down)
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3053
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.820
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+93
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.668
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.811
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+DEAD
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3053
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.820
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+93
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.668
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.811
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+DEAD
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3053
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.820
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+93
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3065
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+7.802
+</td>
+<td style="text-align:right;">
+162
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+19.558
+</td>
+<td style="text-align:right;">
+12.496
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3065
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+7.802
+</td>
+<td style="text-align:right;">
+162
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+19.558
+</td>
+<td style="text-align:right;">
+12.496
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3065
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+7.802
+</td>
+<td style="text-align:right;">
+162
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3071
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.498
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+204
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+39.116
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.212
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3071
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.498
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+204
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+39.116
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+26.212
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3071
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.498
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+204
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40.894
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.657
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+fork broke off; top broken
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3,6,17
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H40.3071
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.498
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+204
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+40.386
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.572
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3,6,17
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3085
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+2.865
+</td>
+<td style="text-align:right;">
+292
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+21.844
+</td>
+<td style="text-align:right;">
+21.640
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3085
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+2.865
+</td>
+<td style="text-align:right;">
+292
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+21.844
+</td>
+<td style="text-align:right;">
+21.640
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3085
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+2.865
+</td>
+<td style="text-align:right;">
+292
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+23.114
+</td>
+<td style="text-align:right;">
+5.486
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+Con Cd E=31 but it’s alive
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+3,18
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+2H40.3085
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+2.865
+</td>
+<td style="text-align:right;">
+292
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+23.114
+</td>
+<td style="text-align:right;">
+7.620
+</td>
+<td style="text-align:right;">
+45
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+3,33,18
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3125
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+16.032
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+107
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+43.180
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.773
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3125
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+16.032
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+107
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+43.180
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+23.773
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3125
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+16.032
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+107
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3126
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+13.868
+</td>
+<td style="text-align:right;">
+116
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+33.528
+</td>
+<td style="text-align:right;">
+22.554
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3126
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+13.868
+</td>
+<td style="text-align:right;">
+116
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+33.528
+</td>
+<td style="text-align:right;">
+22.554
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3126
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+13.868
+</td>
+<td style="text-align:right;">
+116
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+peeled off of stump
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3139
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PISI
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.315
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+162
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+42.164
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.126
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3139
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PISI
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.315
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+162
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+42.164
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.126
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3139
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PISI
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+7.315
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+162
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3157
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+9.540
+</td>
+<td style="text-align:right;">
+236
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+10.922
+</td>
+<td style="text-align:right;">
+17.373
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3157
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+9.540
+</td>
+<td style="text-align:right;">
+236
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+10.922
+</td>
+<td style="text-align:right;">
+17.373
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+2H80.3157
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+9.540
+</td>
+<td style="text-align:right;">
+236
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3174
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5.364
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+307
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.176
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.934
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3174
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5.364
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+307
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.176
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.934
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2H80.3174
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5.364
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+307
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+2L40.3492
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+6.218
+</td>
+<td style="text-align:right;">
+166
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+21.590
+</td>
+<td style="text-align:right;">
+18.287
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+2L40.3492
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+6.218
+</td>
+<td style="text-align:right;">
+166
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+21.590
+</td>
+<td style="text-align:right;">
+18.287
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+2L40.3492
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+6.218
+</td>
+<td style="text-align:right;">
+166
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+old bear damage and rot
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L40.3499
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.210
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+211
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.320
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+21.640
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L40.3499
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.210
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+211
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.320
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+21.640
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+2L40.3499
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.210
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+211
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+3H40.1837
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+9.692
+</td>
+<td style="text-align:right;">
+50
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+43.688
+</td>
+<td style="text-align:right;">
+27.126
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+3H40.1837
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+9.692
+</td>
+<td style="text-align:right;">
+50
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+43.688
+</td>
+<td style="text-align:right;">
+27.126
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+3H40.1837
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+9.692
+</td>
+<td style="text-align:right;">
+50
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+down 32?
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H40.1868
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.368
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+257
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.812
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.325
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H40.1868
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.368
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+257
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.812
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.325
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H40.1868
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.368
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+257
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+peeld off OG stump: top alive
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+3H40.1869
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+10.424
+</td>
+<td style="text-align:right;">
+258
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+33.782
+</td>
+<td style="text-align:right;">
+20.421
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+3H40.1869
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+10.424
+</td>
+<td style="text-align:right;">
+258
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+33.782
+</td>
+<td style="text-align:right;">
+20.421
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H40
+</td>
+<td style="text-align:left;">
+H40
+</td>
+<td style="text-align:left;">
+3H40.1869
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+10.424
+</td>
+<td style="text-align:right;">
+258
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+peeld off OG stump
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H80.3839
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.625
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+156
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.210
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.554
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H80.3839
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.625
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+156
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.210
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.554
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H80.3839
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.625
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+156
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.718
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+2.133
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+seven ft. tall; dowwned by wind above DBH; retagged; broken
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+19,31
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+H80
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3H80.3839
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.625
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+156
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+29.972
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+re-tag 4775
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3,8,19
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+3H80.3882
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+6.004
+</td>
+<td style="text-align:right;">
+270
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+11.430
+</td>
+<td style="text-align:right;">
+16.763
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+3H80.3882
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+6.004
+</td>
+<td style="text-align:right;">
+270
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+11.430
+</td>
+<td style="text-align:right;">
+16.763
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3H80
+</td>
+<td style="text-align:left;">
+H80
+</td>
+<td style="text-align:left;">
+3H80.3882
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+6.004
+</td>
+<td style="text-align:right;">
+270
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.3207
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+6.766
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+151
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30.734
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.3207
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+6.766
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+151
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30.734
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.3207
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+6.766
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+151
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+34.544
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.353
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+80
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3,6,7
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3L40.3207
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+6.766
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+151
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+33.782
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+broken top 6 ft
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+3,6,7
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+3L40.3234
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+3.383
+</td>
+<td style="text-align:right;">
+330
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+16.510
+</td>
+<td style="text-align:right;">
+17.678
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+3L40.3234
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+3.383
+</td>
+<td style="text-align:right;">
+330
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+16.510
+</td>
+<td style="text-align:right;">
+17.678
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+3L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+3L40.3234
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+3.383
+</td>
+<td style="text-align:right;">
+330
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+blow down from adj tree knocking it over
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3246
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.694
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+57
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.432
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.116
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+Blow down
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3246
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.694
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+57
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+27.432
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.116
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+Blow down
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3246
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.694
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+57
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3255
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+13.197
+</td>
+<td style="text-align:right;">
+122
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+20.066
+</td>
+<td style="text-align:right;">
+17.068
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3255
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+13.197
+</td>
+<td style="text-align:right;">
+122
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+20.066
+</td>
+<td style="text-align:right;">
+17.068
+</td>
+<td style="text-align:right;">
+20
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3255
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+13.197
+</td>
+<td style="text-align:right;">
+122
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+13.716
+</td>
+<td style="text-align:right;">
+3.657
+</td>
+<td style="text-align:right;">
+40
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+tree split in half
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+3,6,8
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3255
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+13.197
+</td>
+<td style="text-align:right;">
+122
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+14.478
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+60
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+3,6,8,18
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3260
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+12.984
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+158
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31.496
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.992
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3260
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+12.984
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+158
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31.496
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.992
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3260
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+12.984
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+158
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3262
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+12.252
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+16.510
+</td>
+<td style="text-align:right;">
+15.849
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3262
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+12.252
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+16.510
+</td>
+<td style="text-align:right;">
+15.849
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3262
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+12.252
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+17.018
+</td>
+<td style="text-align:right;">
+6.096
+</td>
+<td style="text-align:right;">
+50
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+3,7,17
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3262
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+12.252
+</td>
+<td style="text-align:right;">
+173
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:right;">
+18.796
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+60
+</td>
+<td style="text-align:right;">
+31
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+3,7,17
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3268
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.657
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+196
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+34.290
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+21.335
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3268
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.657
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+196
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+34.290
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+21.335
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+25
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+X
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3268
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.657
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+196
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+snapped at base
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3273
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+8.534
+</td>
+<td style="text-align:right;">
+230
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+29.718
+</td>
+<td style="text-align:right;">
+24.383
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3273
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+8.534
+</td>
+<td style="text-align:right;">
+230
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+29.718
+</td>
+<td style="text-align:right;">
+24.383
+</td>
+<td style="text-align:right;">
+25
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L40
+</td>
+<td style="text-align:left;">
+L40
+</td>
+<td style="text-align:left;">
+4L40.3273
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+8.534
+</td>
+<td style="text-align:right;">
+230
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+dead and down
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3283
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.901
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+309
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+33.274
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+24.078
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+Blow down
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3283
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.901
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+309
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+33.274
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.500
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+Blow down
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3283
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.901
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+309
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+33.274
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.534
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+frass; broken top; dead
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+L40
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+4L40.3283
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.901
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+309
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L80
+</td>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+4L80.1947
+</td>
+<td style="text-align:left;">
+PISI
+</td>
+<td style="text-align:right;">
+12.953
+</td>
+<td style="text-align:right;">
+181
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+53.848
+</td>
+<td style="text-align:right;">
+27.126
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L80
+</td>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+4L80.1947
+</td>
+<td style="text-align:left;">
+PISI
+</td>
+<td style="text-align:right;">
+12.953
+</td>
+<td style="text-align:right;">
+181
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+53.848
+</td>
+<td style="text-align:right;">
+27.126
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+X
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+4L80
+</td>
+<td style="text-align:left;">
+L80
+</td>
+<td style="text-align:left;">
+4L80.1947
+</td>
+<td style="text-align:left;">
+PISI
+</td>
+<td style="text-align:right;">
+12.953
+</td>
+<td style="text-align:right;">
+181
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C1.4151
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.106
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+86
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.668
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+18.897
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+LEANER
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C1.4151
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.106
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+86
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.668
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+18.897
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+LEANER
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C1.4151
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.106
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+86
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+dead and down
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C1
+</td>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+C1.4213
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+15.605
+</td>
+<td style="text-align:right;">
+276
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+11.176
+</td>
+<td style="text-align:right;">
+16.154
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C1
+</td>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+C1.4213
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+15.605
+</td>
+<td style="text-align:right;">
+276
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+11.176
+</td>
+<td style="text-align:right;">
+16.154
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C1
+</td>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+C1.4213
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+15.605
+</td>
+<td style="text-align:right;">
+276
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+dead and down
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C2
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C2.4301
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.508
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+170
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.140
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+21.335
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C2
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C2.4301
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.508
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+170
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+22.140
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+21.335
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C2
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C2.4301
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.508
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+170
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20.030
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+18.287
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+check data DBH shrank, unexplained
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C2
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C2.4301
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.508
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+170
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+30
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+Dead, Down
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C3
+</td>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+C3.4492
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+14.081
+</td>
+<td style="text-align:right;">
+140
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+13.208
+</td>
+<td style="text-align:right;">
+16.458
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C3
+</td>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+C3.4492
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+14.081
+</td>
+<td style="text-align:right;">
+140
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+13.208
+</td>
+<td style="text-align:right;">
+16.458
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C3
+</td>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+C3.4492
+</td>
+<td style="text-align:left;">
+PSMEM
+</td>
+<td style="text-align:right;">
+14.081
+</td>
+<td style="text-align:right;">
+140
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+dead and down
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3.4530
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.058
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+242
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.304
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+21.640
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3.4530
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.058
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+242
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.304
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+21.640
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+20
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3.4530
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.058
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+242
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.812
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+3.048
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+31
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C3.4530
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+PSMEM
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+10.058
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+242
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+18
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+19.304
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+5
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+Dead
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C4
+</td>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+C4.4655
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+15.940
+</td>
+<td style="text-align:right;">
+224
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:right;">
+27.940
+</td>
+<td style="text-align:right;">
+26.212
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C4
+</td>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+C4.4655
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+15.940
+</td>
+<td style="text-align:right;">
+224
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:right;">
+27.940
+</td>
+<td style="text-align:right;">
+26.212
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+TRUE
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+C4
+</td>
+<td style="text-align:left;">
+C
+</td>
+<td style="text-align:left;">
+C4.4655
+</td>
+<td style="text-align:left;">
+SESE3
+</td>
+<td style="text-align:right;">
+15.940
+</td>
+<td style="text-align:right;">
+224
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+<td style="text-align:left;">
+NA
+</td>
+<td style="text-align:left;">
+stump sprouts
+</td>
+<td style="text-align:right;">
+-1
+</td>
+<td style="text-align:left;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C4.4693
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.258
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+321
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+init
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+18.034
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15.544
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+50
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C4.4693
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.258
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+321
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+08
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+18.034
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15.544
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+50
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+TRUE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C4
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+C4.4693
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.258
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+321
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+13
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+32
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+FALSE
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+NA
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+down
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+-1
+</td>
+<td style="text-align:left;background-color: #EEE9E9 !important;">
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>d_l &lt;- d_l |&gt;
+  mutate(cond = case_when(
+    status %in% c(30, 31, 32) &amp; !get_cond(30, 31, 32) &amp; cond == &quot;&quot; ~ as.character(status),
+    status %in% c(30, 31, 32) &amp; !get_cond(30, 31, 32) &amp; cond != &quot;&quot; ~ paste0(cond, &quot;,&quot;, status),
+    TRUE ~ cond
+  ))</code></pre>
 </div>
 </div>
 

@@ -236,32 +236,46 @@ But they applied it to all trees, in which case, I assume that, leaving aside th
 
 Here I will calculate the species dominance metric separately for redwood and Douglas-fir components.
 
-```{r}
+A stand composed of a single species should have an average Ui of 0.5
 
+A species with more shade tolerance might have a lower Ui, because there are more trees in the understory, brining down average Ui.
+
+ Ui for redwood decreases in the control. This would suggest that the number of trees of other species out-competing (by diameter growth) redwoods is increasing, assuming the 4 nearest trees are in competition with any given tree. Because this metric is expressed as an average, it doesn't account for the density of the species.
+
+
+```{r}
+# Use live trees
 dd <- d_l |>
   filter(
     live,
     year != "init"
-  )
+  ) |>
+  mutate(year = factor(year, ordered = FALSE)) |>
+  droplevels()
 
-temp <- dd |> filter(paste(plot, year) %in% sample(paste(plot, year), 1)) 
-
-Ui_tree <- function(focus_dbh, neighbors_dbh) {
+# calculate Ui for one observation, given observation number, dbh list and neighbors list
+Ui_tree <- function(x, dbh, k_indices) {
+  focus_dbh <- dbh[x]
+  neighbors_dbh <- dbh[ k_indices[[x]] ]
   mean(focus_dbh > neighbors_dbh)
 }
 
+# Ui for all observations
 calc_Ui <- function(x, y, dbh) {
-  trees <- data.frame(x = x, y = y)
-  idx <- nearest(trees, k = 4)
-  sapply( 1:nrow(trees), function(x) Ui_tree(dbh[x], dbh[ idx[[x]] ]) )
+  xy <- data.frame(x = x, y = y)
+  k_indices <- nearest(xy, k = 4)
+  sapply( 1:nrow(xy), Ui_tree, dbh, k_indices)
 }
 
 
 Ui_plot <- dd |>
-  group_by(treatment, year, spp, plot) |>
-  summarize(val = mean(calc_Ui(x, y, dbh))) |>
+  group_by(treatment, year, plot) |>
+  mutate(val = calc_Ui(x, y, dbh)) |>
+  group_by(treatment, year, plot, spp) |>
+  summarize(val = mean(val)) |>
   filter(spp %in% c("PSMEM", "SESE3"))
 
+  
 lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot) |>
   emmeans( ~ treatment + year + spp) |> as.data.frame() |>
   relevel_treatment() |>
@@ -277,7 +291,54 @@ lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot) |>
         position = my_dodge
       ) +
       theme_bw() +
-      facet_wrap( ~ treatment)      
+      facet_wrap( ~ treatment)     
 
+```
+
+First, I'll show the average number of trees and standard deviation of each species in the top 100 TPH.
+
+```{r}
+dd |>
+  group_by(treatment, year, plot) |>
+  slice_max(n = 8, order_by = dbh, with_ties = TRUE) |>
+  group_by(treatment, year, spp) |>
+  count(plot) |>
+  summarize(avg_cnt = mean(n), sd = sd(n)) |>
+  filter(spp %in% c("SESE3", "PSMEM")) |>
+  color_groups(digits = 2, caption = "Average count and sd of number of DF or RW trees in the to 100 TPH per treatment/year")
+```
+
+Here I plot the average Ui of RW or DF trees that are in the top 100 TPH. 
+
+```{r}
+Ui_plot2 <- dd |>
+  group_by(treatment, year, plot) |>
+  mutate(val = calc_Ui(x, y, dbh)) |>
+  slice_max(n = 8, order_by = dbh, with_ties = TRUE) |>
+  group_by(treatment, year, plot, spp) |>
+  summarize(val = mean(val)) |>
+  filter(spp %in% c("PSMEM", "SESE3"))
+
+  
+Ui_mod2 <- lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot2)
+
+emmeans(Ui_mod2, pairwise ~ spp | treatment + year)$contrasts
+
+emmeans(Ui_mod2, ~ treatment + year + spp) |> 
+  as.data.frame() |>
+  relevel_treatment() |>
+  mutate(
+    spp = factor(spp, levels = c("SESE3", "PSMEM"))
+  ) |>
+  ggplot(aes(year, emmean, color = spp, group = spp)) +
+      geom_line(size = 1, position = my_dodge) +
+      geom_point(position = my_dodge) +
+      geom_errorbar(
+        aes(ymin = emmean - SE, ymax = emmean + SE),
+        width = .75,
+        position = my_dodge
+      ) +
+      theme_bw() +
+      facet_wrap( ~ treatment)      
 
 ```

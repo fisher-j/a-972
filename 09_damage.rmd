@@ -16,13 +16,13 @@ library(performance)
 
 ## data cleaning
 
-I'll only consider live trees.
+I previously only looked at live trees, this underestimates damage because observations are ommited from counts of cumulative damage. I'm leaving dead, bear damaged trees in now, so they are properly counted. I will still omit dead trees that were not bear damaged because these are not contributing to overall density. If a tree died without bear damage, it gets removed from data but if a tree dies from stem snap or windthrow, but had bear damage, I include it.
 
 ```{r}
 bd <- d_l %>%
-  filter(live) %>%
+  filter(live | !live & bear) %>%
   mutate(year = factor(year, ordered = FALSE)) %>%
-  select(-c(h_dist, azi, x, y, cc, live, ht))
+  select(-c(h_dist, azi, x, y))
 ```
 
 There are trees with "healed over" in the notes, most of these are in 2008. It makes sense if these trees are subsequently listed as not bear damaged. 
@@ -53,9 +53,10 @@ In looking at notes, trees trees that have "old bear damage" recorded are treate
 
 Are there trees that are recorded as bear damaged in one period and then not in the next period? Put another way, are bear damaged trees dropped from the list for one reason or another? 
 
-There are 64 trees that are dropped (all in 2013), of these, 14 are subsequently listed as damaged (all in 2018). As stated above, I will consider these valid occurrences of new damage.
+There are 61 trees that are dropped (all in 2013), of these, 14 are subsequently listed as damaged (all in 2018). As stated above, I will consider these valid occurrences of new damage.
 
 ```{r}
+
 bear_dropped <- bd %>%
   group_by(tree_id) %>%
   mutate(bear_dropped = lag(bear) & !bear) %>%
@@ -69,11 +70,11 @@ bear_dropped <- bd %>%
 
 # color_groups(bear_dropped)
 
-# # trees that are re-attacked
-# bear_dropped %>%
-#   filter(any(bear & !lag(bear))) %>%
-#   mutate(id = cur_group_id(), .before = 1) %>%
-#   color_groups()
+# trees that are re-attacked
+bear_dropped %>%
+  filter(any(bear & !lag(bear))) %>%
+  mutate(id = cur_group_id(), .before = 1) %>%
+  color_groups()
 
 ```
 
@@ -112,8 +113,21 @@ There were about 30 spruce trees before thinning and about half of these had bea
 
 ```{r}
 
-bd <- filter(bd, spp %in% c("SESE3", "PSMEM")) %>%
-  mutate(spp2 = spp)
+bd <- mutate(bd, spp2 = spp)
+
+```
+
+Trees killed just by bears.
+
+Bear damaged trees that were alive in 2008 and subsequently died without being broken or uprooted
+
+```{r}
+
+bd |>
+  group_by(tree_id) |>
+  filter( any((bear | lag(bear)) & !live & lag(live) & !get_cond(30, 31, 32)) ) |>
+  pull(tree_id) |>
+  n_distinct()
 
 ```
 
@@ -138,16 +152,15 @@ bear_plot <- function(data, var) {
 bd %>%
   # filter(year != "init") %>%
   group_by(year, treatment, plot) %>% 
-  summarize(pct_bear = sum(bear_new, na.rm = TRUE) / n()) %>% 
+  summarize(pct_bear = mean(bear_new)) %>% 
   summarize(avg_pct_bear = mean(pct_bear), se = sd(pct_bear) / sqrt(n()) ) %>% 
   bear_plot(avg_pct_bear) +
     labs(title = "Average percent new bear damage for each treatment ±SE")
 
-
 bd %>%
   # filter(year != "init") %>%
   group_by(year, treatment, plot) %>% 
-  summarize(cnt_bear = sum(bear_new, na.rm = TRUE)) %>% 
+  summarize(cnt_bear = sum(bear_new)) %>% 
   summarize( avg_cnt_bear = mean(cnt_bear), se = sd(cnt_bear) / sqrt(n()) ) %>% 
   bear_plot(avg_cnt_bear) +
     labs(title = "Average count new bear damage for each treatment ±SE")
@@ -157,15 +170,14 @@ Here is the same data for individual plots, showing their trajectories
 
 ```{r}
 
-
-bd_plot_fig <- function(prop = FALSE) {
-  my_sum <- function(d) summarise(d, var = sum(bear_new))
+bd_plot_fig <- function(data, var = bear_new, prop = FALSE) {
+  my_sum <- function(d) summarise(d, var = sum( {{var}} ))
   lab_word <- "Count"
   if (prop) {
-    my_sum <- function(d) summarise(d, var = sum(bear_new) / n())
+    my_sum <- function(d) summarise(d, var = sum( {{var}} ) / n())
     lab_word <- "Proportion"
   }
-  bd %>%
+  data %>%
     group_by(year, treatment, plot) %>% 
     my_sum %>% 
     ggplot(aes(year, var, color = treatment, group = plot)) + 
@@ -180,43 +192,131 @@ bd_plot_fig <- function(prop = FALSE) {
       )
 }
 
-bd_plot_fig()
-bd_plot_fig(prop = TRUE)
+bd_plot_fig(bd, bear_new)
+
+bd_plot_fig(bd, bear_new, prop = TRUE)
 
 ```
 
 Bear bar charts
 
 ```{r}
+# This funtion is using "spp2" instead of "spp", this was originally to allow grouping of species
 
-basic_bear_bar <- function(cum, prop) {
-  var <- quote(bear_new)
-  if (cum) var <- quote(bear_cum)
-  my_sum <- function(d) summarise(d, var = sum(eval(var)))
-  if (prop) my_sum <- function(d) summarise(d, var = sum(eval(var)) / n())
-  calc <- if_else(prop, "Proportion ", "Count ")
-  variable <- if_else(cum, "cumulative ", "")
-    
-  group_by(bd, treatment, year, spp2) %>%
-    my_sum %>%
-    ggplot(aes(treatment, eval(var), fill = spp2)) +
-       geom_col(position = "stack", color = "black") +
-    facet_wrap(~ year, nrow = 1) +
-    scale_fill_manual(values = palette()) +
-    labs(
-      title = paste0(calc, "of ", variable, "new bear damage"),
-      y = calc,
-      x = "Treatment",
-      fill = NULL
-    )
+treat_bar <- function(d, var, type) {
+  if (type == "pct") {
+    my_sum <- function(d) d |> summarize(var1 = mean( {{var}} ))
+  } else if (type == "cnt") {
+    my_sum <- function(d) d |> summarise(var1 = sum( {{var}} ))
+  }
+  d |>
+  group_by(treatment, year, plot) |>
+  my_sum() |>
+  summarise(avg = mean(var1), SE = sd(var1) / sqrt(n()))
+} 
+
+spp_bar <- function(d, var, type) {
+  if (type == "pct") {
+    my_sum <- function(d) {
+      d |>
+      summarize(spp_true = sum( {{var}} ), n = n()) |>
+      mutate(spp_plot = spp_true / sum(n))
+    }
+  } else if (type == "cnt") {
+    my_sum <- function(d) {
+      d |> summarise(spp_plot = sum( {{var}} ))
+    }
+  }
+  d |>
+  group_by(treatment, year, plot, spp2) |>
+  my_sum() |>
+  group_by(treatment, year, spp2) |>
+  summarise(avg_spp = sum(spp_plot) / 4) |>
+  filter(avg_spp > 0)
 }
 
-basic_bear_bar(cum = TRUE, prop = FALSE)
-basic_bear_bar(cum = TRUE, prop = TRUE)
+dam_bar1 <- function(d, var, type, title, error = FALSE, nospruce = FALSE) {
+  
+  spp_d <- spp_bar(d = d, var = {{var}}, type = type)
+  if(nospruce) spp_d <- filter(spp_d, spp2 != "PISI")
+  err_d <- treat_bar(d, var = {{var}}, type = type)
+
+  ggplot(spp_d, aes(x = treatment)) +
+    geom_col(aes(y = avg_spp, fill = spp2), position = "stack", color = "black") +
+    {if (error) geom_errorbar(data = err_d, aes(y = avg, ymin = avg - SE, ymax = avg + SE), width = 0.2)} +
+    facet_wrap(~ year, nrow = 1) +
+    scale_fill_manual(values = palette()) +
+    labs(title = title, y = type, x = "Treatment", fill = NULL)
+
+}
+
+# The first way ###################################
+dam_bar0 <- function(data, var, type = "cnt", title = "") {
+  if (type == "cnt") {
+    my_sum <- function(d) {
+    summarise(d, var = sum( {{var}} ))
+    } 
+  } else if (type == "pct") {
+    my_sum <- function(d) {
+      summarise(d, var = sum( {{var}} ), ntree = n()) |>
+      mutate(var = var / sum(ntree))
+    } 
+  }
+
+  data |>  
+    group_by(treatment, year, spp2) |>
+    my_sum() |>
+    filter(var > 0) |>
+    ggplot(aes(treatment, var, fill = spp2)) +
+      geom_col(position = "stack", color = "black") +
+      facet_wrap(~ year, nrow = 1) +
+      scale_fill_manual(values = palette()) +
+      labs(title = title, y = type, x = "Treatment", fill = NULL)
+}
+```
+
+# The problem with the bear bars
+
+After thinking about it some more I found a couple things.
+
+First, there is a subtle difference between aggregating at the treatment level (simple sum of bear damage across plots), and averaging plot level sums.
+
+```{r, animation.hook="gifski", interval=1.7}
+
+dam_bar0(bd, bear_new, type = "pct",
+  title = "Aggregated percent new bear damage pre and post treatment") +
+  scale_y_continuous(limits = c(0, .20))
+
+dam_bar1(bd, bear_new, type = "pct",
+  title = "Average percent new bear damage pre and post treatment")+
+  scale_y_continuous(limits = c(0, .20))
+```
+
+```{r, animation.hook="gifski", interval=1.7}
+
+dam_bar0(bd, bear_cum, type = "pct",
+  title = "Aggregated cumulative percent new bear damage pre and post treatment")
+
+dam_bar1(bd, bear_cum, type = "pct",
+  title = "Average cumulative percent new bear damage pre and post treatment")
+```
+
+The other thing I figured out is that we can put error bars on the top of the bar indicating the variation in total damage across plots, but in this case we would need to include spruce, otherwise the error bar be centered in empty space.
+
+```{r, animation.hook="gifski"}
+
+dam_bar1(bd, bear_cum, type = "pct", error = TRUE,
+  title = "Average cumulative percent new bear damage pre and post treatment")
+
+dam_bar1(bd, bear_cum, type = "pct", error = TRUE, nospruce = TRUE,
+  title = "Average cumulative percent new bear damage pre and post treatment") +
+  scale_fill_manual(values = palette()[2:3])
 
 ```
 
-Bear bar chart for publication
+I think that after talking today, I would want to leave off the spruce as well as the error bars, but I wanted to check in to be sure.
+
+## Bear bar figure for publication
 
 ```{r, fig.width=7.16, fig.height=3.54}
 
@@ -224,7 +324,8 @@ year_labels <- c(
   init = "Pretreatment damage\nbefore thin",
   `08` = "Pretreatment damage\nafter thin",
   `13` = "Posttreatment damage\n2008 - 2013",
-  `18` = "Posttreatment damage\n2008 - 2018"
+  `18` = "Posttreatment damage\n2008 - 2018",
+  final = "Observed bear damage\n2018"
 )
 
 type_labels <- as_labeller(c(
@@ -232,15 +333,30 @@ type_labels <- as_labeller(c(
   bear_prop = "Proportion"
 ), label_parsed)
 
-bd_2 <- group_by(bd, treatment, spp2, year)
+
+bd_2 <- group_by(bd, treatment, year, spp2) |> filter(spp %in% c("SESE3", "PSMEM"))
+
+bd_3 <- filter(bd_2, year == "18") |> mutate(year = "final")
+
+bd_3 <- bind_rows(
+  bear_cnt = summarise(bd_3, bear_sum = sum(bear * 3.125)),
+  bear_prop = summarise(bd_3, bear_sum = sum(bear), ntree = n()) |> 
+    mutate(bear_sum = bear_sum / sum(ntree)),
+  .id = "sum_type"
+)
+
 bd_2 <- bind_rows(
   bear_cnt = summarise(bd_2, bear_sum = sum(bear_cum * 3.125)),
-  bear_prop = summarise(bd_2, bear_sum = sum(bear_cum) / n()),
+  bear_prop = summarise(bd_2, bear_sum = sum(bear_cum), ntree = n()) |> 
+    mutate(bear_sum = bear_sum / sum(ntree)),
   .id = "sum_type"
-) %>% relevel_treatment()
+)
 
+bd_pub <- bind_rows(bd_2, bd_3) |> 
+  mutate(year = factor(year, levels = c("init", "08", "13", "18", "final"))) |> 
+  relevel_treatment()
 
-bd_2 %>%
+bd_pub %>%
   ggplot(aes(treatment, bear_sum, fill = spp2)) +
     geom_col(position = "stack") +
     facet_grid(
@@ -301,11 +417,16 @@ My first model is additive and includes `treatment`, `year`, `d_inc2`, `spp2` an
 
 The random effects for `tree_id` are very small, these might end up getting dropped.
 
+*I'm removing dead trees for modeling, because we want to better estiamte probability of a live tree being damaged*
 
-```{r, warning=FALSE}
+```{r, cache=TRUE, warning=FALSE}
 
-bdmd <- subset(bd, year %in% c("13", "18")) %>%
-  mutate(year = factor(year))
+bdmd <- bd |>
+  group_by(treatment, plot) |>
+  mutate(pbear_init = sum(year == "init" & bear)) |> 
+  ungroup() |>
+  filter(year %in% c("13", "18"), live, spp %in% c("PSMEM", "SESE3")) |>
+  droplevels()
 
 
 bm1 <- glmer(
@@ -493,6 +614,7 @@ pred_bd <- function(mod, limit = FALSE) {
     )
   }
 
+  # This is the part where I get the std error as per GLMM FAQ instructions
   dat <- prediction_data
   dmat <- model.matrix(terms(mod), dat)
   pvar1 <- diag(dmat %*% tcrossprod(vcov(mod), dmat))
@@ -502,7 +624,7 @@ pred_bd <- function(mod, limit = FALSE) {
   , plo = dat$bear_new - cmult * sqrt(pvar1)
   , phi = dat$bear_new + cmult * sqrt(pvar1)
   ) %>% 
-  mutate(across(c(bear_new, plo, phi), ~ exp(.x) / (1 + exp(.x))))
+  mutate(across( c(bear_new, plo, phi), ~ exp(.x) / (1 + exp(.x)) ))
 }
 
 ```
@@ -706,57 +828,111 @@ emmip(bbdm[[4]], treatment ~ ba_inc2 | spp2 + year, at = ba_incs, CIs = TRUE, ty
 
 ```
 
-## Cumulative bear damage
+## Compare model predictions to observed
 
-Formulas
+First I show amount of bear damage predicted (sum of predicted probabilities) for each time period compared to observed.
 
-```{r, eval=FALSE}
-fl2 <- list(
-  bear_cum ~ treatment + spp + scale(ba_inc2)
- , bear_cum ~ treatment + spp + scale(ba_inc2) + treatment:spp
- , bear_cum ~ treatment + spp + scale(ba_inc2) + scale(ba_inc2):spp
-)
-names(fl2) <- seq_along(fl2)
+```{r}
+##### Predict new bear damage #######
+
+make_pred_bar_chart <- function() {
+  
+  pred <- predict(bbdm[[4]], type = "response")
+  
+  data1 <- cbind(bdmd, pred = pred)
+
+  a <- data1 %>%
+    group_by(treatment, year, spp2) %>%
+    summarize(pred = sum(pred)) %>%
+    ungroup() %>%
+    ggplot(aes(treatment, pred, fill = spp2)) + 
+      geom_col(position = "stack", color = "black") +
+      facet_wrap(~ year) +
+      scale_fill_manual(values = palette()) +
+      labs(
+        title = "predicted sum of DF and RW trees with bear damage",
+        y = "count",
+        x = "Treatment",
+        fill = NULL
+      ) +
+      theme(legend.position = "none") +
+      scale_y_continuous(limits = c(0, 17))
+
+  b <- bd %>%
+    filter(year %in% c("13", "18")) %>%
+    group_by(treatment, year, spp2) %>%
+    summarize(bear_new = sum(bear_new)) %>%
+    ungroup() %>%
+    ggplot(aes(treatment, bear_new, fill = spp2)) + 
+      geom_col(position = "stack", color = "black") +
+      facet_wrap(~ year) +
+      scale_fill_manual(values = palette()) +
+      labs(
+        title = "Total sum of new bear damage for each treatment/species",
+        y = "Count of bear damage",
+        x = "Treatment",
+        fill = NULL
+      ) +
+      scale_y_continuous(limits = c(0, 17))
+
+  a + b
+}
+
+make_pred_bar_chart()
 ```
 
-```{r, eval=FALSE}
-bdmd1 <- filter(bdmd, year == "13")
-bdmd2 <- filter(bdmd, year == "18")
+This figure compares the cumulative (post treatment) predicted amount of bear damage to the cumulative observed.
+
+```{r}
+
+####### Cumulative prediction from new bear damage model #########
+
+make_pred_bar_chart2 <- function() {
+
+  data1 <- cbind(bdmd, pred1 = predict(bbdm[[4]], type = "response")) %>%
+    group_by(tree_id) %>%
+    mutate(pred = if_else(year == "18", sum(pred1), pred1))
 
 
-# Seperate years, only models that don't include year
-# 2013
-cbdm1 <- make_bglmm_mods(bdmd1, fl2)
-examine_bdmod(cbdm1, "bglmm models cumulative bear damage 2013")
-# 2018
-cbdm2 <- make_bglmm_mods(bdmd2, fl2)
-examine_bdmod(cbdm2, "bglmm models cumulative new bear damage 2018")
-emmip(cbdm2[[2]], treatment ~ ba_inc2 | spp, at = ba_incs, type = "response") + labs(title = "bglmm cumulative new bear damage 2018")
+  p1 <- data1 %>%
+    group_by(treatment, year, spp2) %>%
+    summarize(pred = sum(pred)) %>%
+    ungroup() %>%
+    ggplot(aes(treatment, pred, fill = spp2)) + 
+      geom_col(position = "stack", color = "black") +
+      facet_wrap(~ year, ncol = 6) +
+      scale_fill_manual(values = palette()) +
+      labs(
+        title = "predicted sum of DF and RW trees with bear damage",
+        y = "count",
+        x = "Treatment",
+        fill = NULL
+      ) +
+      theme(legend.position = "none") +
+      scale_y_continuous(limits = c(0, 25))
 
+  p2 <- bdmd %>%
+    group_by(treatment, year, spp2) %>%
+    summarize(bear_cum = sum(bear_cum)) %>%
+    ungroup() %>%
+    ggplot(aes(treatment, bear_cum, fill = spp2)) + 
+      geom_col(position = "stack", color = "black") +
+      facet_wrap(~ year) +
+      scale_fill_manual(values = palette()) +
+      labs(
+        title = "cumulative (after treatment) new bear damage for each treatment/species",
+        y = "Count of bear damage",
+        x = "Treatment",
+        fill = NULL
+      ) +
+      scale_y_continuous(limits = c(0, 25))
 
+  p1 + p2
+}
 
-
-
-# all interactions with year: new
-full_interaction_new <- make_bglmm_mods(bdmd, list(new = 
-  bear_new ~ spp + treatment + scale(ba_inc2) + year:spp + year:treatment + year:scale(ba_inc2)
-))
-
-# all interactions with year: cumulative
-full_interaction_cumulative <- make_bglmm_mods(bdmd, list(cumulative = 
-  bear_cum ~ spp + treatment + scale(ba_inc2) + year:spp + year:treatment + year:scale(ba_inc2)
-))
-
-examine_bdmod(c(full_interaction_cumulative, full_interaction_new), cap = "Cumulative and new bear damage full interaction with year")
-
-
-emmip(cbdm2[[2]], treatment ~ ba_inc2 | spp, type = "response") + labs(title = "glmm cumulative new bear damage 2018")
-
-emmip(full_interaction_new[[1]], treatment ~ ba_inc2 | spp + year, at = ba_incs, type = "response")
-emmip(full_interaction_cumulative[[1]], treatment ~ ba_inc2 | spp + year, type = "response")
-
-
+make_pred_bar_chart2()
 ```
+
 
 ## Model validation
 
@@ -769,3 +945,98 @@ I can check for over dispersion, and [I don't think I need to worry about underd
 
 # Wind damage and breakage
 
+Wind damage and breakage are characterized by condition codes:
+
+    2          = dead top
+    3          = broken top
+    12         = broken top - operational damage
+    30, 31     = broken stem (below and above dbh)
+    32         = windthrow (uprooted)
+
+there is only 1 code 12, I think we can ignore it
+
+```{r}
+
+wd <- d_l |>
+  mutate(spp2 = spp, year = factor(year, ordered = FALSE)) |>
+  select(-c(h_dist, azi, x, y, contains("inc1"))) 
+
+wd <- wd %>%
+  group_by(tree_id) %>%
+  mutate(
+    bt_new = get_cond(3) & year %in% c("init", "08") | get_cond(3) & !lag(get_cond(3)),
+    bt_new = if_else(is.na(bt_new), FALSE, bt_new),
+    bt_cum = if_else(year == "18" & lag(bt_new), TRUE, bt_new),
+    
+    bs_new = get_cond(30, 31) & year %in% c("init", "08") | get_cond(30, 31) & !lag(get_cond(30, 31)),
+    bs_new = if_else(is.na(bs_new), FALSE, bs_new),
+    bs_cum = if_else(year == "18" & lag(bs_new), TRUE, bs_new),
+    
+    wt_new = get_cond(32) & year %in% c("init", "08") | get_cond(32) & !lag(get_cond(32)),
+    wt_new = if_else(is.na(wt_new), FALSE, wt_new),
+    wt_cum = if_else(year == "18" & lag(wt_new), TRUE, wt_new),
+    ) %>%
+  ungroup()
+
+```
+
+Some damaged trees are listed as damaged and subsequently unlisted.
+
+for code 3, there are 5 dropped trees most of them due to death
+for codes 30 and 31 there are 6. Most of these die, others are recorded differently, ie 31 to 3
+for code 32, there are 2, both are dead at the start
+
+```{r}
+
+get_dropped <- function(dat, test_condition) {
+  dat %>%
+    group_by(tree_id) %>%
+    mutate( dropped = lag({{test_condition}}) & !{{test_condition}} ) %>%
+    filter(any(dropped)) %>%
+    mutate(id = cur_group_id()) %>%
+    relocate(id) %>%
+    arrange(id)
+}
+
+
+get_dropped(wd, get_cond(2)) 
+get_dropped(wd, get_cond(3)) 
+get_dropped(wd, get_cond(30, 31)) 
+get_dropped(wd, get_cond(32))
+
+
+```
+
+Basically I want to know how many trees ended up being damaged over the 10 years since thinning. It might also be useful to compare this to initial damage rates.
+
+```{r}
+
+wd %>%
+  # filter(year != "init") %>%
+  group_by(year, treatment, plot) %>% 
+  summarize(pct = sum(bt_new, na.rm = TRUE) / n()) %>% 
+  summarize(avg = mean(pct), se = sd(pct) / sqrt(n()) ) %>% 
+  bear_plot(avg) +
+    labs(title = "Average percent new broken tops for each treatment ±SE")
+
+```
+
+```{r}
+basic_bear_bar(wd, bt_cum, type = "pct", "Cumulative percent of all trees with broken tops")
+basic_bear_bar(wd, bs_cum, type = "pct", "Cumulative percent of all trees with broken stems")
+basic_bear_bar(wd, wt_cum, type = "pct", "Cumulative percent of all uprooted trees")
+
+wd |>
+  filter(spp %in% c("SESE3", "PSMEM")) |>
+  basic_bear_bar(bt_cum, type = "pct", "Cumulative percent of DF and RW trees with broken tops for RW & DF")
+
+
+
+```
+
+
+```{r}
+
+
+
+```
