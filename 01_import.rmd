@@ -2,8 +2,30 @@
 title: "Import data"
 ---
 
+```{r}
+chunk_times <- data.frame()  # store the time for each chunk
+```
+
+```{r}
+knitr::knit_hooks$set(time_it = local({
+  now <- NULL
+  function(before, options) {
+    if (before) {
+      now <<- Sys.time()
+    } else {
+      res <- difftime(Sys.time(), now)
+      chunk_times <<- rbind(chunk_times, list(
+        file = knitr::current_input(), 
+        chunk = options$label, 
+        time = res
+      ))
+    }
+  }
+}))
+```
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE)
 ```
 
 ```{r extra-functions, include=FALSE}

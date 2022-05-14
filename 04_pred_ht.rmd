@@ -3,7 +3,7 @@ title: "Height increment model"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = TRUE, time_it = TRUE)
 ```
 
 ```{r}

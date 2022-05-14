@@ -4,7 +4,7 @@ bibliography: [reference/a972.bib]
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE)
 ```
 
 ```{r}

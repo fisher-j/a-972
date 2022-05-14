@@ -335,11 +335,11 @@ $(document).ready(function () {
 <li><a href="#bear-damage">Bear damage</a>
 <ul>
 <li><a href="#data-cleaning">data cleaning</a></li>
-<li><a href="#summary">Summary</a></li>
 </ul></li>
 <li><a href="#the-problem-with-the-bear-bars">The problem with the bear
 bars</a>
 <ul>
+<li><a href="#summary">Summary</a></li>
 <li><a href="#bear-bar-figure-for-publication">Bear bar figure for
 publication</a></li>
 <li><a href="#modeling">Modeling</a></li>
@@ -355,6 +355,8 @@ breakage</a></li>
 </ul>
 </div>
 
+<pre class="r"><code>print(knitr::current_input())</code></pre>
+<pre><code>## [1] &quot;09_damage.rmd&quot;</code></pre>
 <pre class="r"><code>require(tidyverse)
 library(performance)</code></pre>
 <div id="bear-damage" class="section level1">
@@ -363,15 +365,12 @@ library(performance)</code></pre>
 <h2>data cleaning</h2>
 <p>I previously only looked at live trees, this underestimates damage
 because observations are ommited from counts of cumulative damage. I’m
-leaving dead, bear damaged trees in now, so they are properly counted. I
-will still omit dead trees that were not bear damaged because these are
-not contributing to overall density. If a tree died without bear damage,
-it gets removed from data but if a tree dies from stem snap or
-windthrow, but had bear damage, I include it.</p>
-<pre class="r"><code>bd &lt;- d_l %&gt;%
-  filter(live | !live &amp; bear) %&gt;%
-  mutate(year = factor(year, ordered = FALSE)) %&gt;%
-  select(-c(h_dist, azi, x, y))</code></pre>
+now including all tree records in the analysis, so estimates represent
+total amounts of post-treatment trees damaged by bears, some of these
+trees may no longer be in the stand, but they were still damaged by
+bears at one point.</p>
+<pre class="r"><code>d_l$year &lt;- factor(d_l$year, ordered = FALSE)
+bd &lt;- d_l</code></pre>
 <p>There are trees with “healed over” in the notes, most of these are in
 2008. It makes sense if these trees are subsequently listed as not bear
 damaged.</p>
@@ -396,9 +395,10 @@ incidence of bear damage.</p>
 <p>Are there trees that are recorded as bear damaged in one period and
 then not in the next period? Put another way, are bear damaged trees
 dropped from the list for one reason or another?</p>
-<p>There are 61 trees that are dropped (all in 2013), of these, 14 are
-subsequently listed as damaged (all in 2018). As stated above, I will
-consider these valid occurrences of new damage.</p>
+<p>There are 77 trees that are dropped (2013 and 2018), of these, 14 are
+subsequently listed as (re-) damaged (all in 2018). As stated above, I
+will consider these valid occurrences of new damage. 16 of the “dropped”
+trees were because of death (no longer recording bear damage).</p>
 <pre class="r"><code>bear_dropped &lt;- bd %&gt;%
   group_by(tree_id) %&gt;%
   mutate(bear_dropped = lag(bear) &amp; !bear) %&gt;%
@@ -436,6 +436,12 @@ tree_id
 </th>
 <th style="text-align:left;">
 spp
+</th>
+<th style="text-align:right;">
+h_dist
+</th>
+<th style="text-align:right;">
+azi
 </th>
 <th style="text-align:left;">
 year
@@ -492,6 +498,12 @@ ht_inc1
 ba_inc1
 </th>
 <th style="text-align:right;">
+x
+</th>
+<th style="text-align:right;">
+y
+</th>
+<th style="text-align:right;">
 sdi_plot
 </th>
 <th style="text-align:right;">
@@ -518,6 +530,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+5.486
+</td>
+<td style="text-align:right;">
+174
 </td>
 <td style="text-align:left;">
 init
@@ -573,6 +591,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;">
+410018.6
+</td>
+<td style="text-align:right;">
+4567413
+</td>
+<td style="text-align:right;">
 1706.229
 </td>
 <td style="text-align:right;">
@@ -597,6 +621,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+5.486
+</td>
+<td style="text-align:right;">
+174
 </td>
 <td style="text-align:left;">
 08
@@ -652,6 +682,12 @@ TRUE
 96.882
 </td>
 <td style="text-align:right;">
+410018.6
+</td>
+<td style="text-align:right;">
+4567413
+</td>
+<td style="text-align:right;">
 710.770
 </td>
 <td style="text-align:right;">
@@ -676,6 +712,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+5.486
+</td>
+<td style="text-align:right;">
+174
 </td>
 <td style="text-align:left;">
 13
@@ -732,6 +774,12 @@ TRUE
 194.819
 </td>
 <td style="text-align:right;">
+410018.6
+</td>
+<td style="text-align:right;">
+4567413
+</td>
+<td style="text-align:right;">
 804.925
 </td>
 <td style="text-align:right;">
@@ -756,6 +804,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+5.486
+</td>
+<td style="text-align:right;">
+174
 </td>
 <td style="text-align:left;">
 18
@@ -812,6 +866,12 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+410018.6
+</td>
+<td style="text-align:right;">
+4567413
+</td>
+<td style="text-align:right;">
 982.710
 </td>
 <td style="text-align:right;">
@@ -836,6 +896,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.938
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+174
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 init
@@ -891,6 +957,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410018.5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567413
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1706.229
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -915,6 +987,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.938
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+174
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 08
@@ -970,6 +1048,12 @@ TRUE
 61.799
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410018.5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567413
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 710.770
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -994,6 +1078,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.938
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+174
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
@@ -1049,6 +1139,12 @@ TRUE
 158.610
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410018.5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567413
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 804.925
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1073,6 +1169,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4.938
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+174
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
@@ -1129,6 +1231,12 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410018.5
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567413
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 982.710
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1153,6 +1261,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+13.746
+</td>
+<td style="text-align:right;">
+190
 </td>
 <td style="text-align:left;">
 init
@@ -1208,6 +1322,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;">
+410015.6
+</td>
+<td style="text-align:right;">
+4567405
+</td>
+<td style="text-align:right;">
 1706.229
 </td>
 <td style="text-align:right;">
@@ -1232,6 +1352,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+13.746
+</td>
+<td style="text-align:right;">
+190
 </td>
 <td style="text-align:left;">
 08
@@ -1287,6 +1413,12 @@ TRUE
 97.045
 </td>
 <td style="text-align:right;">
+410015.6
+</td>
+<td style="text-align:right;">
+4567405
+</td>
+<td style="text-align:right;">
 710.770
 </td>
 <td style="text-align:right;">
@@ -1311,6 +1443,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+13.746
+</td>
+<td style="text-align:right;">
+190
 </td>
 <td style="text-align:left;">
 13
@@ -1366,6 +1504,12 @@ TRUE
 134.774
 </td>
 <td style="text-align:right;">
+410015.6
+</td>
+<td style="text-align:right;">
+4567405
+</td>
+<td style="text-align:right;">
 804.925
 </td>
 <td style="text-align:right;">
@@ -1390,6 +1534,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+13.746
+</td>
+<td style="text-align:right;">
+190
 </td>
 <td style="text-align:left;">
 18
@@ -1446,6 +1596,12 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+410015.6
+</td>
+<td style="text-align:right;">
+4567405
+</td>
+<td style="text-align:right;">
 982.710
 </td>
 <td style="text-align:right;">
@@ -1470,6 +1626,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.308
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+202
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 init
@@ -1525,6 +1687,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410013.8
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567408
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1706.229
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1549,6 +1717,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.308
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+202
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 08
@@ -1604,6 +1778,12 @@ TRUE
 92.575
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410013.8
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567408
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 710.770
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1628,6 +1808,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.308
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+202
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
@@ -1683,6 +1869,12 @@ TRUE
 130.244
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410013.8
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567408
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 804.925
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1707,6 +1899,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+11.308
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+202
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
@@ -1763,6 +1961,12 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410013.8
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567408
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 982.710
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -1787,6 +1991,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+8.595
+</td>
+<td style="text-align:right;">
+266
 </td>
 <td style="text-align:left;">
 init
@@ -1842,6 +2052,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;">
+410009.4
+</td>
+<td style="text-align:right;">
+4567417
+</td>
+<td style="text-align:right;">
 1706.229
 </td>
 <td style="text-align:right;">
@@ -1866,6 +2082,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+8.595
+</td>
+<td style="text-align:right;">
+266
 </td>
 <td style="text-align:left;">
 08
@@ -1921,6 +2143,12 @@ TRUE
 36.888
 </td>
 <td style="text-align:right;">
+410009.4
+</td>
+<td style="text-align:right;">
+4567417
+</td>
+<td style="text-align:right;">
 710.770
 </td>
 <td style="text-align:right;">
@@ -1945,6 +2173,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+8.595
+</td>
+<td style="text-align:right;">
+266
 </td>
 <td style="text-align:left;">
 13
@@ -2000,6 +2234,12 @@ TRUE
 195.792
 </td>
 <td style="text-align:right;">
+410009.4
+</td>
+<td style="text-align:right;">
+4567417
+</td>
+<td style="text-align:right;">
 804.925
 </td>
 <td style="text-align:right;">
@@ -2024,6 +2264,12 @@ H40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+8.595
+</td>
+<td style="text-align:right;">
+266
 </td>
 <td style="text-align:left;">
 18
@@ -2080,6 +2326,12 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+410009.4
+</td>
+<td style="text-align:right;">
+4567417
+</td>
+<td style="text-align:right;">
 982.710
 </td>
 <td style="text-align:right;">
@@ -2104,6 +2356,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.656
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+340
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 init
@@ -2159,6 +2417,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410015.0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567426
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1706.229
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2183,6 +2447,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.656
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+340
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 08
@@ -2238,6 +2508,12 @@ TRUE
 65.963
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410015.0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567426
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 710.770
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2262,6 +2538,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.656
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+340
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
@@ -2317,6 +2599,12 @@ TRUE
 98.453
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410015.0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567426
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 804.925
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2341,6 +2629,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+8.656
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+340
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
@@ -2397,6 +2691,12 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410015.0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567426
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 982.710
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2421,6 +2721,12 @@ H80
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+6.218
+</td>
+<td style="text-align:right;">
+203
 </td>
 <td style="text-align:left;">
 init
@@ -2476,6 +2782,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;">
+410017.1
+</td>
+<td style="text-align:right;">
+4567361
+</td>
+<td style="text-align:right;">
 1581.479
 </td>
 <td style="text-align:right;">
@@ -2500,6 +2812,12 @@ H80
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+6.218
+</td>
+<td style="text-align:right;">
+203
 </td>
 <td style="text-align:left;">
 08
@@ -2555,6 +2873,12 @@ TRUE
 89.626
 </td>
 <td style="text-align:right;">
+410017.1
+</td>
+<td style="text-align:right;">
+4567361
+</td>
+<td style="text-align:right;">
 1241.962
 </td>
 <td style="text-align:right;">
@@ -2579,6 +2903,12 @@ H80
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+6.218
+</td>
+<td style="text-align:right;">
+203
 </td>
 <td style="text-align:left;">
 13
@@ -2634,6 +2964,12 @@ TRUE
 142.942
 </td>
 <td style="text-align:right;">
+410017.1
+</td>
+<td style="text-align:right;">
+4567361
+</td>
+<td style="text-align:right;">
 1314.530
 </td>
 <td style="text-align:right;">
@@ -2658,6 +2994,12 @@ H80
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+6.218
+</td>
+<td style="text-align:right;">
+203
 </td>
 <td style="text-align:left;">
 18
@@ -2714,6 +3056,12 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+410017.1
+</td>
+<td style="text-align:right;">
+4567361
+</td>
+<td style="text-align:right;">
 1425.856
 </td>
 <td style="text-align:right;">
@@ -2738,6 +3086,12 @@ H80
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+9.662
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+342
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 init
@@ -2793,6 +3147,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410016.6
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567376
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1581.479
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2817,6 +3177,12 @@ H80
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+9.662
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+342
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 08
@@ -2872,6 +3238,12 @@ TRUE
 46.820
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410016.6
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567376
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1241.962
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2896,6 +3268,12 @@ H80
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+9.662
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+342
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
@@ -2952,6 +3330,12 @@ TRUE
 45.604
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410016.6
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567376
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1314.530
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -2976,6 +3360,12 @@ H80
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+9.662
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+342
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
@@ -3032,6 +3422,12 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410016.6
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567376
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1425.856
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3056,6 +3452,12 @@ L40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+8.290
+</td>
+<td style="text-align:right;">
+307
 </td>
 <td style="text-align:left;">
 init
@@ -3111,6 +3513,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;">
+409993.4
+</td>
+<td style="text-align:right;">
+4567753
+</td>
+<td style="text-align:right;">
 1359.021
 </td>
 <td style="text-align:right;">
@@ -3135,6 +3543,12 @@ L40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+8.290
+</td>
+<td style="text-align:right;">
+307
 </td>
 <td style="text-align:left;">
 08
@@ -3190,6 +3604,12 @@ TRUE
 47.945
 </td>
 <td style="text-align:right;">
+409993.4
+</td>
+<td style="text-align:right;">
+4567753
+</td>
+<td style="text-align:right;">
 563.961
 </td>
 <td style="text-align:right;">
@@ -3214,6 +3634,12 @@ L40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+8.290
+</td>
+<td style="text-align:right;">
+307
 </td>
 <td style="text-align:left;">
 13
@@ -3270,6 +3696,12 @@ TRUE
 16.661
 </td>
 <td style="text-align:right;">
+409993.4
+</td>
+<td style="text-align:right;">
+4567753
+</td>
+<td style="text-align:right;">
 659.869
 </td>
 <td style="text-align:right;">
@@ -3294,6 +3726,12 @@ L40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+8.290
+</td>
+<td style="text-align:right;">
+307
 </td>
 <td style="text-align:left;">
 18
@@ -3350,6 +3788,12 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+409993.4
+</td>
+<td style="text-align:right;">
+4567753
+</td>
+<td style="text-align:right;">
 722.016
 </td>
 <td style="text-align:right;">
@@ -3374,6 +3818,12 @@ L80
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.843
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+282
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 init
@@ -3429,6 +3879,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410183.0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567282
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1204.536
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3453,6 +3909,12 @@ L80
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.843
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+282
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 08
@@ -3508,6 +3970,12 @@ TRUE
 56.417
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410183.0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567282
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 915.762
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3532,6 +4000,12 @@ L80
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.843
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+282
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
@@ -3587,6 +4061,12 @@ TRUE
 56.680
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410183.0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567282
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1019.818
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3611,6 +4091,12 @@ L80
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+14.843
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+282
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
@@ -3667,6 +4153,12 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410183.0
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567282
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1108.124
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -3691,6 +4183,12 @@ H80
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+7.772
+</td>
+<td style="text-align:right;">
+248
 </td>
 <td style="text-align:left;">
 init
@@ -3746,6 +4244,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;">
+410195.6
+</td>
+<td style="text-align:right;">
+4567188
+</td>
+<td style="text-align:right;">
 1297.365
 </td>
 <td style="text-align:right;">
@@ -3770,6 +4274,12 @@ H80
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+7.772
+</td>
+<td style="text-align:right;">
+248
 </td>
 <td style="text-align:left;">
 08
@@ -3825,6 +4335,12 @@ TRUE
 71.020
 </td>
 <td style="text-align:right;">
+410195.6
+</td>
+<td style="text-align:right;">
+4567188
+</td>
+<td style="text-align:right;">
 1023.100
 </td>
 <td style="text-align:right;">
@@ -3849,6 +4365,12 @@ H80
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+7.772
+</td>
+<td style="text-align:right;">
+248
 </td>
 <td style="text-align:left;">
 13
@@ -3905,6 +4427,12 @@ NA
 112.854
 </td>
 <td style="text-align:right;">
+410195.6
+</td>
+<td style="text-align:right;">
+4567188
+</td>
+<td style="text-align:right;">
 1032.595
 </td>
 <td style="text-align:right;">
@@ -3929,6 +4457,12 @@ H80
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+7.772
+</td>
+<td style="text-align:right;">
+248
 </td>
 <td style="text-align:left;">
 18
@@ -3985,6 +4519,12 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+410195.6
+</td>
+<td style="text-align:right;">
+4567188
+</td>
+<td style="text-align:right;">
 1105.628
 </td>
 <td style="text-align:right;">
@@ -4009,6 +4549,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15.757
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+144
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 init
@@ -4064,6 +4610,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410108.8
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567258
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1363.643
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -4088,6 +4640,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15.757
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+144
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 08
@@ -4143,6 +4701,12 @@ TRUE
 79.776
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410108.8
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567258
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 570.153
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -4167,6 +4731,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15.757
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+144
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
@@ -4222,6 +4792,12 @@ TRUE
 -54.481
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410108.8
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567258
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 656.313
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -4246,6 +4822,12 @@ H40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+15.757
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+144
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
@@ -4302,6 +4884,12 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410108.8
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567258
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 612.469
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -4326,6 +4914,12 @@ L40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+4.358
+</td>
+<td style="text-align:right;">
+102
 </td>
 <td style="text-align:left;">
 init
@@ -4381,6 +4975,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;">
+410056.2
+</td>
+<td style="text-align:right;">
+4567155
+</td>
+<td style="text-align:right;">
 1422.038
 </td>
 <td style="text-align:right;">
@@ -4405,6 +5005,12 @@ L40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+4.358
+</td>
+<td style="text-align:right;">
+102
 </td>
 <td style="text-align:left;">
 08
@@ -4460,6 +5066,12 @@ TRUE
 56.630
 </td>
 <td style="text-align:right;">
+410056.2
+</td>
+<td style="text-align:right;">
+4567155
+</td>
+<td style="text-align:right;">
 562.503
 </td>
 <td style="text-align:right;">
@@ -4484,6 +5096,12 @@ L40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+4.358
+</td>
+<td style="text-align:right;">
+102
 </td>
 <td style="text-align:left;">
 13
@@ -4540,6 +5158,12 @@ NA
 23.025
 </td>
 <td style="text-align:right;">
+410056.2
+</td>
+<td style="text-align:right;">
+4567155
+</td>
+<td style="text-align:right;">
 597.688
 </td>
 <td style="text-align:right;">
@@ -4564,6 +5188,12 @@ L40
 </td>
 <td style="text-align:left;">
 SESE3
+</td>
+<td style="text-align:right;">
+4.358
+</td>
+<td style="text-align:right;">
+102
 </td>
 <td style="text-align:left;">
 18
@@ -4620,6 +5250,12 @@ NA
 NA
 </td>
 <td style="text-align:right;">
+410056.2
+</td>
+<td style="text-align:right;">
+4567155
+</td>
+<td style="text-align:right;">
 679.618
 </td>
 <td style="text-align:right;">
@@ -4644,6 +5280,12 @@ L40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.197
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+122
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 init
@@ -4699,6 +5341,12 @@ NA
 0.000
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410063.1
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567149
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 1422.038
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -4723,6 +5371,12 @@ L40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.197
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+122
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 08
@@ -4778,6 +5432,12 @@ TRUE
 -33.696
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410063.1
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567149
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 562.503
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -4802,6 +5462,12 @@ L40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.197
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+122
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 13
@@ -4858,6 +5524,12 @@ NA
 3.375
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410063.1
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567149
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 597.688
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -4882,6 +5554,12 @@ L40
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 SESE3
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+13.197
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+122
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 18
@@ -4938,6 +5616,12 @@ NA
 NA
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
+410063.1
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
+4567149
+</td>
+<td style="text-align:right;background-color: #EEE9E9 !important;">
 679.618
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
@@ -4966,23 +5650,37 @@ cum_logic &lt;- function(x) {
   return(x)
 }
 
-bd &lt;- bd %&gt;%
-  group_by(tree_id) %&gt;%
-  mutate(
-    bear_mag = as.numeric(get_cond(17, 18, 19, str = TRUE)),
-    bear_new = bear &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | bear &amp; !lag(bear) | bear_mag &gt; lag(bear_mag),
-    bear_new = if_else(is.na(bear_new), FALSE, bear_new),
-    bear_cum = if_else(year == &quot;18&quot; &amp; lag(bear_new), TRUE, bear_new),
+make_bd &lt;- function(data) {
+  data |&gt;
+    group_by(tree_id) %&gt;%
+    mutate(
+      bear_mag = as.numeric(get_cond(17, 18, 19, str = TRUE)),
+      bear_new = bear &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | bear &amp; !lag(bear, order_by = year) | bear_mag &gt; lag(bear_mag, order_by = year),
+      bear_new = if_else(is.na(bear_new), FALSE, bear_new),
+      bear_cum = if_else(year == &quot;18&quot; &amp; lag(bear_new, order_by = year), TRUE, bear_new),
+      spp2 = spp
     ) %&gt;%
-  select(-bear_mag) %&gt;%
-  ungroup()</code></pre>
-<p>I’m going to drop alder and hemlock, because they are never attacked
-by bear. I am also dropping spruce in order to be consistent with the
-rest of my analysis.</p>
+    select(-c(bear_mag, h_dist, azi, x, y)) %&gt;%
+    ungroup()
+}
+
+bd1 &lt;- make_bd(d_l)</code></pre>
+<p>I want to include all trees present after treatment. 38 trees are
+“lost” due to being dead and downed so I need to re-add them manually as
+dead trees. I show the difference between this and the incomplete
+treelist further on.</p>
+<pre class="r"><code>bd &lt;- d_l |&gt; 
+  filter(year != &quot;init&quot;) |&gt; 
+  droplevels() |&gt;
+  complete(nesting(tree_id, plot, treatment, spp), year) |&gt;
+  anti_join(filter(wd, year != &quot;init&quot;)) |&gt;
+  mutate(live = FALSE) |&gt;
+  bind_rows(bd) |&gt;
+  mutate(year = fct_relevel(year, &quot;init&quot;)) |&gt;
+  make_bd()</code></pre>
 <p>There were about 30 spruce trees before thinning and about half of
 these had bear damage. In 2013, there were 24 spruce and 4 of them
 received damage.</p>
-<pre class="r"><code>bd &lt;- mutate(bd, spp2 = spp)</code></pre>
 <p>Trees killed just by bears.</p>
 <p>Bear damaged trees that were alive in 2008 and subsequently died
 without being broken or uprooted</p>
@@ -4991,43 +5689,22 @@ without being broken or uprooted</p>
   filter( any((bear | lag(bear)) &amp; !live &amp; lag(live) &amp; !get_cond(30, 31, 32)) ) |&gt;
   pull(tree_id) |&gt;
   n_distinct()</code></pre>
-<pre><code>## [1] 10</code></pre>
-</div>
-<div id="summary" class="section level2">
-<h2>Summary</h2>
-<p>Here is percent new bear damage over time. The H40 and L40 treatments
-seem to have the largest increases.</p>
-<p>In the H40 treatment there is a decline in percent new bear damage in
-two plots, whereas for the L40 treatment, only one declines, and it is
-anomalous in that is the only plot that sees an increase from 2008 to
-2013.</p>
-<p>Error bars represent 1 SE of mean</p>
-<pre class="r"><code>bear_plot &lt;- function(data, var) {
+<pre><code>## [1] 12</code></pre>
+<p>function for plotting data at the treatment level</p>
+<pre class="r"><code>bear_plot &lt;- function(data, var, type) {
+  if (type == &quot;cnt&quot;) .fun &lt;- sum
+  if (type == &quot;pct&quot;) .fun &lt;- mean
   my_dodge = position_dodge(width = 0.5)
-  ggplot(data, aes(year, {{var}}, color = treatment, group = treatment)) + 
-    geom_line(position = my_dodge) +
-    geom_point(position = my_dodge) +
-    geom_errorbar(aes(ymin = {{var}} - se, ymax = {{var}} + se), width = 0.2, position = my_dodge)
-}
-
-bd %&gt;%
-  # filter(year != &quot;init&quot;) %&gt;%
-  group_by(year, treatment, plot) %&gt;% 
-  summarize(pct_bear = mean(bear_new)) %&gt;% 
-  summarize(avg_pct_bear = mean(pct_bear), se = sd(pct_bear) / sqrt(n()) ) %&gt;% 
-  bear_plot(avg_pct_bear) +
-    labs(title = &quot;Average percent new bear damage for each treatment ±SE&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
-<pre class="r"><code>bd %&gt;%
-  # filter(year != &quot;init&quot;) %&gt;%
-  group_by(year, treatment, plot) %&gt;% 
-  summarize(cnt_bear = sum(bear_new)) %&gt;% 
-  summarize( avg_cnt_bear = mean(cnt_bear), se = sd(cnt_bear) / sqrt(n()) ) %&gt;% 
-  bear_plot(avg_cnt_bear) +
-    labs(title = &quot;Average count new bear damage for each treatment ±SE&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
-<p>Here is the same data for individual plots, showing their
-trajectories</p>
+  data |&gt;
+    group_by(year, treatment, plot) %&gt;% 
+    summarize(plot_sum = .fun( {{var}} )) %&gt;% 
+    summarize(avg = mean(plot_sum), se = sd(plot_sum) / sqrt(n()) ) %&gt;% 
+    ggplot(aes(year, avg, color = treatment, group = treatment)) + 
+      geom_line(position = my_dodge) +
+      geom_point(position = my_dodge) +
+      geom_errorbar(aes(ymin = avg - se, ymax = avg + se), width = 0.2, position = my_dodge)
+  }</code></pre>
+<p>function for plotting data at the plot level</p>
 <pre class="r"><code>bd_plot_fig &lt;- function(data, var = bear_new, prop = FALSE) {
   my_sum &lt;- function(d) summarise(d, var = sum( {{var}} ))
   lab_word &lt;- &quot;Count&quot;
@@ -5048,15 +5725,13 @@ trajectories</p>
         title = paste(lab_word, &quot;new bear damage for each treatment and plot&quot;),
         y = lab_word
       )
-}
-
-bd_plot_fig(bd, bear_new)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
-<pre class="r"><code>bd_plot_fig(bd, bear_new, prop = TRUE)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
-<p>Bear bar charts</p>
+}</code></pre>
+<p>bar-graph function for plotting species distribution at treatment
+level, second function shows difference between aggregating at treatment
+level and averaging across plots (probably how it should be done).</p>
 <pre class="r"><code># This funtion is using &quot;spp2&quot; instead of &quot;spp&quot;, this was originally to allow grouping of species
 
+# this function computes total bar height (average) and SE
 treat_bar &lt;- function(d, var, type) {
   if (type == &quot;pct&quot;) {
     my_sum &lt;- function(d) d |&gt; summarize(var1 = mean( {{var}} ))
@@ -5069,23 +5744,29 @@ treat_bar &lt;- function(d, var, type) {
   summarise(avg = mean(var1), SE = sd(var1) / sqrt(n()))
 } 
 
+# This function computes the species component of bar height, the
+# sum of which is the same as above.
 spp_bar &lt;- function(d, var, type) {
   if (type == &quot;pct&quot;) {
     my_sum &lt;- function(d) {
       d |&gt;
-      summarize(spp_true = sum( {{var}} ), n = n()) |&gt;
-      mutate(spp_plot = spp_true / sum(n))
+      summarize(var_true = sum( {{var}} ), n = n()) |&gt;
+      # species component damage of all trees in plot
+      mutate(var_true = var_true / sum(n))
     }
   } else if (type == &quot;cnt&quot;) {
     my_sum &lt;- function(d) {
-      d |&gt; summarise(spp_plot = sum( {{var}} ))
+      d |&gt; summarise(var_true = sum( {{var}} ))
     }
   }
   d |&gt;
   group_by(treatment, year, plot, spp2) |&gt;
   my_sum() |&gt;
   group_by(treatment, year, spp2) |&gt;
-  summarise(avg_spp = sum(spp_plot) / 4) |&gt;
+  # hard-coding &quot;4&quot; was necessary because not every species is present
+  # in every plot, so zeros for some species in some plots need to be implied.
+  summarise(avg_spp = sum(var_true) / 4) |&gt;
+  # get rid of &quot;zero&quot; bars
   filter(avg_spp &gt; 0)
 }
 
@@ -5104,7 +5785,7 @@ dam_bar1 &lt;- function(d, var, type, title, error = FALSE, nospruce = FALSE) {
 
 }
 
-# The first way ###################################
+# Naive way (aggregating at treatment level) ###################################
 dam_bar0 &lt;- function(data, var, type = &quot;cnt&quot;, title = &quot;&quot;) {
   if (type == &quot;cnt&quot;) {
     my_sum &lt;- function(d) {
@@ -5135,31 +5816,87 @@ dam_bar0 &lt;- function(data, var, type = &quot;cnt&quot;, title = &quot;&quot;)
 <p>First, there is a subtle difference between aggregating at the
 treatment level (simple sum of bear damage across plots), and averaging
 plot level sums.</p>
-<pre class="r"><code>dam_bar0(bd, bear_new, type = &quot;pct&quot;,
+<pre class="r"><code>dam_bar0(bd1, bear_new, type = &quot;pct&quot;,
   title = &quot;Aggregated percent new bear damage pre and post treatment&quot;) +
-  scale_y_continuous(limits = c(0, .20))</code></pre>
-<pre class="r"><code>dam_bar1(bd, bear_new, type = &quot;pct&quot;,
+  scale_y_continuous(limits = c(0, .21))</code></pre>
+<pre class="r"><code>dam_bar1(bd1, bear_new, type = &quot;pct&quot;,
   title = &quot;Average percent new bear damage pre and post treatment&quot;)+
-  scale_y_continuous(limits = c(0, .20))</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-12-.gif" width="672" /></p>
-<pre class="r"><code>dam_bar0(bd, bear_cum, type = &quot;pct&quot;,
-  title = &quot;Aggregated cumulative percent new bear damage pre and post treatment&quot;)</code></pre>
-<pre class="r"><code>dam_bar1(bd, bear_cum, type = &quot;pct&quot;,
-  title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;)</code></pre>
+  scale_y_continuous(limits = c(0, .21))</code></pre>
 <p><img src="09_damage_files/figure-html/unnamed-chunk-13-.gif" width="672" /></p>
+<pre class="r"><code>dam_bar0(bd1, bear_cum, type = &quot;pct&quot;,
+  title = &quot;Aggregated cumulative percent new bear damage pre and post treatment&quot;) +
+  scale_y_continuous(limits = c(0, .21))</code></pre>
+<pre class="r"><code>dam_bar1(bd1, bear_cum, type = &quot;pct&quot;,
+  title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;) +
+  scale_y_continuous(limits = c(0, .21))</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-14-.gif" width="672" /></p>
 <p>The other thing I figured out is that we can put error bars on the
 top of the bar indicating the variation in total damage across plots,
 but in this case we would need to include spruce, otherwise the error
 bar be centered in empty space.</p>
-<pre class="r"><code>dam_bar1(bd, bear_cum, type = &quot;pct&quot;, error = TRUE,
-  title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;)</code></pre>
-<pre class="r"><code>dam_bar1(bd, bear_cum, type = &quot;pct&quot;, error = TRUE, nospruce = TRUE,
+<pre class="r"><code>dam_bar1(bd1, bear_cum, type = &quot;pct&quot;, error = TRUE,
   title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;) +
-  scale_fill_manual(values = palette()[2:3])</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-14-.gif" width="672" /></p>
+  scale_y_continuous(limits = c(0, .21))</code></pre>
+<pre class="r"><code>dam_bar1(bd1, bear_cum, type = &quot;pct&quot;, error = TRUE, nospruce = TRUE,
+  title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;) +
+  scale_fill_manual(values = palette()[2:3]) +
+  scale_y_continuous(limits = c(0, .21))</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-15-.gif" width="672" /></p>
 <p>I think that after talking today, I would want to leave off the
 spruce as well as the error bars, but I wanted to check in to be
 sure.</p>
+<p><strong>AM I USING BD OR BD1 HERE??</strong></p>
+<p>Another thing is that there is a difference between whether we
+consider only live trees at any given time, or all trees, live or dead
+that were hit by bears. I think it is most straight forward to consider
+all post treatment trees, whether they died at some point or not. This
+is different from my earlier thinking. Perhaps the last panel of the
+publication bear chart will show existing conditions with live trees
+only…</p>
+<pre class="r"><code>bd_live &lt;- filter(bd1, live)
+
+dam_bar1(bd_live, bear_cum, type = &quot;pct&quot;,
+  title = &quot;Live only avg cumulative percent new bear damage pre and post treatment&quot;) +
+  scale_y_continuous(limits = c(0, .22))</code></pre>
+<pre class="r"><code>dam_bar1(bd1, bear_cum, type = &quot;pct&quot;,
+  title = &quot;all trees avg cumulative percent new bear damage pre and post treatment&quot;) +
+  scale_y_continuous(limits = c(0, .22))</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-16-.gif" width="672" /></p>
+<p>Finally, If we are trying to characterize the outcome considering all
+post-treatment trees, then I have to deal with tags that are dropped
+from observation list because of being dead and down. There are 38 of
+these trees, some of them bear damaged. I created observations for these
+“lost” trees to make a complete picture of <em>all posttreatment
+trees</em></p>
+<pre class="r"><code>dam_bar1(bd1, bear_cum, type = &quot;pct&quot;,
+  title = &quot;Incomplete cumulative percent new bear damage all trees&quot;) +
+  scale_y_continuous(limits = c(0, .21))</code></pre>
+<pre class="r"><code>dam_bar1(bd, bear_cum, type = &quot;pct&quot;,
+  title = &quot;Complete cumulative percent new bear damage all trees&quot;) +
+  scale_y_continuous(limits = c(0, .21))</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-17-.gif" width="672" /></p>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<p>Here is percent new bear damage over time. The H40 and L40 treatments
+seem to have the largest increases.</p>
+<p>In the H40 treatment there is a decline in percent new bear damage in
+two plots, whereas for the L40 treatment, only one declines, and it is
+anomalous in that is the only plot that sees an increase from 2008 to
+2013.</p>
+<p>Error bars represent 1 SE of mean</p>
+<pre class="r"><code>bear_plot(bd, bear_new, &quot;pct&quot;) +
+  labs(title = &quot;Average percent new bear damage for each treatment ±SE&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-18-1.png" width="672" /></p>
+<pre class="r"><code>bear_plot(bd, bear_new, &quot;cnt&quot;) +
+  labs(title = &quot;Average count new bear damage for each treatment ±SE&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-18-2.png" width="672" /></p>
+<p>Here is the same data for individual plots, showing their
+trajectories</p>
+<pre class="r"><code>bd_plot_fig(bd, bear_new)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<pre class="r"><code>bd_plot_fig(bd, bear_new, prop = TRUE)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-19-2.png" width="672" /></p>
+</div>
 <div id="bear-bar-figure-for-publication" class="section level2">
 <h2>Bear bar figure for publication</h2>
 <pre class="r"><code>year_labels &lt;- c(
@@ -5167,7 +5904,7 @@ sure.</p>
   `08` = &quot;Pretreatment damage\nafter thin&quot;,
   `13` = &quot;Posttreatment damage\n2008 - 2013&quot;,
   `18` = &quot;Posttreatment damage\n2008 - 2018&quot;,
-  final = &quot;Observed bear damage\n2018&quot;
+  final = &quot;Observed damage\n2018 (live only)&quot;
 )
 
 type_labels &lt;- as_labeller(c(
@@ -5176,30 +5913,29 @@ type_labels &lt;- as_labeller(c(
 ), label_parsed)
 
 
-bd_2 &lt;- group_by(bd, treatment, year, spp2) |&gt; filter(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;))
+# bd_2 &lt;- group_by(bd, treatment, year, spp2) |&gt; filter(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;))
 
-bd_3 &lt;- filter(bd_2, year == &quot;18&quot;) |&gt; mutate(year = &quot;final&quot;)
+bd_18 &lt;- filter(bd, year == &quot;18&quot;, live) |&gt; mutate(year = &quot;final&quot;)
 
-bd_3 &lt;- bind_rows(
-  bear_cnt = summarise(bd_3, bear_sum = sum(bear * 3.125)),
-  bear_prop = summarise(bd_3, bear_sum = sum(bear), ntree = n()) |&gt; 
-    mutate(bear_sum = bear_sum / sum(ntree)),
+bd_18 &lt;- bind_rows(
+  bear_cnt = spp_bar(bd_18, bear, &quot;cnt&quot;),
+  bear_prop = spp_bar(bd_18, bear, &quot;pct&quot;),
   .id = &quot;sum_type&quot;
 )
 
-bd_2 &lt;- bind_rows(
-  bear_cnt = summarise(bd_2, bear_sum = sum(bear_cum * 3.125)),
-  bear_prop = summarise(bd_2, bear_sum = sum(bear_cum), ntree = n()) |&gt; 
-    mutate(bear_sum = bear_sum / sum(ntree)),
+bd_p &lt;- bind_rows(
+  bear_cnt = spp_bar(bd, bear_cum, &quot;cnt&quot;),
+  bear_prop = spp_bar(bd, bear_cum, &quot;pct&quot;),
   .id = &quot;sum_type&quot;
 )
 
-bd_pub &lt;- bind_rows(bd_2, bd_3) |&gt; 
+bd_pub &lt;- bind_rows(bd_p, bd_18) |&gt; 
   mutate(year = factor(year, levels = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;, &quot;final&quot;))) |&gt; 
-  relevel_treatment()
+  relevel_treatment() |&gt;
+  filter(spp2 %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;))
 
 bd_pub %&gt;%
-  ggplot(aes(treatment, bear_sum, fill = spp2)) +
+  ggplot(aes(treatment, avg_spp, fill = spp2)) +
     geom_col(position = &quot;stack&quot;) +
     facet_grid(
       sum_type ~ year,
@@ -5209,10 +5945,13 @@ bd_pub %&gt;%
     ) +
     theme_bw() +
     theme(
+      plot.margin = unit(c(1, 1.2, 1, 0), &quot;mm&quot;),
+      panel.spacing = unit(1.5, &quot;mm&quot;),
       axis.title.y = element_blank(),
       strip.placement = &quot;outside&quot;,
       strip.background.y = element_blank(),
-      legend.position = c(.91, .86),
+      strip.switch.pad.grid = unit(0, &quot;mm&quot;),
+      legend.position = c(.91, .9),
       legend.title = element_blank(),
       legend.background = element_blank(),
       axis.text.x = element_text(vjust = 0, angle = -45)
@@ -5222,8 +5961,9 @@ bd_pub %&gt;%
       labels = c(&quot;Douglas-fir&quot;, &quot;Redwood&quot;)
     ) + 
     scale_y_continuous(expand = c(0.0, 0, 0.08, 0)) +
+    # scale_x_discrete(expand = expansion(mult = 0.05)) +
     labs(x = &quot;Treatment&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-15-1.png" width="687.36" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-20-1.png" width="687.36" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bd_summary.pdf&quot;,
   device = cairo_pdf,
@@ -7114,7 +7854,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %&gt;%
       shape = &quot;Treatment&quot;,
       linetype = &quot;Treatment&quot;
     )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-23-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bd_pred.pdf&quot;,
   device = cairo_pdf,
@@ -7180,7 +7920,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %&gt;%
       shape = &quot;Treatment&quot;,
       linetype = &quot;Treatment&quot;
     )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bd_pred2.pdf&quot;,
   device = cairo_pdf,
@@ -7212,7 +7952,7 @@ emmip(bbdm[[4]],
   type = &quot;response&quot;,
   CIs = TRUE
 ) </code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
 </div>
 <div id="emmeans-interpreting-model" class="section level2">
 <h2>Emmeans: interpreting model</h2>
@@ -7266,7 +8006,7 @@ pairs(mean_treat)</code></pre>
 ## P value adjustment: tukey method for comparing a family of 5 estimates 
 ## Tests are performed on the log odds ratio scale</code></pre>
 <pre class="r"><code>pwpp(mean_treat)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
 <pre class="r"><code>mean_treat %&gt;% multcomp::cld(reversed = TRUE)</code></pre>
 <pre><code>##  treatment    prob      SE  df asymp.LCL asymp.UCL .group
 ##  L40       0.04042 0.01780 Inf   0.01684    0.0938  1    
@@ -7287,7 +8027,7 @@ pairs(mean_treat)</code></pre>
 <p>Finally, here is the expected response over levels of diameter
 increment.</p>
 <pre class="r"><code>emmip(bbdm[[4]], treatment ~ ba_inc2 | spp2 + year, at = ba_incs, CIs = TRUE, type = &quot;response&quot;) + labs(title = &quot;bayesian new bear damage model&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
 </div>
 <div id="compare-model-predictions-to-observed" class="section level2">
 <h2>Compare model predictions to observed</h2>
@@ -7339,7 +8079,7 @@ make_pred_bar_chart &lt;- function() {
 }
 
 make_pred_bar_chart()</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-31-1.png" width="672" /></p>
 <p>This figure compares the cumulative (post treatment) predicted amount
 of bear damage to the cumulative observed.</p>
 <pre class="r"><code>####### Cumulative prediction from new bear damage model #########
@@ -7388,7 +8128,7 @@ make_pred_bar_chart2 &lt;- function() {
 }
 
 make_pred_bar_chart2()</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
 </div>
 <div id="model-validation" class="section level2">
 <h2>Model validation</h2>
@@ -7406,24 +8146,22 @@ don’t think I need to worry about underdispersion</a></p>
 30, 31     = broken stem (below and above dbh)
 32         = windthrow (uprooted)</code></pre>
 <p>there is only 1 code 12, I think we can ignore it</p>
-<pre class="r"><code>wd &lt;- d_l |&gt;
-  mutate(spp2 = spp, year = factor(year, ordered = FALSE)) |&gt;
-  select(-c(h_dist, azi, x, y, contains(&quot;inc1&quot;))) 
+<pre class="r"><code>wd &lt;- bd
 
 wd &lt;- wd %&gt;%
   group_by(tree_id) %&gt;%
   mutate(
-    bt_new = get_cond(3) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(3) &amp; !lag(get_cond(3)),
+    bt_new = get_cond(3) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(3) &amp; !lag(order_by = year, get_cond(3)),
     bt_new = if_else(is.na(bt_new), FALSE, bt_new),
-    bt_cum = if_else(year == &quot;18&quot; &amp; lag(bt_new), TRUE, bt_new),
+    bt_cum = if_else(year == &quot;18&quot; &amp; lag(order_by = year, bt_new), TRUE, bt_new),
     
-    bs_new = get_cond(30, 31) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(30, 31) &amp; !lag(get_cond(30, 31)),
+    bs_new = get_cond(30, 31) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(30, 31) &amp; !lag(order_by = year, get_cond(30, 31)),
     bs_new = if_else(is.na(bs_new), FALSE, bs_new),
-    bs_cum = if_else(year == &quot;18&quot; &amp; lag(bs_new), TRUE, bs_new),
+    bs_cum = if_else(year == &quot;18&quot; &amp; lag(order_by = year, bs_new), TRUE, bs_new),
     
-    wt_new = get_cond(32) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(32) &amp; !lag(get_cond(32)),
+    wt_new = get_cond(32) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(32) &amp; !lag(order_by = year, get_cond(32)),
     wt_new = if_else(is.na(wt_new), FALSE, wt_new),
-    wt_cum = if_else(year == &quot;18&quot; &amp; lag(wt_new), TRUE, wt_new),
+    wt_cum = if_else(year == &quot;18&quot; &amp; lag(order_by = year, wt_new), TRUE, wt_new),
     ) %&gt;%
   ungroup()</code></pre>
 <p>Some damaged trees are listed as damaged and subsequently
@@ -7444,92 +8182,97 @@ start</p>
 
 
 get_dropped(wd, get_cond(2)) </code></pre>
-<pre><code>## # A tibble: 8 x 30
+<pre><code>## # A tibble: 8 x 35
 ## # Groups:   tree_id [2]
-##      id plot  treatment tree_id spp   year    dbh    ht    cr status bear  rot   notes         cc cond     live     ba  d_inc2 ht_inc2 ba_inc2 sdi_plot  ht_p spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
-##   &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;      &lt;int&gt; &lt;chr&gt;    &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
-## 1     1 C1    C         C1.4204 SESE3 init   38.9  10.7    10      1 TRUE  FALSE SNAGTOP       NA &quot;&quot;       TRUE  1186. NA       NA       NA       1186.  10.7 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 2     1 C1    C         C1.4204 SESE3 08     38.9  10.7    10      1 TRUE  FALSE SNAGTOP       NA &quot;2&quot;      TRUE  1186.  0        0        0       1186.  10.7 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 3     1 C1    C         C1.4204 SESE3 13     38.9  10.7    15      1 TRUE  NA    &lt;NA&gt;           4 &quot;2,7,18&quot; TRUE  1186.  0        0        0       1248.  10.7 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 4     1 C1    C         C1.4204 SESE3 18     38.6  10.7    NA      1 TRUE  NA    &lt;NA&gt;          NA &quot;3,4,18&quot; TRUE  1171. -0.0508   0       -3.09    1250.  10.7 SESE3 TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  TRUE   
-## 5     2 C3    C         C3.4567 SESE3 init   26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;          NA &quot;&quot;       TRUE   569. NA       NA       NA       1441.  22.2 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 6     2 C3    C         C3.4567 SESE3 08     26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;          NA &quot;&quot;       TRUE   569.  0        0        0       1441.  22.2 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 7     2 C3    C         C3.4567 SESE3 13     30.2  20.1    20      1 FALSE NA    &lt;NA&gt;           4 &quot;1,2,4&quot;  TRUE   718.  0.660   -0.427   29.6     1416.  20.1 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 8     2 C3    C         C3.4567 SESE3 18     32.5  21.3    20      1 FALSE NA    Broken Top    NA &quot;3&quot;      TRUE   830.  0.457    0.244   22.5     1358.  21.3 SESE3 TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  TRUE</code></pre>
+##      id tree_id plot  treatment spp   year    dbh    ht    cr status bear  rot   notes      cc cond  live     ba  d_inc2 ht_inc2 ba_inc2  d_inc1 ht_inc1 ba_inc1 sdi_plot  ht_p bear_new bear_cum spp2  bt_new
+##   &lt;int&gt; &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;   &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;    &lt;lgl&gt;    &lt;chr&gt; &lt;lgl&gt; 
+## 1     1 C1.4204 C1    C         SESE3 init   38.9  10.7    10      1 TRUE  FALSE SNAGTOP    NA &quot;&quot;    TRUE  1186. NA       NA       NA     0        0        0       1186.  10.7 TRUE     TRUE     SESE3 FALSE 
+## 2     1 C1.4204 C1    C         SESE3 08     38.9  10.7    10      1 TRUE  FALSE SNAGTOP    NA &quot;2&quot;   TRUE  1186.  0        0        0     0        0        0       1186.  10.7 TRUE     TRUE     SESE3 FALSE 
+## 3     1 C1.4204 C1    C         SESE3 13     38.9  10.7    15      1 TRUE  NA    &lt;NA&gt;        4 &quot;2,7~ TRUE  1186.  0        0        0    -0.0508   0       -3.09    1248.  10.7 FALSE    FALSE    SESE3 FALSE 
+## 4     1 C1.4204 C1    C         SESE3 18     38.6  10.7    NA      1 TRUE  NA    &lt;NA&gt;       NA &quot;3,4~ TRUE  1171. -0.0508   0       -3.09 NA       NA       NA       1250.  10.7 FALSE    FALSE    SESE3 TRUE  
+## 5     2 C3.4567 C3    C         SESE3 init   26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;       NA &quot;&quot;    TRUE   569. NA       NA       NA     0        0        0       1441.  22.2 FALSE    FALSE    SESE3 FALSE 
+## 6     2 C3.4567 C3    C         SESE3 08     26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;       NA &quot;&quot;    TRUE   569.  0        0        0     0.660   -0.427   29.6     1441.  22.2 FALSE    FALSE    SESE3 FALSE 
+## 7     2 C3.4567 C3    C         SESE3 13     30.2  20.1    20      1 FALSE NA    &lt;NA&gt;        4 &quot;1,2~ TRUE   718.  0.660   -0.427   29.6   0.457    0.244   22.5     1416.  20.1 FALSE    FALSE    SESE3 FALSE 
+## 8     2 C3.4567 C3    C         SESE3 18     32.5  21.3    20      1 FALSE NA    Broken~    NA &quot;3&quot;   TRUE   830.  0.457    0.244   22.5  NA       NA       NA       1358.  21.3 FALSE    FALSE    SESE3 TRUE  
+## # ... with 6 more variables: bt_cum &lt;lgl&gt;, bs_new &lt;lgl&gt;, bs_cum &lt;lgl&gt;, wt_new &lt;lgl&gt;, wt_cum &lt;lgl&gt;, dropped &lt;lgl&gt;</code></pre>
 <pre class="r"><code>get_dropped(wd, get_cond(3)) </code></pre>
-<pre><code>## # A tibble: 20 x 30
+<pre><code>## # A tibble: 20 x 35
 ## # Groups:   tree_id [5]
-##       id plot  treatment tree_id   spp   year    dbh    ht    cr status bear  rot   notes                                    cc cond     live     ba  d_inc2 ht_inc2 ba_inc2 sdi_plot  ht_p spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
-##    &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;                                 &lt;int&gt; &lt;chr&gt;    &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
-##  1     1 1H40  H40       1H40.1908 SESE3 init   16.8  4.27     5      1 FALSE FALSE BROKEN TOP                               NA &quot;&quot;       TRUE   221. NA       NA       NA       1090.  4.27 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-##  2     1 1H40  H40       1H40.1908 SESE3 08     16.8  4.27     5     31 FALSE FALSE BROKEN TOP                               NA &quot;3,31&quot;   TRUE   221.  0        0        0        449.  4.27 SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
-##  3     1 1H40  H40       1H40.1908 SESE3 13     16.5 NA       NA      5 FALSE NA    dead, no sprouts                         -1 &quot;&quot;       FALSE  214. -0.0508  NA       -1.33     484. NA    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  TRUE   
-##  4     1 1H40  H40       1H40.1908 SESE3 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                                     NA &quot;&quot;       FALSE   NA  NA       NA       NA        556. NA    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-##  5     2 2H40  H40       2H40.3064 SESE3 init   34.3 24.1     15      1 TRUE  FALSE X                                        NA &quot;&quot;       TRUE   923. NA       NA       NA       1706. 24.1  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-##  6     2 2H40  H40       2H40.3064 SESE3 08     34.3 24.1     15      1 TRUE  FALSE X                                        NA &quot;&quot;       TRUE   923.  0        0        0        711. 24.1  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-##  7     2 2H40  H40       2H40.3064 SESE3 13     34.5  4.88     0      6 FALSE NA    Broken tops dead; measured under bark    -1 &quot;8,3,31&quot; FALSE  937.  0.0508  -3.84     2.75     805.  4.88 SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
-##  8     2 2H40  H40       2H40.3064 SESE3 18     NA   NA       NA      6 FALSE NA    &lt;NA&gt;                                     NA &quot;8,31&quot;   FALSE   NA  NA       NA       NA        983. NA    SESE3 FALSE  TRUE   FALSE  TRUE   FALSE  FALSE  TRUE   
-##  9     3 4H80  H80       4H80.3975 PSMEM init   19.8 18.9     15      1 FALSE FALSE X                                        NA &quot;&quot;       TRUE   308. NA       NA       NA       1345. 18.9  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 10     3 4H80  H80       4H80.3975 PSMEM 08     19.8 18.9     15      1 FALSE FALSE X                                        NA &quot;&quot;       TRUE   308.  0        0        0       1063. 18.9  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 11     3 4H80  H80       4H80.3975 PSMEM 13     19.6 13.7      0      6 FALSE NA    &lt;NA&gt;                                     -1 &quot;3&quot;      FALSE  300. -0.0508  -1.04    -1.57    1162. 13.7  PSMEM TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  FALSE  
-## 12     3 4H80  H80       4H80.3975 PSMEM 18     NA   NA       NA      6 FALSE NA    &lt;NA&gt;                                     NA &quot;&quot;       FALSE   NA  NA       NA       NA       1264. NA    PSMEM FALSE  TRUE   FALSE  FALSE  FALSE  FALSE  TRUE   
-## 13     4 4H80  H80       4H80.4027 PSMEM init   14.2 17.7     15      1 FALSE FALSE X                                        NA &quot;&quot;       TRUE   159. NA       NA       NA       1345. 17.7  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 14     4 4H80  H80       4H80.4027 PSMEM 08     14.2 17.7     15      1 FALSE FALSE X                                        NA &quot;&quot;       TRUE   159.  0        0        0       1063. 17.7  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 15     4 4H80  H80       4H80.4027 PSMEM 13     14.5 12.8      0      5 FALSE NA    &lt;NA&gt;                                     -1 &quot;3&quot;      FALSE  165.  0.0508  -0.975    1.15    1162. 12.8  PSMEM TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  FALSE  
-## 16     4 4H80  H80       4H80.4027 PSMEM 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                                     NA &quot;&quot;       FALSE   NA  NA       NA       NA       1264. NA    PSMEM FALSE  TRUE   FALSE  FALSE  FALSE  FALSE  TRUE   
-## 17     5 C2    C         C2.4295   PSMEM init   30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;                                     NA &quot;&quot;       TRUE   730. NA       NA       NA       1192. 24.4  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 18     5 C2    C         C2.4295   PSMEM 08     30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;                                     NA &quot;&quot;       TRUE   730.  0        0        0       1192. 24.4  PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 19     5 C2    C         C2.4295   PSMEM 13     32.5 22.6     15      1 FALSE NA    frass; potential broken top               3 &quot;3&quot;      TRUE   830.  0.406   -0.366   20.1     1246. 22.6  PSMEM TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  FALSE  
-## 20     5 C2    C         C2.4295   PSMEM 18     34.0 NA       NA      1 FALSE NA    &lt;NA&gt;                                     NA &quot;&quot;       TRUE   910.  0.305   NA       15.9     1217. NA    PSMEM FALSE  TRUE   FALSE  FALSE  FALSE  FALSE  TRUE</code></pre>
+##       id tree_id  plot  treatment spp   year    dbh    ht    cr status bear  rot   notes    cc cond  live     ba  d_inc2 ht_inc2 ba_inc2  d_inc1 ht_inc1 ba_inc1 sdi_plot  ht_p bear_new bear_cum spp2  bt_new
+##    &lt;int&gt; &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;    &lt;lgl&gt;    &lt;chr&gt; &lt;lgl&gt; 
+##  1     1 1H40.19~ 1H40  H40       SESE3 init   16.8  4.27     5      1 FALSE FALSE BROK~    NA &quot;&quot;    TRUE   221. NA       NA       NA     0        0        0       1090.  4.27 FALSE    FALSE    SESE3 FALSE 
+##  2     1 1H40.19~ 1H40  H40       SESE3 08     16.8  4.27     5     31 FALSE FALSE BROK~    NA &quot;3,3~ TRUE   221.  0        0        0    -0.0508  NA       -1.33     449.  4.27 FALSE    FALSE    SESE3 TRUE  
+##  3     1 1H40.19~ 1H40  H40       SESE3 13     16.5 NA       NA      5 FALSE NA    dead~    -1 &quot;&quot;    FALSE  214. -0.0508  NA       -1.33 NA       NA       NA        484. NA    FALSE    FALSE    SESE3 FALSE 
+##  4     1 1H40.19~ 1H40  H40       SESE3 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;     NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA        556. NA    FALSE    FALSE    SESE3 FALSE 
+##  5     2 2H40.30~ 2H40  H40       SESE3 init   34.3 24.1     15      1 TRUE  FALSE X        NA &quot;&quot;    TRUE   923. NA       NA       NA     0        0        0       1706. 24.1  TRUE     TRUE     SESE3 FALSE 
+##  6     2 2H40.30~ 2H40  H40       SESE3 08     34.3 24.1     15      1 TRUE  FALSE X        NA &quot;&quot;    TRUE   923.  0        0        0     0.0508  -3.84     2.75     711. 24.1  TRUE     TRUE     SESE3 FALSE 
+##  7     2 2H40.30~ 2H40  H40       SESE3 13     34.5  4.88     0      6 FALSE NA    Brok~    -1 &quot;8,3~ FALSE  937.  0.0508  -3.84     2.75 NA       NA       NA        805.  4.88 FALSE    FALSE    SESE3 TRUE  
+##  8     2 2H40.30~ 2H40  H40       SESE3 18     NA   NA       NA      6 FALSE NA    &lt;NA&gt;     NA &quot;8,3~ FALSE   NA  NA       NA       NA    NA       NA       NA        983. NA    FALSE    FALSE    SESE3 FALSE 
+##  9     3 4H80.39~ 4H80  H80       PSMEM init   19.8 18.9     15      1 FALSE FALSE X        NA &quot;&quot;    TRUE   308. NA       NA       NA     0        0        0       1345. 18.9  FALSE    FALSE    PSMEM FALSE 
+## 10     3 4H80.39~ 4H80  H80       PSMEM 08     19.8 18.9     15      1 FALSE FALSE X        NA &quot;&quot;    TRUE   308.  0        0        0    -0.0508  -1.04    -1.57    1063. 18.9  FALSE    FALSE    PSMEM FALSE 
+## 11     3 4H80.39~ 4H80  H80       PSMEM 13     19.6 13.7      0      6 FALSE NA    &lt;NA&gt;     -1 &quot;3&quot;   FALSE  300. -0.0508  -1.04    -1.57 NA       NA       NA       1162. 13.7  FALSE    FALSE    PSMEM TRUE  
+## 12     3 4H80.39~ 4H80  H80       PSMEM 18     NA   NA       NA      6 FALSE NA    &lt;NA&gt;     NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA       1264. NA    FALSE    FALSE    PSMEM FALSE 
+## 13     4 4H80.40~ 4H80  H80       PSMEM init   14.2 17.7     15      1 FALSE FALSE X        NA &quot;&quot;    TRUE   159. NA       NA       NA     0        0        0       1345. 17.7  FALSE    FALSE    PSMEM FALSE 
+## 14     4 4H80.40~ 4H80  H80       PSMEM 08     14.2 17.7     15      1 FALSE FALSE X        NA &quot;&quot;    TRUE   159.  0        0        0     0.0508  -0.975    1.15    1063. 17.7  FALSE    FALSE    PSMEM FALSE 
+## 15     4 4H80.40~ 4H80  H80       PSMEM 13     14.5 12.8      0      5 FALSE NA    &lt;NA&gt;     -1 &quot;3&quot;   FALSE  165.  0.0508  -0.975    1.15 NA       NA       NA       1162. 12.8  FALSE    FALSE    PSMEM TRUE  
+## 16     4 4H80.40~ 4H80  H80       PSMEM 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;     NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA       1264. NA    FALSE    FALSE    PSMEM FALSE 
+## 17     5 C2.4295  C2    C         PSMEM init   30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;     NA &quot;&quot;    TRUE   730. NA       NA       NA     0        0        0       1192. 24.4  FALSE    FALSE    PSMEM FALSE 
+## 18     5 C2.4295  C2    C         PSMEM 08     30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;     NA &quot;&quot;    TRUE   730.  0        0        0     0.406   -0.366   20.1     1192. 24.4  FALSE    FALSE    PSMEM FALSE 
+## 19     5 C2.4295  C2    C         PSMEM 13     32.5 22.6     15      1 FALSE NA    fras~     3 &quot;3&quot;   TRUE   830.  0.406   -0.366   20.1   0.305   NA       15.9     1246. 22.6  FALSE    FALSE    PSMEM TRUE  
+## 20     5 C2.4295  C2    C         PSMEM 18     34.0 NA       NA      1 FALSE NA    &lt;NA&gt;     NA &quot;&quot;    TRUE   910.  0.305   NA       15.9  NA       NA       NA       1217. NA    FALSE    FALSE    PSMEM FALSE 
+## # ... with 6 more variables: bt_cum &lt;lgl&gt;, bs_new &lt;lgl&gt;, bs_cum &lt;lgl&gt;, wt_new &lt;lgl&gt;, wt_cum &lt;lgl&gt;, dropped &lt;lgl&gt;</code></pre>
 <pre class="r"><code>get_dropped(wd, get_cond(30, 31)) </code></pre>
-<pre><code>## # A tibble: 24 x 30
+<pre><code>## # A tibble: 24 x 35
 ## # Groups:   tree_id [6]
-##       id plot  treatment tree_id   spp   year    dbh    ht    cr status bear  rot   notes               cc cond       live     ba  d_inc2 ht_inc2 ba_inc2 sdi_plot  ht_p spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
-##    &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;            &lt;int&gt; &lt;chr&gt;      &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
-##  1     1 1H40  H40       1H40.1908 SESE3 init   16.8  4.27     5      1 FALSE FALSE BROKEN TOP          NA &quot;&quot;         TRUE   221. NA       NA       NA       1090.  4.27 SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-##  2     1 1H40  H40       1H40.1908 SESE3 08     16.8  4.27     5     31 FALSE FALSE BROKEN TOP          NA &quot;3,31&quot;     TRUE   221.  0        0        0        449.  4.27 SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
-##  3     1 1H40  H40       1H40.1908 SESE3 13     16.5 NA       NA      5 FALSE NA    dead, no sprouts    -1 &quot;&quot;         FALSE  214. -0.0508  NA       -1.33     484. NA    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  TRUE   
-##  4     1 1H40  H40       1H40.1908 SESE3 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                NA &quot;&quot;         FALSE   NA  NA       NA       NA        556. NA    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-##  5     2 1H80  H80       1H80.3625 SESE3 init   17.0 16.2     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   227. NA       NA       NA       1480. 16.2  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-##  6     2 1H80  H80       1H80.3625 SESE3 08     17.0 16.2     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   227.  0        0        0       1162. 16.2  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-##  7     2 1H80  H80       1H80.3625 SESE3 13     17.0  4.27    10     31 FALSE NA    &lt;NA&gt;                 4 &quot;3,4,8,31&quot; TRUE   227.  0       -2.38     0       1284.  4.27 SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
-##  8     2 1H80  H80       1H80.3625 SESE3 18     16.5  5.49    NA      1 FALSE NA    &lt;NA&gt;                NA &quot;3,4,8&quot;    TRUE   214. -0.102    0.244   -2.68    1441.  5.49 SESE3 FALSE  TRUE   FALSE  TRUE   FALSE  FALSE  TRUE   
-##  9     3 2H40  H40       2H40.3085 SESE3 init   21.8 21.6     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   375. NA       NA       NA       1706. 21.6  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 10     3 2H40  H40       2H40.3085 SESE3 08     21.8 21.6     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   375.  0        0        0        711. 21.6  SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## # ... with 14 more rows</code></pre>
+##       id tree_id  plot  treatment spp   year    dbh    ht    cr status bear  rot   notes    cc cond  live     ba  d_inc2 ht_inc2 ba_inc2  d_inc1 ht_inc1 ba_inc1 sdi_plot  ht_p bear_new bear_cum spp2  bt_new
+##    &lt;int&gt; &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;    &lt;lgl&gt;    &lt;chr&gt; &lt;lgl&gt; 
+##  1     1 1H40.19~ 1H40  H40       SESE3 init   16.8  4.27     5      1 FALSE FALSE BROK~    NA &quot;&quot;    TRUE   221. NA       NA       NA     0        0        0       1090.  4.27 FALSE    FALSE    SESE3 FALSE 
+##  2     1 1H40.19~ 1H40  H40       SESE3 08     16.8  4.27     5     31 FALSE FALSE BROK~    NA &quot;3,3~ TRUE   221.  0        0        0    -0.0508  NA       -1.33     449.  4.27 FALSE    FALSE    SESE3 TRUE  
+##  3     1 1H40.19~ 1H40  H40       SESE3 13     16.5 NA       NA      5 FALSE NA    dead~    -1 &quot;&quot;    FALSE  214. -0.0508  NA       -1.33 NA       NA       NA        484. NA    FALSE    FALSE    SESE3 FALSE 
+##  4     1 1H40.19~ 1H40  H40       SESE3 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;     NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA        556. NA    FALSE    FALSE    SESE3 FALSE 
+##  5     2 1H80.36~ 1H80  H80       SESE3 init   17.0 16.2     15      1 FALSE FALSE X        NA &quot;&quot;    TRUE   227. NA       NA       NA     0        0        0       1480. 16.2  FALSE    FALSE    SESE3 FALSE 
+##  6     2 1H80.36~ 1H80  H80       SESE3 08     17.0 16.2     15      1 FALSE FALSE X        NA &quot;&quot;    TRUE   227.  0        0        0     0       -2.38     0       1162. 16.2  FALSE    FALSE    SESE3 FALSE 
+##  7     2 1H80.36~ 1H80  H80       SESE3 13     17.0  4.27    10     31 FALSE NA    &lt;NA&gt;      4 &quot;3,4~ TRUE   227.  0       -2.38     0    -0.102    0.244   -2.68    1284.  4.27 FALSE    FALSE    SESE3 TRUE  
+##  8     2 1H80.36~ 1H80  H80       SESE3 18     16.5  5.49    NA      1 FALSE NA    &lt;NA&gt;     NA &quot;3,4~ TRUE   214. -0.102    0.244   -2.68 NA       NA       NA       1441.  5.49 FALSE    FALSE    SESE3 FALSE 
+##  9     3 2H40.30~ 2H40  H40       SESE3 init   21.8 21.6     15      1 FALSE FALSE X        NA &quot;&quot;    TRUE   375. NA       NA       NA     0        0        0       1706. 21.6  FALSE    FALSE    SESE3 FALSE 
+## 10     3 2H40.30~ 2H40  H40       SESE3 08     21.8 21.6     15      1 FALSE FALSE X        NA &quot;&quot;    TRUE   375.  0        0        0     0.254   -3.23     8.97     711. 21.6  FALSE    FALSE    SESE3 FALSE 
+## # ... with 14 more rows, and 6 more variables: bt_cum &lt;lgl&gt;, bs_new &lt;lgl&gt;, bs_cum &lt;lgl&gt;, wt_new &lt;lgl&gt;, wt_cum &lt;lgl&gt;, dropped &lt;lgl&gt;</code></pre>
 <pre class="r"><code>get_dropped(wd, get_cond(32))</code></pre>
-<pre><code>## # A tibble: 7 x 30
+<pre><code>## # A tibble: 8 x 35
 ## # Groups:   tree_id [2]
-##      id plot  treatment tree_id   spp   year    dbh    ht    cr status bear  rot   notes                      cc cond  live     ba d_inc2  ht_inc2 ba_inc2 sdi_plot  ht_p spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
-##   &lt;int&gt; &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;                   &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
-## 1     1 4L40  L40       4L40.3246 SESE3 init   27.4 20.1     20     32 FALSE FALSE Blow down                  NA &quot;32&quot;  FALSE  591.     NA NA            NA    1422. 20.1  SESE3 FALSE  FALSE  FALSE  FALSE  TRUE   TRUE   FALSE  
-## 2     1 4L40  L40       4L40.3246 SESE3 08     27.4 20.1     20     32 FALSE FALSE Blow down                  NA &quot;32&quot;  FALSE  591.      0  0             0     563. 20.1  SESE3 FALSE  FALSE  FALSE  FALSE  TRUE   TRUE   FALSE  
-## 3     1 4L40  L40       4L40.3246 SESE3 13     NA   NA       NA     30 FALSE NA    &lt;NA&gt;                       -1 &quot;30&quot;  FALSE   NA      NA NA            NA     598. NA    SESE3 FALSE  FALSE  TRUE   TRUE   FALSE  FALSE  TRUE   
-## 4     2 4L40  L40       4L40.3283 PSMEM init   33.3 24.1     30     32 FALSE FALSE Blow down                  NA &quot;32&quot;  FALSE  870.     NA NA            NA    1422. 24.1  PSMEM FALSE  FALSE  FALSE  FALSE  TRUE   TRUE   FALSE  
-## 5     2 4L40  L40       4L40.3283 PSMEM 08     33.3  8.5     30     31 FALSE FALSE Blow down                  NA &quot;31&quot;  FALSE  870.      0 -3.12          0     563.  8.5  PSMEM FALSE  FALSE  TRUE   TRUE   FALSE  FALSE  TRUE   
-## 6     2 4L40  L40       4L40.3283 PSMEM 13     33.3  8.53     0      5 FALSE NA    frass; broken top; dead    -1 &quot;&quot;    FALSE  870.      0  0.00680       0     598.  8.53 PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 7     2 4L40  L40       4L40.3283 PSMEM 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                       NA &quot;&quot;    FALSE   NA      NA NA            NA     680. NA    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE</code></pre>
+##      id tree_id   plot  treatment spp   year    dbh    ht    cr status bear  rot   notes    cc cond  live     ba d_inc2  ht_inc2 ba_inc2 d_inc1  ht_inc1 ba_inc1 sdi_plot  ht_p bear_new bear_cum spp2  bt_new
+##   &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;    &lt;lgl&gt;    &lt;chr&gt; &lt;lgl&gt; 
+## 1     1 4L40.3246 4L40  L40       SESE3 18     NA   NA       NA     NA NA    NA    &lt;NA&gt;     NA  &lt;NA&gt; FALSE   NA      NA NA            NA     NA NA            NA      NA  NA    FALSE    FALSE    SESE3 FALSE 
+## 2     1 4L40.3246 4L40  L40       SESE3 init   27.4 20.1     20     32 FALSE FALSE Blow~    NA &quot;32&quot;  FALSE  591.     NA NA            NA      0  0             0    1422. 20.1  FALSE    FALSE    SESE3 FALSE 
+## 3     1 4L40.3246 4L40  L40       SESE3 08     27.4 20.1     20     32 FALSE FALSE Blow~    NA &quot;32&quot;  FALSE  591.      0  0             0     NA NA            NA     563. 20.1  FALSE    FALSE    SESE3 FALSE 
+## 4     1 4L40.3246 4L40  L40       SESE3 13     NA   NA       NA     30 FALSE NA    &lt;NA&gt;     -1 &quot;30&quot;  FALSE   NA      NA NA            NA     NA NA            NA     598. NA    FALSE    FALSE    SESE3 FALSE 
+## 5     2 4L40.3283 4L40  L40       PSMEM init   33.3 24.1     30     32 FALSE FALSE Blow~    NA &quot;32&quot;  FALSE  870.     NA NA            NA      0 -3.12          0    1422. 24.1  FALSE    FALSE    PSMEM FALSE 
+## 6     2 4L40.3283 4L40  L40       PSMEM 08     33.3  8.5     30     31 FALSE FALSE Blow~    NA &quot;31&quot;  FALSE  870.      0 -3.12          0      0  0.00680       0     563.  8.5  FALSE    FALSE    PSMEM FALSE 
+## 7     2 4L40.3283 4L40  L40       PSMEM 13     33.3  8.53     0      5 FALSE NA    fras~    -1 &quot;&quot;    FALSE  870.      0  0.00680       0     NA NA            NA     598.  8.53 FALSE    FALSE    PSMEM FALSE 
+## 8     2 4L40.3283 4L40  L40       PSMEM 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;     NA &quot;&quot;    FALSE   NA      NA NA            NA     NA NA            NA     680. NA    FALSE    FALSE    PSMEM FALSE 
+## # ... with 6 more variables: bt_cum &lt;lgl&gt;, bs_new &lt;lgl&gt;, bs_cum &lt;lgl&gt;, wt_new &lt;lgl&gt;, wt_cum &lt;lgl&gt;, dropped &lt;lgl&gt;</code></pre>
 <p>Basically I want to know how many trees ended up being damaged over
 the 10 years since thinning. It might also be useful to compare this to
 initial damage rates.</p>
-<pre class="r"><code>wd %&gt;%
-  # filter(year != &quot;init&quot;) %&gt;%
-  group_by(year, treatment, plot) %&gt;% 
-  summarize(pct = sum(bt_new, na.rm = TRUE) / n()) %&gt;% 
-  summarize(avg = mean(pct), se = sd(pct) / sqrt(n()) ) %&gt;% 
-  bear_plot(avg) +
-    labs(title = &quot;Average percent new broken tops for each treatment ±SE&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
-<pre class="r"><code>basic_bear_bar(wd, bt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all trees with broken tops&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-35-1.png" width="672" /></p>
-<pre class="r"><code>basic_bear_bar(wd, bs_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all trees with broken stems&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-35-2.png" width="672" /></p>
-<pre class="r"><code>basic_bear_bar(wd, wt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all uprooted trees&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-35-3.png" width="672" /></p>
+<pre class="r"><code>bear_plot(wd, bt_new, &quot;pct&quot;) +
+  labs(title = &quot;Average percent new broken tops for each treatment ±SE&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>
+<pre class="r"><code>bear_plot(wd, bs_new, &quot;pct&quot;) +
+  labs(title = &quot;Average percent new broken stems for each treatment ±SE&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-36-2.png" width="672" /></p>
+<pre class="r"><code>bear_plot(wd, wt_new, &quot;pct&quot;) +
+  labs(title = &quot;Average percent new windthrow for each treatment ±SE&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-36-3.png" width="672" /></p>
+<pre class="r"><code>dam_bar1(wd, bt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all trees with broken tops&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-37-1.png" width="672" /></p>
+<pre class="r"><code>dam_bar1(wd, bs_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all trees with broken stems&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-37-2.png" width="672" /></p>
+<pre class="r"><code>dam_bar1(wd, wt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all uprooted trees&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-37-3.png" width="672" /></p>
 <pre class="r"><code>wd |&gt;
   filter(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;)) |&gt;
-  basic_bear_bar(bt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of DF and RW trees with broken tops for RW &amp; DF&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-35-4.png" width="672" /></p>
+  dam_bar1(bt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of DF and RW trees with broken tops for RW &amp; DF&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-37-4.png" width="672" /></p>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-ludeckePerformancePackageAssessment2021" class="csl-entry">
 Lüdecke, Daniel, Mattan S. Ben-Shachar, Indrajeet Patil, Philip

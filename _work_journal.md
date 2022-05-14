@@ -1,4 +1,9 @@
+## 05/13/2022
 
+* I havn't been keeping up with recording work
+* Spent a couple days getting the patterns fills to work out right with the understory species distribution graph. Really tricky was getting each bar sorted with the smallest component on top.
+* I spent quite a bit of time figuring out how to average species components of percent of plot damage.
+* I realized that in order to assess all post-harvest trees it is necessary to manaully add tags that were not recorded in 2018 due to trees being dead and down. This affects "proportions" of stand damage. Now all damage calculations are made in terms of all post-treatment trees.
 
 ## 05/04/2022
 

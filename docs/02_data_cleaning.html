@@ -11341,8 +11341,8 @@ badrow &lt;- with(d_l, tree_id == &quot;2H40.3064&quot; &amp; year %in% c(&quot;
 oldval &lt;- d_l$cond[badrow]
 newval &lt;- paste0(oldval, &quot;,31&quot;)
 d_l$cond[badrow] &lt;- newval</code></pre>
-<p>Trees with status code 30, 31, 32 but no condition code look for
-condition 33</p>
+<p>Trees with status code 30, 31, 32 but no condition code: ensure
+condition code reflects status code as well. look for condition 33</p>
 <pre class="r"><code>options(vsc.viewer = FALSE)
 
 d_l |&gt;
