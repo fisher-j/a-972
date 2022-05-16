@@ -4,10 +4,8 @@ title: "Import data"
 
 ```{r}
 chunk_times <- data.frame()  # store the time for each chunk
-```
 
-```{r}
-knitr::knit_hooks$set(time_it = local({
+time_it <- local({
   now <- NULL
   function(before, options) {
     if (before) {
@@ -21,10 +19,12 @@ knitr::knit_hooks$set(time_it = local({
       ))
     }
   }
-}))
+})
 ```
 
+
 ```{r setup, include=FALSE}
+knitr::knit_hooks$set(time_it = time_it)
 knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE)
 ```
 

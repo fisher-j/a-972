@@ -3,6 +3,7 @@ title: "BAI modeling"
 ---
 
 ```{r setup, include=FALSE}
+knitr::knit_hooks$set(time_it = time_it)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = TRUE, time_it = TRUE)
 ```
 
@@ -152,7 +153,7 @@ Here I'm looking for any outliers in basal area increment, or extreme changes. T
 
 *Note, I have already removed increments less than -0.2 and adjusted one large tree with extrememe growth using its first increment*
 
-```{r}
+```{r bainc6, cache=TRUE}
 
 # outliers defined as 1.5 times above or below IQR
 test_d %>%
@@ -182,7 +183,7 @@ test_d %>%
 
 To put outliers in terms of ba_inc1 in context, if we look at the full dataset, including bear damaged trees, and plot *diameter* increment instead of basal area, then we see a more consistent gradient of diameter measurements.
 
-```{r}
+```{r bainc7, cache=TRUE}
 
 d_l %>%
   filter(year %in% c("08", "13"), live) %>%
@@ -617,9 +618,7 @@ emmeans(ba_inc_ref, pairwise ~ treatment + spp, type = "response")
 
 Here I plot the expected response by species and dbh, averaged over the effect of year and add an inset for the interaction effect of crown ratio and year. For this I define two more reference grids, one with a range of dbh to include and one with a range of cr to include
 
-```{r, fig.width=7.16, fig.height=5.91}
-
-library(patchwork)
+```{r bainc-fig, cache=TRUE, fig.width=7.16, fig.height=5.91}
 
 ba_inc_ref_dbh <- ref_grid(
   ba_inc_mod,

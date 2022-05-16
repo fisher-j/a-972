@@ -3,6 +3,7 @@ title: "Detailed data cleaning"
 ---
 
 ```{r setup, include=FALSE}
+knitr::knit_hooks$set(time_it = time_it)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE)
 ```
 

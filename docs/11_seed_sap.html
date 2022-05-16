@@ -358,7 +358,7 @@ anti_join(ing, ssd1)</code></pre>
 </div>
 <div id="size-class-distribution-by-species" class="section level1">
 <h1>Size class distribution by species</h1>
-<pre class="r"><code># To control the order of each stacked bar, create each bar separately from a 
+<pre class="r"><code># To control the order of each stacked bar, create each bar separately from a
 # subset of the data, order the common factor in each bar separately with &quot;reorder&quot;
 
 library(ggpattern)
@@ -382,12 +382,12 @@ my_angles &lt;- c(
 )
 
 my_labels &lt;- c(
-  ALRU2 = &quot;red alder&quot;,
-  CONF = &quot;conifer&quot;,
+  ALRU2 = &quot;Red alder&quot;,
+  CONF = &quot;Conifer&quot;,
   PISI = &quot;Sitka spruce&quot;,
   PSMEM = &quot;Douglas-fir&quot;,
-  SESE3 = &quot;redwood&quot;,
-  TSHE = &quot;western hemlock&quot;
+  SESE3 = &quot;Redwood&quot;,
+  TSHE = &quot;Western hemlock&quot;
 )
 
 ssdd &lt;- ssd |&gt;
@@ -432,7 +432,7 @@ ggplot(mapping = aes(size_class, count)) +
   scale_pattern_manual(values = my_patterns, labels = my_labels) +
   scale_pattern_angle_manual(values = my_angles, labels = my_labels) +
   scale_y_continuous(expand = c(0, 0, .05, 0))</code></pre>
-<p><img src="11_seed_sap_files/figure-html/unnamed-chunk-3-1.png" width="960" /></p>
+<p><img src="11_seed_sap_files/figure-html/seed3-1.png" width="960" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/regen.pdf&quot;,
   device = cairo_pdf,

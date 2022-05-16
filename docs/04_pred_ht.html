@@ -1637,7 +1637,7 @@ emmip(
       aesthetics = c(&quot;color&quot;, &quot;fill&quot;)
     ) +
     labs(y = &quot;Predicted ht increment&quot;)</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="04_pred_ht_files/figure-html/ht8-1.png" width="672" /></p>
 <pre class="r"><code>emmip(
   lmod(fl[[5]]),
   spp ~ dbh | treatment,
@@ -1655,7 +1655,7 @@ emmip(
       aesthetics = c(&quot;color&quot;, &quot;fill&quot;)
       ) +
     labs(y = &quot;Predicted ht increment&quot;, title = &quot;alternative model with treatment and species&quot;)</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-8-2.png" width="672" /></p>
+<p><img src="04_pred_ht_files/figure-html/ht8-2.png" width="672" /></p>
 <pre class="r"><code>emmeans(ht_inc_mod1, pairwise ~ treatment4, by = c(&quot;spp&quot;))</code></pre>
 <pre><code>## $emmeans
 ## spp = PSMEM:
@@ -1720,7 +1720,7 @@ plot(
   pch = 16
 )
 abline(0,0)</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 <pre class="r"><code>with(
   model.frame(ht_inc_mod1),
   boxplot(
@@ -1730,7 +1730,7 @@ abline(0,0)</code></pre>
     main = &quot;Distribution of residuals by spp&quot;
   )
 )</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
 </div>
 <div id="homogeneity-of-random-group-residuals" class="section level3">
 <h3>Homogeneity of random group residuals</h3>
@@ -1743,7 +1743,7 @@ abline(0,0)</code></pre>
   xlab = &quot;Fitted values&quot;,
   ylab = &quot;Standardised residuals&quot;
 )</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
 </div>
 <div id="normality-of-residuals" class="section level3">
 <h3>Normality of residuals</h3>
@@ -1751,7 +1751,7 @@ abline(0,0)</code></pre>
 I’m not sure if this requires attention or not.</p>
 <pre class="r"><code>qqnorm(resid(ht_inc_mod1, type = &quot;pearson&quot;), pch=16, col = 1,  main = &quot;QQplot for pearosn residuals&quot;)
 qqline(resid(ht_inc_mod1, type = &quot;pearson&quot;))</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="960" /></p>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-11-1.png" width="960" /></p>
 </div>
 <div id="leverage-and-cooks-distance" class="section level3">
 <h3>Leverage and Cooks distance</h3>
@@ -1770,7 +1770,7 @@ plot(
   pch = 16
 )
 points(resid ~ lev, data = filter(ht_inc_d, cooks &gt; 3 * mean(cooks)), pch = 16, col =3)</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-13-1.png" width="960" /></p>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-12-1.png" width="960" /></p>
 </div>
 <div id="random-effects-distribution" class="section level3">
 <h3>Random effects distribution</h3>
@@ -1779,7 +1779,7 @@ Here our distribution is skewed, <a href=""
 title="https://stats.stackexchange.com/a/366500">from what I’ve
 read</a>, this should not be a problem for estimates or their std’s.</p>
 <pre class="r"><code>hist(as.vector(unlist(ranef(ht_inc_mod1)$plot)), col = 1)</code></pre>
-<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p><img src="04_pred_ht_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
 </div>
 </div>
 </div>
@@ -1818,14 +1818,14 @@ d_l &lt;- left_join(d_l, new_heights, by = c(&quot;tree_id&quot;, &quot;year&quo
   mutate(ht_p = if_else(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;), ht_p, ht))</code></pre>
 <pre class="r"><code>head(d_l)</code></pre>
 <pre><code>## # A tibble: 6 x 28
-##   plot  treatment tree_id   spp   h_dist   azi year    dbh    ht    cr status bear  rot   notes                           cc cond  live     ba d_inc2 ht_inc2 ba_inc2 d_inc1 ht_inc1 ba_inc1      x      y sdi_plot  ht_p
-##   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;ord&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;                        &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
-## 1 1H40  H40       1H40.1901 SESE3   12.9    10 init   27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*0.005454154~    NA &quot;&quot;    TRUE   591. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.5 
-## 2 1H40  H40       1H40.1901 SESE3   12.9    10 08     27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*0.005454154~    NA &quot;&quot;    TRUE   591.  0        0       0     0.102  -3.96     4.42 4.10e5 4.57e6     449. 23.5 
-## 3 1H40  H40       1H40.1901 SESE3   12.9    10 13     27.9  3.66     0      5 FALSE NA    Top blown off, dead standing    -1 &quot;3,7~ FALSE  613.  0.102   -3.96    4.42 NA      NA       NA    4.10e5 4.57e6     484.  3.66
-## 4 1H40  H40       1H40.1901 SESE3   12.9    10 18     NA   NA       NA     -5 FALSE NA    &lt;NA&gt;                            NA &quot;3,7~ FALSE   NA  NA       NA      NA    NA      NA       NA    4.10e5 4.57e6     556. NA   
-## 5 1H40  H40       1H40.1902 SESE3   14.2    13 init   37.6 23.2     40      1 TRUE  FALSE X                               NA &quot;&quot;    TRUE  1110. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.2 
-## 6 1H40  H40       1H40.1902 SESE3   14.2    13 08     37.6 23.2     40      1 TRUE  FALSE X                               NA &quot;&quot;    TRUE  1110.  0        0       0     0.559  -0.671   34.2  4.10e5 4.57e6     449. 23.2</code></pre>
+##   plot  treatment tree_id   spp   h_dist   azi year    dbh    ht    cr status bear  rot   notes                cc cond  live     ba d_inc2 ht_inc2 ba_inc2 d_inc1 ht_inc1 ba_inc1      x      y sdi_plot  ht_p
+##   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;ord&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;             &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
+## 1 1H40  H40       1H40.1901 SESE3   12.9    10 init   27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*~    NA &quot;&quot;    TRUE   591. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.5 
+## 2 1H40  H40       1H40.1901 SESE3   12.9    10 08     27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*~    NA &quot;&quot;    TRUE   591.  0        0       0     0.102  -3.96     4.42 4.10e5 4.57e6     449. 23.5 
+## 3 1H40  H40       1H40.1901 SESE3   12.9    10 13     27.9  3.66     0      5 FALSE NA    Top blown off, d~    -1 &quot;3,7~ FALSE  613.  0.102   -3.96    4.42 NA      NA       NA    4.10e5 4.57e6     484.  3.66
+## 4 1H40  H40       1H40.1901 SESE3   12.9    10 18     NA   NA       NA     -5 FALSE NA    &lt;NA&gt;                 NA &quot;3,7~ FALSE   NA  NA       NA      NA    NA      NA       NA    4.10e5 4.57e6     556. NA   
+## 5 1H40  H40       1H40.1902 SESE3   14.2    13 init   37.6 23.2     40      1 TRUE  FALSE X                    NA &quot;&quot;    TRUE  1110. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.2 
+## 6 1H40  H40       1H40.1902 SESE3   14.2    13 08     37.6 23.2     40      1 TRUE  FALSE X                    NA &quot;&quot;    TRUE  1110.  0        0       0     0.559  -0.671   34.2  4.10e5 4.57e6     449. 23.2</code></pre>
 </div>
 
 

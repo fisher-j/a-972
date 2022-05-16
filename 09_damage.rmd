@@ -4,6 +4,7 @@ bibliography: ["./reference/a972.bib"]
 ---
 
 ```{r setup, include=FALSE}
+knitr::knit_hooks$set(time_it = time_it)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE)
 ```
 
@@ -610,7 +611,7 @@ My best guess is that it doesn't make sense to include `tree_id` because of its 
 
 Another option could be ensuring that a tree is only damaged in one period, but here are only 3 trees that receive "new" damage in both periods. I doubt that these are having a huge effect. For the most part, trees are only damaged in one period or the other.
 
-```{r}
+```{r damage23, cache=TRUE}
 
 show_regression_table <- function(mod, cap = cap) {
   mod_list <- do.call(compare_performance, c(mod, metrics = "common")) %>%
@@ -1024,7 +1025,7 @@ Wind damage and breakage are characterized by condition codes:
 
 there is only 1 code 12, I think we can ignore it
 
-```{r}
+```{r damage33, cache=TRUE}
 
 wd <- bd
 
@@ -1053,7 +1054,7 @@ for code 3, there are 5 dropped trees most of them due to death
 for codes 30 and 31 there are 6. Most of these die, others are recorded differently, ie 31 to 3
 for code 32, there are 2, both are dead at the start
 
-```{r}
+```{r damage34, cache=TRUE, incldue=FALSE}
 
 get_dropped <- function(dat, test_condition) {
   dat %>%

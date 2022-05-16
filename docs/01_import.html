@@ -329,7 +329,8 @@ dataset</a></li>
 </div>
 
 <pre class="r"><code>chunk_times &lt;- data.frame()  # store the time for each chunk
-knitr::knit_hooks$set(time_it = local({
+
+time_it &lt;- local({
   now &lt;- NULL
   function(before, options) {
     if (before) {
@@ -343,7 +344,7 @@ knitr::knit_hooks$set(time_it = local({
       ))
     }
   }
-}))</code></pre>
+})</code></pre>
 <div id="libraries" class="section level2">
 <h2>libraries</h2>
 <pre class="r"><code>library(&quot;tidyverse&quot;)
@@ -738,8 +739,7 @@ map(veg_cover_l, names) %&gt;% unique</code></pre>
 ##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;    &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;       &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;     &quot;Flag&quot;           
 ## 
 ## [[2]]
-##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;    &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;       &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;     &quot;Flag&quot;           
-## [12] &quot;NOTE&quot;</code></pre>
+##  [1] &quot;ID&quot;              &quot;Plot_ID&quot;         &quot;CoverClassCON&quot;   &quot;CoverClassHW&quot;    &quot;CoverClassShrub&quot; &quot;CoverClassHerb&quot;  &quot;Dom_sp_CON&quot;      &quot;Dom_sp_HW&quot;       &quot;Dom_sp_Shrub&quot;    &quot;Dom_sp_Herb&quot;     &quot;Flag&quot;            &quot;NOTE&quot;</code></pre>
 <pre class="r"><code>veg_cover &lt;- bind_rows(veg_cover_l, .id = &quot;year&quot;) %&gt;%
   select(
     year,
@@ -792,8 +792,7 @@ names(seedling_sapling_files) &lt;- str_replace(
 seedling_sapling_l &lt;- lapply(seedling_sapling_files, read_csv)
 map(seedling_sapling_l, names) %&gt;% unique</code></pre>
 <pre><code>## [[1]]
-##  [1] &quot;SSID&quot;          &quot;Plot ID&quot;       &quot;Species&quot;       &quot;SpecCode2&quot;     &quot;Resprouts?&quot;    &quot;Seedling&quot;      &quot;DBH class 1&quot;   &quot;DBH class 2&quot;   &quot;DBH class 3&quot;   &quot;DBH class 4&quot;   &quot;TotalStems&quot;    &quot;calc1&quot;         &quot;calcSpecCode2&quot;
-## [14] &quot;calc2&quot;         &quot;SPP&quot;           &quot;Notes&quot;</code></pre>
+##  [1] &quot;SSID&quot;          &quot;Plot ID&quot;       &quot;Species&quot;       &quot;SpecCode2&quot;     &quot;Resprouts?&quot;    &quot;Seedling&quot;      &quot;DBH class 1&quot;   &quot;DBH class 2&quot;   &quot;DBH class 3&quot;   &quot;DBH class 4&quot;   &quot;TotalStems&quot;    &quot;calc1&quot;         &quot;calcSpecCode2&quot; &quot;calc2&quot;         &quot;SPP&quot;           &quot;Notes&quot;</code></pre>
 <pre class="r"><code>seed_sap &lt;- bind_rows(seedling_sapling_l, .id = &quot;year&quot;) %&gt;%
   select(
     year,

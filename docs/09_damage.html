@@ -7854,7 +7854,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %&gt;%
       shape = &quot;Treatment&quot;,
       linetype = &quot;Treatment&quot;
     )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bd_pred.pdf&quot;,
   device = cairo_pdf,
@@ -7920,7 +7920,7 @@ pred_bd(bbdm[[4]], limit = TRUE) %&gt;%
       shape = &quot;Treatment&quot;,
       linetype = &quot;Treatment&quot;
     )</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bd_pred2.pdf&quot;,
   device = cairo_pdf,
@@ -7952,7 +7952,7 @@ emmip(bbdm[[4]],
   type = &quot;response&quot;,
   CIs = TRUE
 ) </code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-26-1.png" width="672" /></p>
 </div>
 <div id="emmeans-interpreting-model" class="section level2">
 <h2>Emmeans: interpreting model</h2>
@@ -8006,7 +8006,7 @@ pairs(mean_treat)</code></pre>
 ## P value adjustment: tukey method for comparing a family of 5 estimates 
 ## Tests are performed on the log odds ratio scale</code></pre>
 <pre class="r"><code>pwpp(mean_treat)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-28-1.png" width="672" /></p>
 <pre class="r"><code>mean_treat %&gt;% multcomp::cld(reversed = TRUE)</code></pre>
 <pre><code>##  treatment    prob      SE  df asymp.LCL asymp.UCL .group
 ##  L40       0.04042 0.01780 Inf   0.01684    0.0938  1    
@@ -8027,7 +8027,7 @@ pairs(mean_treat)</code></pre>
 <p>Finally, here is the expected response over levels of diameter
 increment.</p>
 <pre class="r"><code>emmip(bbdm[[4]], treatment ~ ba_inc2 | spp2 + year, at = ba_incs, CIs = TRUE, type = &quot;response&quot;) + labs(title = &quot;bayesian new bear damage model&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
 </div>
 <div id="compare-model-predictions-to-observed" class="section level2">
 <h2>Compare model predictions to observed</h2>
@@ -8079,7 +8079,7 @@ make_pred_bar_chart &lt;- function() {
 }
 
 make_pred_bar_chart()</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-31-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
 <p>This figure compares the cumulative (post treatment) predicted amount
 of bear damage to the cumulative observed.</p>
 <pre class="r"><code>####### Cumulative prediction from new bear damage model #########
@@ -8128,7 +8128,7 @@ make_pred_bar_chart2 &lt;- function() {
 }
 
 make_pred_bar_chart2()</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-32-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-31-1.png" width="672" /></p>
 </div>
 <div id="model-validation" class="section level2">
 <h2>Model validation</h2>
@@ -8256,23 +8256,23 @@ the 10 years since thinning. It might also be useful to compare this to
 initial damage rates.</p>
 <pre class="r"><code>bear_plot(wd, bt_new, &quot;pct&quot;) +
   labs(title = &quot;Average percent new broken tops for each treatment ±SE&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-36-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
 <pre class="r"><code>bear_plot(wd, bs_new, &quot;pct&quot;) +
   labs(title = &quot;Average percent new broken stems for each treatment ±SE&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-36-2.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-33-2.png" width="672" /></p>
 <pre class="r"><code>bear_plot(wd, wt_new, &quot;pct&quot;) +
   labs(title = &quot;Average percent new windthrow for each treatment ±SE&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-36-3.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-33-3.png" width="672" /></p>
 <pre class="r"><code>dam_bar1(wd, bt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all trees with broken tops&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-37-1.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
 <pre class="r"><code>dam_bar1(wd, bs_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all trees with broken stems&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-37-2.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-34-2.png" width="672" /></p>
 <pre class="r"><code>dam_bar1(wd, wt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all uprooted trees&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-37-3.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-34-3.png" width="672" /></p>
 <pre class="r"><code>wd |&gt;
   filter(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;)) |&gt;
   dam_bar1(bt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of DF and RW trees with broken tops for RW &amp; DF&quot;)</code></pre>
-<p><img src="09_damage_files/figure-html/unnamed-chunk-37-4.png" width="672" /></p>
+<p><img src="09_damage_files/figure-html/unnamed-chunk-34-4.png" width="672" /></p>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-ludeckePerformancePackageAssessment2021" class="csl-entry">
 Lüdecke, Daniel, Mattan S. Ben-Shachar, Indrajeet Patil, Philip

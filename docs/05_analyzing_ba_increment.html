@@ -3355,7 +3355,7 @@ test_d %&gt;%
       y = &quot;tree id (sorted by diameter increment)&quot;,
       title = &quot;data in dataset&quot;
     )</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/bainc6-1.png" width="672" /></p>
 <p>To put outliers in terms of ba_inc1 in context, if we look at the
 full dataset, including bear damaged trees, and plot <em>diameter</em>
 increment instead of basal area, then we see a more consistent gradient
@@ -3373,7 +3373,7 @@ of diameter measurements.</p>
       y = &quot;tree id ALL TREES (sorted by diameter increment)&quot;,
       title = &quot;all data&quot;
     )</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/bainc7-1.png" width="672" /></p>
 </div>
 <div id="negative-values" class="section level2">
 <h2>Negative values</h2>
@@ -3400,21 +3400,21 @@ include those few observations back in the data.</p>
   ggplot(aes(x = cr, fill = spp)) +
     geom_bar() +
     facet_wrap(~ year)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
 </div>
 <div id="plotting-data" class="section level2">
 <h2>Plotting data</h2>
 <p>First I’ll look at distributions of the response:</p>
 <pre class="r"><code>hist(test_d$ba_inc1, main = &quot;Basal area increment&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 <pre class="r"><code>hist(log(test_d$ba_inc_scaled), main = &quot;Log of basal area increment + constant&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-8-2.png" width="672" /></p>
 <pre class="r"><code>with(test_d, plot(dbh, ba_inc1))</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-3.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-8-3.png" width="672" /></p>
 <pre class="r"><code>hist(test_d$dbh, main = &quot;DBHt&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-4.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-8-4.png" width="672" /></p>
 <pre class="r"><code>hist(log(test_d$dbh + 18), main = &quot;Log of DBH&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-5.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-8-5.png" width="672" /></p>
 <p>relationship of ba_inc1 with dbh by species and year is not exactly
 linear, I will use a transformation or a GLM with a different
 distribution.</p>
@@ -3423,25 +3423,25 @@ distribution.</p>
   geom_point(alpha = 0.3) +
   facet_wrap(~ year) +
   scale_color_manual(values = palette())</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
 <pre class="r"><code>test_d %&gt;%
   ggplot(aes(x = (dbh), y = log(ba_inc_scaled), color = spp)) +
   geom_point(alpha = 0.3) +
   facet_wrap(~ year) +
   scale_color_manual(values = palette())</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-11-2.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
 <pre class="r"><code>test_d %&gt;%
   ggplot(aes(x = log(dbh), y = (ba_inc1), color = spp)) +
   geom_point(alpha = 0.3) +
   facet_wrap(~ year) +
   scale_color_manual(values = palette())</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-11-3.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-9-3.png" width="672" /></p>
 <pre class="r"><code>test_d %&gt;%
   ggplot(aes(x = log(dbh), y = log(ba_inc_scaled), color = spp)) +
   geom_point(alpha = 0.3) +
   facet_wrap(~ year) +
   scale_color_manual(values = palette())</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-11-4.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-9-4.png" width="672" /></p>
 <p>does crown ratio have a relationship with diameter increment?</p>
 <pre class="r"><code>test_d %&gt;%
   ggplot(aes(cr, d_inc1), color = spp) +
@@ -3449,7 +3449,7 @@ distribution.</p>
   geom_smooth(method = &quot;lm&quot;) +
   ggpubr::stat_cor()</code></pre>
 <pre><code>## `geom_smooth()` using formula &#39;y ~ x&#39;</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
 </div>
 <div id="evidence-that-my-response-is-not-normally-distributed"
 class="section level2">
@@ -3465,7 +3465,7 @@ normally distributed by dbh.</p>
     geom_histogram() +
     facet_wrap(~ dbh_cut, scales = &quot;free&quot;)</code></pre>
 <pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
 </div>
 <div id="change-in-ba-inc-over-years-at-tree-level"
 class="section level2">
@@ -3493,7 +3493,7 @@ treatment * year interaction</p>
     scale_y_continuous(expand = expansion(mult = 0.01)) +
     theme(legend.position = &quot;bottom&quot;) +
     labs(color = NULL)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-14-1.png" width="864" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-12-1.png" width="864" /></p>
 <p>And what about at the plot level, can I discern any interactions
 between species, year and plot?</p>
 <pre class="r"><code>plot_bainc_change &lt;- function(treatment) {
@@ -3579,7 +3579,7 @@ comparable with anything.</p>
     ) +
     scale_color_manual(values = palette()) +
     labs(title = &quot;Gamma glm wih log link&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-17-1.png" width="672" /></p>
 <pre class="r"><code>test_d %&gt;%
   ggplot(aes(x = dbh, y = ba_inc1 + scale_val, color = spp)) +
     geom_point(alpha = .2) +
@@ -3591,7 +3591,7 @@ comparable with anything.</p>
     ) +
     scale_color_manual(values = palette()) +
     labs(title = &quot;Gaussian glm wih log link&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-19-2.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-17-2.png" width="672" /></p>
 <pre class="r"><code>test_d %&gt;%
   ggplot(aes(x = dbh, y = log(ba_inc_scaled), color = spp)) +
     geom_point(alpha = .2) +
@@ -3599,7 +3599,7 @@ comparable with anything.</p>
     geom_smooth(method = &quot;lm&quot;, formula = y ~ x) +
     scale_color_manual(values = palette()) +
     labs(title = &quot;Linear model, log-transformed&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-19-3.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-17-3.png" width="672" /></p>
 <pre class="r"><code>test_d %&gt;%
   ggplot(aes(x = log(dbh), y = log(ba_inc_scaled), color = spp)) +
     geom_point(alpha = .2) +
@@ -3607,7 +3607,7 @@ comparable with anything.</p>
     geom_smooth(method = &quot;lm&quot;, formula = y ~ x) +
     scale_color_manual(values = palette()) +
     labs(title = &quot;Linear model, log-log-transformed&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-19-4.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-17-4.png" width="672" /></p>
 </div>
 <div id="moving-forward-with-log---log-model-mixed-effects"
 class="section level2">
@@ -4237,7 +4237,7 @@ summary(ba_inc_lmm)</code></pre>
 }
 
 residual_plot(ba_inc_lmm)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-22-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
 <p>see: <a
 href="https://stats.stackexchange.com/questions/115090/why-do-i-get-zero-variance-of-a-random-effect-in-my-mixed-model-despite-some-va">Cross
 validated post about zero variance</a></p>
@@ -4583,7 +4583,7 @@ emmeans(ba_inc_ref, pairwise ~ treatment, type = &quot;response&quot;)</code></p
 <p>This visualization shows that most pairwise comparisons of species
 and treatment combinations are significantly different.</p>
 <pre class="r"><code>emmeans(ba_inc_ref, ~ treatment + spp) %&gt;% pwpp(type = &quot;response&quot;)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/bainc30-1.png" width="672" /></p>
 <pre class="r"><code>emmeans(ba_inc_ref, pairwise ~ treatment + spp, type = &quot;response&quot;)</code></pre>
 <pre><code>## $emmeans
 ##  treatment spp   response    SE   df lower.CL upper.CL
@@ -4740,7 +4740,7 @@ layout &lt;- c(
 )
 
 a + b + plot_layout(design = layout)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-30-1.png" width="687.36" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-26-1.png" width="687.36" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bai_prediction.pdf&quot;,
   device = cairo_pdf,
@@ -4787,7 +4787,7 @@ emmeans(ba_inc_ref, ~ treatment + spp, type = &quot;response&quot;) %&gt;%
     ) +
     scale_y_continuous(expand = c(0.0, 0, 0.08, 0)) +
     labs(y = expression(BAI ~ (cm^2 ~ year^-1)), x = &quot;Treatment&quot;, fill = NULL)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-31-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-27-1.png" width="672" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/bai_mean_compare.pdf&quot;,
   device = cairo_pdf,
@@ -4830,7 +4830,7 @@ ba_inc_d &lt;- augment1(test_d, ba_inc_mod)</code></pre>
   col = as.factor(treatment)
 )
 abline(0,0)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-29-1.png" width="672" /></p>
 <pre class="r"><code>plot(
   resid ~ log(dbh),
   data = ba_inc_d,
@@ -4841,7 +4841,7 @@ abline(0,0)</code></pre>
   pch = 16
 )
 abline(0,0)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-2.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-29-2.png" width="672" /></p>
 <pre class="r"><code>plot(
   resid ~ cr,
   data = ba_inc_d,
@@ -4852,7 +4852,7 @@ abline(0,0)</code></pre>
   pch = 16
 )
 abline(0,0)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-3.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-29-3.png" width="672" /></p>
 </div>
 <div id="homogeneity-of-random-group-residuals" class="section level2">
 <h2>Homogeneity of random group residuals</h2>
@@ -4867,7 +4867,7 @@ because there are over a thousand of them.</p>
   xlab = &quot;Fitted values&quot;,
   ylab = &quot;Standardised residuals&quot;
 )</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-34-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-30-1.png" width="672" /></p>
 </div>
 <div id="normality-of-residuals" class="section level2">
 <h2>Normality of residuals</h2>
@@ -4875,7 +4875,7 @@ because there are over a thousand of them.</p>
 here.</p>
 <pre class="r"><code>qqnorm(resid(ba_inc_mod, type = &quot;pearson&quot;), pch=16, col = 1,  main = &quot;QQplot for pearosn residuals&quot;)
 qqline(resid(ba_inc_mod, type = &quot;pearson&quot;))</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-35-1.png" width="960" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-31-1.png" width="960" /></p>
 </div>
 <div id="leverage-and-cooks-distance" class="section level2">
 <h2>Leverage and Cooks distance</h2>
@@ -4896,14 +4896,14 @@ plot(
 )
 
 points(resid ~ lev, data = filter(ba_inc_d, cooks &gt; 6 * mean(cooks)), pch = 16, col =3)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-36-1.png" width="960" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-32-1.png" width="960" /></p>
 <pre class="r"><code>plot(ba_inc_d$lev,pch=16,col=&quot;red&quot;,ylim=c(0,1.2),las=1,ylab=&quot;Leverage/Cook&#39;s distance value&quot;)
 points(ba_inc_d$cooks,pch=17,col=&quot;blue&quot;)
 points(x=1650,y=1,pch=16,col=&quot;red&quot;)
 points(x=1650,y=0.8,pch=17,col=&quot;blue&quot;)
 text(x=1650,y=1,&quot;Leverage&quot;,adj=c(0,0.5))
 text(x=1650,y=0.8,&quot;Cook&#39;s distance&quot;,adj=c(0,0.5))</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-36-2.png" width="960" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-32-2.png" width="960" /></p>
 </div>
 <div id="random-effects-distribution" class="section level2">
 <h2>Random effects distribution</h2>
@@ -4912,7 +4912,7 @@ Here our distribution is skewed, <a href=""
 title="https://stats.stackexchange.com/a/366500">from what I’ve
 read</a>, this should not be a problem for estimates or their std’s.</p>
 <pre class="r"><code>hist(as.vector(unlist(ranef(ba_inc_mod)$tree_id)), col = 1)</code></pre>
-<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-37-1.png" width="672" /></p>
+<p><img src="05_analyzing_ba_increment_files/figure-html/unnamed-chunk-33-1.png" width="672" /></p>
 </div>
 </div>
 <div id="is-a-glm-going-to-work" class="section level1">
