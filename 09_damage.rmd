@@ -201,24 +201,8 @@ bd_plot_fig <- function(data, var = bear_new, prop = FALSE) {
 bar-graph function for plotting species distribution at treatment level, second function shows difference between aggregating at treatment level and averaging across plots (probably how it should be done).
 
 ```{r 09-damage-12}
-# This funtion is using "spp2" instead of "spp", this was originally to allow grouping of species
 
-# this function computes total bar height (average) and SE
-treat_bar <- function(d, var, type) {
-  if (type == "pct") {
-    my_sum <- function(d) d |> summarize(var1 = mean( {{var}} ))
-  } else if (type == "cnt") {
-    my_sum <- function(d) d |> summarise(var1 = sum( {{var}} ))
-  }
-  d |>
-  group_by(treatment, year, plot) |>
-  my_sum() |>
-  summarise(avg = mean(var1), SE = sd(var1) / sqrt(n()))
-} 
-
-# This function computes the species component of bar height, the
-# sum of which is the same as above.
-spp_bar <- function(d, var, type) {
+dam_plot <- function(d, var, type) {
   if (type == "pct") {
     my_sum <- function(d) {
       d |>
@@ -234,12 +218,31 @@ spp_bar <- function(d, var, type) {
   d |>
   group_by(treatment, year, plot, spp2) |>
   my_sum() |>
+  ungroup()
+}
+
+# This funtion is using "spp2" instead of "spp", this was originally to allow grouping of species
+
+
+# this function computes total bar height (average) and SE
+treat_bar <- function(...) {
+  dam_plot(...) |>
+    group_by(treatment, year, plot) |>
+    summarize(var1 = sum(var_true)) |>
+    summarise(avg = mean(var1), SE = sd(var1) / sqrt(n())) |>
+    relevel_treatment()
+} 
+
+# This function computes the species component of bar height, the
+# sum of which is the same as above.
+spp_bar <- function(...) {
+  dam_plot(...) |>
   group_by(treatment, year, spp2) |>
   # hard-coding "4" was necessary because not every species is present
   # in every plot, so zeros for some species in some plots need to be implied.
   summarise(avg_spp = sum(var_true) / 4) |>
-  # get rid of "zero" bars
-  filter(avg_spp > 0)
+  filter(avg_spp > 0) |>
+  relevel_treatment()
 }
 
 dam_bar1 <- function(d, var, type, title, error = FALSE, nospruce = FALSE) {
@@ -316,12 +319,12 @@ The other thing I figured out is that we can put error bars on the top of the ba
 
 dam_bar1(bd1, bear_cum, type = "pct", error = TRUE,
   title = "Average cumulative percent new bear damage pre and post treatment") +
-  scale_y_continuous(limits = c(0, .21))
+  scale_y_continuous(limits = c(0, .24))
 
 dam_bar1(bd1, bear_cum, type = "pct", error = TRUE, nospruce = TRUE,
   title = "Average cumulative percent new bear damage pre and post treatment") +
   scale_fill_manual(values = palette()[2:3]) +
-  scale_y_continuous(limits = c(0, .21))
+  scale_y_continuous(limits = c(0, .24))
 
 ```
 
@@ -1093,18 +1096,20 @@ bear_plot(wd, wt_new, "pct") +
 ```{r 09-damage-34}
 
 dam_bar1(wd, bt_cum, type = "pct", "Cumulative percent of all trees with broken tops")
-dam_bar1(wd, bs_cum, type = "pct", "Cumulative percent of all trees with broken stems")
+dam_bar1(wd, bs_cum, type = "pct", "Cumulative percent of all trees with broken stems", error = TRUE)
 dam_bar1(wd, wt_cum, type = "pct", "Cumulative percent of all uprooted trees")
-
-wd |>
-  filter(spp %in% c("SESE3", "PSMEM")) |>
-  dam_bar1(bt_cum, type = "pct", "Cumulative percent of DF and RW trees with broken tops for RW & DF")
 
 ```
 
 
 ```{r 09-damage-35}
 
+wd1 <- dam_plot(wd, bs_cum, "cnt") |> complete(nesting(treatment, plot), year, spp2, fill = list(var_true = 0))
+wd2 <- dam_plot(wd, bs_cum, "cnt") |> filter(var_true > 0)
 
+mod1 <- lmer(var_true ~ treatment * year + (1 | plot), data = wd1)
+mod2 <- lmer(var_true ~ treatment * year + (1 | plot), data = wd2)
 
+summary(mod)
+emmeans(mod2, ~ treatment + year)
 ```
