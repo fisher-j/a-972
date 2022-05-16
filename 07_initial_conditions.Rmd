@@ -12,7 +12,7 @@ It has come up several times, the question as to whether or not the average trea
 
 First, here is the summary table with just the initial conditions. These do not look substantially different.
 
-```{r}
+```{r 07-initial-conditions-1}
 
 d_l %>%
   filter(year == "init") %>%
@@ -24,7 +24,7 @@ d_l %>%
 
 How about when we do it by species of interest?
 
-```{r}
+```{r 07-initial-conditions-2}
 
 sum_rw <- d_l %>%
   filter(year == "init") %>%
@@ -44,7 +44,7 @@ We can see that basal area of redwood in the L40 and Control treatments seems to
 
 I'll run some anovas to test if there are significant differences in initial data, for all species and for redwood and df separately, and these can be followed up with pairwise t-tests, with a Tukey adjustment.
 
-```{r}
+```{r 07-initial-conditions-3}
 
 # I need to get plot height data seperately, otherwise, get plot statistics
 # for each measure of interest
@@ -143,7 +143,7 @@ test_sum <- function(.x) {
 
 The assumption with t-tests is that that data are normally distributed. I'm not sure I'm able to confirm this assumption with only 4 replications per treatment. It might be important to perform non-parametric significance tests. 
 
-```{r}
+```{r 07-initial-conditions-4}
 
 plot_sum(d_l, years = "init") %>%
   ggplot(aes(value)) +
@@ -154,7 +154,7 @@ plot_sum(d_l, years = "init") %>%
 
 In addition to anova and t-tests, I'll also use Kruskal-Wallis rank-sum tests and the Dunn and M-W-Wilcoxon post-hoc tests. I don't think anovas and t-tests are reliable with only 4 data points.
 
-```{r}
+```{r 07-initial-conditions-5}
 
 plot_sum(d_l, years = "init") %>% 
   test_sum() %>% 
@@ -176,7 +176,7 @@ How about for redwood:
 
 there are no significant differences.
 
-```{r}
+```{r 07-initial-conditions-6}
 
 plot_sum(d_l, years = "init", species = "SESE3") %>% 
   test_sum() %>% 
@@ -196,7 +196,7 @@ And for Douglas-fir?
 
 Differences follow the same pattern as for all trees, which makes sense because there were no differences among redwoods, but now the Kruskal-Wallis test doesn't detect any significant effect, and neither do post-hoc tests.
 
-```{r}
+```{r 07-initial-conditions-7}
 
 plot_sum(d_l, years = "init", species = "PSMEM") %>% 
   test_sum() %>% 

@@ -8,7 +8,7 @@ knitr::knit_hooks$set(time_it = time_it)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE)
 ```
 
-```{r}
+```{r 08-variability-1}
 require(tidyverse)
 library(rgl)
 setupKnitr()
@@ -23,7 +23,7 @@ First I'll identify trees of interest as live trees including ingrowth. I'm not 
 
 Details for calculations can be found on the [Define new data](03_define.html) page.
 
-```{r}
+```{r 08-variability-2}
 
 ingrowth <- mutate(ingrowth,
   define_xy(ingrowth),
@@ -41,7 +41,7 @@ sci_d <- d_l %>%
 
 Here is the graphing function and emmeans generating function I'll use for visualizing these metrics. The mixed model I'm using is of the form: `plot_level_metric = treatment + year + treatment * year` with plot as a random variable. Any metric which does not inherently produce a plot level value is averaged at the plot level. 
 
-```{r}
+```{r 08-variability-3}
 
 my_dodge <- position_dodge(0.4)
 
@@ -91,7 +91,7 @@ Finally, I realized that Zenner and following researchers definitions of SCI is 
 
 # SCI summarized by treatment
 
-```{r}
+```{r 08-variability-4}
 
 sci_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -116,7 +116,7 @@ Values should range between 0 for a grided arrangement to 4. A completely random
 
 Also, with this index, I am dropping extra coincident points, keeping the first.
 
-```{r}
+```{r 08-variability-5}
 
 mdi_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -139,7 +139,7 @@ This is the single closest neighbor version, there is also a N neighbor version,
 
 @pommereningApproachesQuantifyingForest2002 provided interpretations of this metric, in our case suggesting *average to small differentiation*, where trees are generally more than 50% (closer to 70%) the size of their neighbor. 
 
-```{r}
+```{r 08-variability-6}
 
 TD_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -157,7 +157,7 @@ var_fig(TD_mean)
 
 Standard deviation of DBH is a straightforward metric for estimating structural heterogeneity. 
 
-```{r}
+```{r 08-variability-7}
 
 dbhsd_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -175,7 +175,7 @@ var_fig(dbhsd_mean)
 
 This index calculates tree species diversity based on the number of stems or basal area [@shannonMathematicalTheoryCommunication2001]
 
-```{r}
+```{r 08-variability-8}
 
 sh_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -202,7 +202,7 @@ var_table(sh_mean_ba, caption = "Basal area based average Shannon-Weaver index")
 
 Another metric we were going to look at is DBHm, I had previously presented this as a boxplot of trees aggregated at the treatment level. This is different than all of our other analysis which base inference off of plot-level averages, or otherwise control for the variance between plots. Here I'll look at mean dbh following the same analysis format used for the other structural variables.
 
-```{r}
+```{r 08-variability-9}
 
 dbhm_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -222,7 +222,7 @@ Here we have Ducey's ratio of the additive method of calculating SDI and the met
 
 Our values run from about 0.95 to about 0.98. 
 
-```{r}
+```{r 08-variability-10}
 
 ducey_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -243,7 +243,7 @@ The coefficient of variation for a plot tells us about variation in tree size re
 
 ## DBH
 
-```{r}
+```{r 08-variability-11}
 
 CVdbh_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -278,7 +278,7 @@ bind_rows(m1 = m1mean, m2 = m2mean, .id = "mod") |>
 
 ## Height
 
-```{r}
+```{r 08-variability-12}
 
 CVht_plot <- sci_d %>%
   group_by(treatment, year, plot) %>%
@@ -305,7 +305,7 @@ sjPlot::tab_model(m1, m2, m3, show.aic = TRUE, dv.labels = 1:3)
 
 # Combined diversity figure
 
-```{r}
+```{r 08-variability-13}
 structural_all <- bind_rows(
   SCI = sci_mean,
   MDI = mdi_mean,
@@ -320,7 +320,7 @@ structural_all <- bind_rows(
   ))
 ```
 
-```{r}
+```{r 08-variability-14}
 
 my_dodge <- position_dodge(0.5)
 
@@ -394,7 +394,7 @@ What I realized is that I can't calculate Shannon-weaver index from a species li
 
 I used a random slope linear model here, I'm not sure this is appropriate as we are dealing with count data. I did run a glmmm with poisson family (various links) and these all had a significantly higher BIC.
 
-```{r}
+```{r 08-variability-15}
 
 veg_richness_plot <- veg_species %>%
   group_by(treatment, year, plot) %>%
@@ -416,7 +416,7 @@ What are the dominant shrubs and herbs for each treatment/year?
 
 It is hard to say because sword fern are treated (mostly) as herbs for the first two entries, and then as shrubs for the last, but even this is inconsistent, some third entries have sword fern listed as an herb.
 
-```{r}
+```{r 08-variability-16}
 spp_common_name <- function(species) {
   case_when(
     species == "POMU"     ~ "Sword fern",
@@ -449,7 +449,7 @@ veg_cover %>%
 
 What is interesting here is that the high intensity thinnings lead consistently to heavy salmon berry shrub cover and the rest lead to heavy sword fern cover. Evergreen violet seems to be the most common herb following all treatments (except control) but the H40 and L40 appear to be more consistent/homogenous across plots.
 
-```{r}
+```{r 08-variability-17}
 
 doj <- position_dodge(width = 0.5)
 veg_cover %>% 
@@ -505,7 +505,7 @@ ggsave(
 
 change in percent cover of shrubs and herbs over time for each treatment. The fact that herb and shrub cover change so much is really confounded by the fact that sword fern (and to a lesser extent, huckleberry) are classified differently over time.
 
-```{r}
+```{r 08-variability-18}
 
 doj <- position_dodge(width = 0.3)
 veg_cover %>%
@@ -533,7 +533,7 @@ veg_cover %>%
 
 I think what I need to do is just look at 2018 and show the total percent cover and dominant species in the same barplot. This plot shows shrub cover for each plot, colored with the dominant species for that plot.
 
-```{r}
+```{r 08-variability-19}
 veg_cover %>%
   filter(year == "18") %>%
   mutate(dom_shrub = spp_common_name(dom_shrub)) %>%
@@ -544,7 +544,7 @@ veg_cover %>%
 
 This figure shows the same information as above, but stacked, where the total bar heights indicate the average shrub cover for a treatment and the region heights represent proportion of plots where that species was recorded as dominant, weighted by that plots total cover.
 
-```{r, fig.height=3.5, fig.width=3.5}
+```{r 08-variability-20, fig.height=3.5, fig.width=3.5}
 
 veg_cover %>%
   filter(year == "18") %>%
@@ -567,7 +567,7 @@ veg_cover %>%
 
 It would have been nice to show the same information for herb species, but unfortunately, the fact that sword fern is a significant component and it was recorded inconsistently, makes interpretation of this (and much of the understory data) very difficult.
 
-```{r}
+```{r 08-variability-21}
 veg_cover %>%
   filter(year == "18") %>%
   mutate(
@@ -586,7 +586,7 @@ UPDATE: After getting updated understory data, with sword fern separated out, we
 
 Error bars represent 1 SE of emmean. This figure includes only shrub cover.
 
-```{r}
+```{r 08-variability-22}
 
 shrub_cover_percent <- veg_cover |>
   rename(val = cl_shrub)
@@ -644,7 +644,7 @@ shrub_cover_mean |>
 
 This figure inlcudes percent cover and change in species richness.
 
-```{r, fig.width=3.5, fig.height=4}
+```{r 08-variability-23, fig.width=3.5, fig.height=4}
 veg <- bind_rows(
   `Shrub cover (%)` = shrub_cover_mean,
   `Richness (count)` = veg_richness_mean,
@@ -726,7 +726,7 @@ ggsave(
 
 Here I visualize the SCI_dbh for 10 random plots
 
-```{r, fig.width=8, fig.height=10, cache=TRUE}
+```{r 08-variability-24, fig.width=8, fig.height=10, cache=TRUE}
 
 sci_plots_d <- sci_d %>% select(x, y, z = dbh, plot, year) %>% split(~ plot + year, drop = TRUE)
 
@@ -761,7 +761,7 @@ I can use the function described in `?rgl::persp3d.triSht` which uses the output
 
 Here are boxplots showing the variability in 2018 of some potentially important variables.
 
-```{r}
+```{r 08-variability-25}
 sci_d %>%
   filter(year == "18") %>%
   select(treatment, spp, dbh, ht_p, cr, ht_inc2) %>%

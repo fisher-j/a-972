@@ -7,7 +7,7 @@ knitr::knit_hooks$set(time_it = time_it)
 knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE)
 ```
 
-```{r}
+```{r 11-seed-sap-1}
 library(tidyverse)
 ```
 
@@ -23,7 +23,7 @@ I'm only looking at year 2018 and I'm combining the last two size classes. So we
 
 Ingrowth includes all trees that "ingrew" after treatment (both 2013 and 2018)
 
-```{r}
+```{r 11-seed-sap-2}
 
 ssd1 <- seed_sap |>
   filter(year == "18") |>

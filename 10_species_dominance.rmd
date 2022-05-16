@@ -8,7 +8,7 @@ knitr::knit_hooks$set(time_it = time_it)
 knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE)
 ```
 
-```{r}
+```{r 10-species-dominance-1}
 library(tidyverse)
 ```
 
@@ -22,7 +22,7 @@ For this to make sense for heights, we will need to predict heights for missing 
 
 Although I refer to proportions here, this is of 100 TPH, so multiplying by 100 gives TPH.
 
-```{r}
+```{r 10-species-dominance-2}
 
 spp_dom_raw <- function(data = d_l, metrics = NULL, years = NULL) {
   if(is.null(years)) years <- c("08", "13", "18")
@@ -67,7 +67,7 @@ spp_dom_pct <- function(...) {
 
 ## Dominance figure
 
-```{r, fig.height=3.5, fig.width=3.5}
+```{r 10-species-dominance-3, fig.height=3.5, fig.width=3.5}
 
 dominance_labels <- as_labeller(
   c(
@@ -143,7 +143,7 @@ ggsave(
 
 Now I need to display the average values for these dominant species, perhaps along with their standard deviations. I think I'll just do this for each treatment in the most recent measurement period.
 
-```{r}
+```{r 10-species-dominance-4}
 
 spp_dom_raw() %>%
   group_by(year, treatment, measure) %>%
@@ -163,7 +163,7 @@ A Wilcoxon rank-sum test could be used to test if one treatment results in chang
 
 To start, I will only test significance for dbh ranked dominance, to see if treatment effect is significant there. first I get a list of differences from 2008 to 2018 for each plot in a treatment, this represents the treatments effect on redwood dominance. Then I compare the treatments to see is ones with a larger average effect, are significantly larger than those with a smaller average effect: 1-sided non-parametric tests. Wilcox rank-sum has lower p-values, than the permutation test. The data has a lot of zeros, and very few data points, none of the one-sided differences are significant. It is too soon to tell if redwood dominance has been affected.
 
-```{r}
+```{r 10-species-dominance-5}
 
 # This is the permutation calculation
 
@@ -222,7 +222,7 @@ non_para_dom_test <- function(metric) {
 ```
 
 
-```{r, warning=FALSE, cache=TRUE}
+```{r 10-species-dominance-6, warning=FALSE, cache=TRUE}
 non_para_dom_test("dbh")
 non_para_dom_test("ba_inc2")
 non_para_dom_test("ht")
@@ -244,7 +244,7 @@ A species with more shade tolerance might have a lower Ui, because there are mor
  Ui for redwood decreases in the control. This would suggest that the number of trees of other species out-competing (by diameter growth) redwoods is increasing, assuming the 4 nearest trees are in competition with any given tree. Because this metric is expressed as an average, it doesn't account for the density of the species.
 
 
-```{r}
+```{r 10-species-dominance-7}
 # Use live trees
 dd <- d_l |>
   filter(
@@ -298,7 +298,7 @@ lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot) |>
 
 First, I'll show the average number of trees and standard deviation of each species in the top 100 TPH.
 
-```{r}
+```{r 10-species-dominance-8}
 dd |>
   group_by(treatment, year, plot) |>
   slice_max(n = 8, order_by = dbh, with_ties = TRUE) |>
@@ -311,7 +311,7 @@ dd |>
 
 Here I plot the average Ui of RW or DF trees that are in the top 100 TPH. 
 
-```{r}
+```{r 10-species-dominance-9}
 Ui_plot2 <- dd |>
   group_by(treatment, year, plot) |>
   mutate(val = calc_Ui(x, y, dbh)) |>

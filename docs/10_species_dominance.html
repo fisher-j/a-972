@@ -457,7 +457,7 @@ make_dominance_fig &lt;- function(...) {
 make_dominance_fig(years = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;))</code></pre>
 <pre><code>## Warning in spp_dom_raw(...): Measures missing values (entries removed): ba_inc2</code></pre>
 <pre><code>## Warning: Removed 20 rows containing missing values (position_stack).</code></pre>
-<p><img src="10_species_dominance_files/figure-html/unnamed-chunk-3-1.png" width="336" /></p>
+<p><img src="10_species_dominance_files/figure-html/10-species-dominance-3-1.png" width="336" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/dominance_fig.pdf&quot;,
   device = cairo_pdf,
@@ -781,43 +781,43 @@ non_para_dom_test &lt;- function(metric) {
 <pre><code>## # A tibble: 8 x 3
 ##   test      Wilcox.P Perm.P
 ##   &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;
-## 1 H80 &gt; L40   0.0668  0.143
-## 2 L80 &gt; L40   0.0668  0.143
+## 1 H80 &gt; L40   0.0668  0.141
+## 2 L80 &gt; L40   0.0668  0.144
 ## 3 C &gt; L40     0.310   0.285
-## 4 H40 &gt; L40   0.128   0.287
+## 4 H40 &gt; L40   0.128   0.284
 ## 5 H80 &gt; C     0.321   0.500
-## 6 H80 &gt; H40   0.304   0.501
-## 7 L80 &gt; C     0.321   0.503
-## 8 L80 &gt; H40   0.304   0.500</code></pre>
+## 6 H80 &gt; H40   0.304   0.503
+## 7 L80 &gt; C     0.321   0.499
+## 8 L80 &gt; H40   0.304   0.502</code></pre>
 <pre class="r"><code>non_para_dom_test(&quot;ba_inc2&quot;)</code></pre>
 <pre><code>## [1] &quot;Test for ba_inc2:&quot;</code></pre>
 <pre><code>## # A tibble: 9 x 3
 ##   test      Wilcox.P Perm.P
 ##   &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;
-## 1 C &gt; L40     0.0235 0.0435
-## 2 L80 &gt; L40   0.0443 0.0843
-## 3 H80 &gt; L40   0.0432 0.0866
+## 1 C &gt; L40     0.0235 0.0436
+## 2 L80 &gt; L40   0.0443 0.0870
+## 3 H80 &gt; L40   0.0432 0.0854
 ## 4 C &gt; H40     0.103  0.186 
 ## 5 L80 &gt; H40   0.176  0.243 
-## 6 H40 &gt; L40   0.215  0.328 
-## 7 H80 &gt; H40   0.215  0.329 
+## 6 H40 &gt; L40   0.215  0.327 
+## 7 H80 &gt; H40   0.215  0.327 
 ## 8 C &gt; H80     0.304  0.500 
-## 9 L80 &gt; H80   0.437  0.498</code></pre>
+## 9 L80 &gt; H80   0.437  0.503</code></pre>
 <pre class="r"><code>non_para_dom_test(&quot;ht&quot;)</code></pre>
 <pre><code>## [1] &quot;Test for ht:&quot;</code></pre>
 <pre><code>## # A tibble: 10 x 3
 ##    test      Wilcox.P Perm.P
 ##    &lt;chr&gt;        &lt;dbl&gt;  &lt;dbl&gt;
-##  1 L80 &gt; H40   0.0316 0.0572
-##  2 C &gt; H40     0.0902 0.101 
-##  3 L80 &gt; L40   0.0671 0.0976
-##  4 H80 &gt; H40   0.178  0.202 
+##  1 L80 &gt; H40   0.0316 0.0564
+##  2 C &gt; H40     0.0902 0.0997
+##  3 L80 &gt; L40   0.0671 0.102 
+##  4 H80 &gt; H40   0.178  0.200 
 ##  5 L80 &gt; H80   0.231  0.214 
-##  6 C &gt; L40     0.224  0.245 
-##  7 L40 &gt; H40   0.5    0.299 
+##  6 C &gt; L40     0.224  0.242 
+##  7 L40 &gt; H40   0.5    0.300 
 ##  8 L80 &gt; C     0.221  0.301 
-##  9 C &gt; H80     0.385  0.429 
-## 10 H80 &gt; L40   0.385  0.430</code></pre>
+##  9 C &gt; H80     0.385  0.430 
+## 10 H80 &gt; L40   0.385  0.432</code></pre>
 </div>
 <div id="huis-dominance-metric" class="section level1">
 <h1>Hui’s dominance metric</h1>
@@ -886,7 +886,7 @@ lmer(val ~ treatment * year * spp + (1 | plot), data = Ui_plot) |&gt;
       ) +
       theme_bw() +
       facet_wrap( ~ treatment)     </code></pre>
-<p><img src="10_species_dominance_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p><img src="10_species_dominance_files/figure-html/10-species-dominance-7-1.png" width="672" /></p>
 <p>First, I’ll show the average number of trees and standard deviation
 of each species in the top 100 TPH.</p>
 <pre class="r"><code>dd |&gt;
@@ -1525,7 +1525,7 @@ emmeans(Ui_mod2, pairwise ~ spp | treatment + year)$contrasts</code></pre>
       ) +
       theme_bw() +
       facet_wrap( ~ treatment)      </code></pre>
-<p><img src="10_species_dominance_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<p><img src="10_species_dominance_files/figure-html/10-species-dominance-9-1.png" width="672" /></p>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-motzSamplingMeasuresTree2010" class="csl-entry">
 Motz, K., H. Sterba, and A. Pommerening. 2010. <span>“Sampling Measures

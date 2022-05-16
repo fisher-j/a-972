@@ -7,7 +7,7 @@ knitr::knit_hooks$set(time_it = time_it)
 knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE)
 ```
 
-```{r}
+```{r 06-summary-1}
 library(tidyverse)
 library(dplyr)
 ```
@@ -18,7 +18,7 @@ I'm making the assumption now that all trees recorded as cut were alive in the i
 
 Generally, the `summarise()` command in each section defines the output of a given measure. The `mutate()` command is also used for calculating new columns. Calculations are done by grouping levels (generally by treatment, by year).
 
-```{r}
+```{r 06-summary-2}
 # I'll store all my metrics in this list
 measures <- list()
 ```
@@ -27,7 +27,7 @@ measures <- list()
 
 I'll look at a quick summary of quartiles of the number of tree observations by plot for each year. Initial plots had between 83 and 164 observations and subsequent years are roughly parallel. Density is being calculated for all live trees, including those broken above dbh.
 
-```{r}
+```{r 06-summary-3}
 
 d_l %>%
   filter(status %in% c(1, 2, 3, 15, 16, 31)) %>%
@@ -54,7 +54,7 @@ measures$density <- function(data, species) {
 
 New mortality here is ascribed to observations of the current period which were alive in the previous period and are not alive in the current period and reported in tph. Currently, this is undefined for the first period ("init") and is zero for "08" (because "init" and "08" are really only one observation). The values for 2013 and 2018 record the new mortality in the previous period, i.e.: 08-13 and 13-18, respectively.
 
-```{r}
+```{r 06-summary-4}
 measures$mort <- function(data, species) {
   if(is.null(species)) species <- unique(data$spp)
   data %>%
@@ -75,7 +75,7 @@ measures$mort <- function(data, species) {
 
 DBH is actually QMD here. It will be calculated based on all live trees, including those broken above dbh and with broken and dead tops (most of these are SESE and assumed to be alive).
 
-```{r}
+```{r 06-summary-5}
 measures$dbh <- function(data, species) {
   if(is.null(species)) species <- unique(data$spp)
   data %>%
@@ -112,7 +112,7 @@ Because there are about 14 observations in 2008 and 2013 that do not have height
 
 For dominant heights, I am using dominant dbh trees *not including broken and dead tops*. Not all of these have heights. For this reason, there are fewer than 4 trees per plot.
 
-```{r}
+```{r 06-summary-6}
 
 # get ids of trees that have heights in 2018
 ht_id_2018 <- filter(d_l, year == "18", !is.na(ht_p)) %>% pull(tree_id)
@@ -164,7 +164,7 @@ measures$dom_ht <- function(data, species) {
 
 Basal area, similar to density will be calculated for all live trees.
 
-```{r}
+```{r 06-summary-7}
 
 measures$ba <- function(data, species) {
   if(is.null(species)) species <- unique(data$spp)
@@ -196,7 +196,7 @@ I want to create another function for calculating basal area. This should return
 
 It turns out that this function is almost identical to my previous one, except that it allows to calculate by species.
 
-```{r}
+```{r 06-summary-8}
 library(tidyverse)
 
 get_ba <- function(data, by_species = FALSE, species_subset = NULL) {
@@ -227,7 +227,7 @@ get_ba <- function(data, by_species = FALSE, species_subset = NULL) {
 
 Here I'll plot BA by species and year, similar to Teraoka (2016)
 
-```{r}
+```{r 06-summary-9}
 teraoka_colors <- c("#04315c", "#EB4332", "#86E981", "#557AF0", "#B3AFAE")
 get_ba(d_l, by_species = TRUE) %>%
   filter(year %in% c("08", "13")) %>%
@@ -246,7 +246,7 @@ It looks pretty similar, but there are discrepancies. Next I'll print out the pe
 
 I define a percent change function which takes output from one of my metric functions (expecting the variable "mean_[variable_name]")
 
-```{r}
+```{r 06-summary-10}
 pct_change <- function(data, var) {
   mutate(data, pct_change = ({{var}} - lag({{var}})) / lag({{var}})) %>%
   select(-starts_with(c("n", "sd")))
@@ -260,7 +260,7 @@ get_ba(d_l) %>%
 
 For SDI, I use the same trees that were used for basal area and density: all standing trees (broken or not) that are taller than breast height.
 
-```{r}
+```{r 06-summary-11}
 # do any target trees have missing dbh?
 any(nrow(filter(d_l, status %in% c(1, 2, 3, 15, 16), is.na(dbh))))
 
@@ -283,7 +283,7 @@ measures$sdi <- function(data, species) {
 
 ## Density of dominant
 
-```{r}
+```{r 06-summary-12}
 
 ```
 
@@ -292,7 +292,7 @@ measures$sdi <- function(data, species) {
 
 ## All species
 
-```{r, echo=FALSE}
+```{r 06-summary-13, echo=FALSE}
 # Call all summary functions with a given dataset and speces list
 # and join the results into a wide dataframe.
 
@@ -318,7 +318,7 @@ make_summary <- function(data, measures = c("dbh", "ht_p", "density", "ba")) {
 
 ```
 
-```{r}
+```{r 06-summary-14}
 
 get_measures(d_l) %>%
   make_summary() %>%
@@ -331,7 +331,7 @@ get_measures(d_l) %>%
 
 ## Redwood
 
-```{r}
+```{r 06-summary-15}
 
 get_measures(species = "SESE3") %>%
   make_summary() %>%
@@ -344,7 +344,7 @@ get_measures(species = "SESE3") %>%
 
 ## Douglas-fir
 
-```{r}
+```{r 06-summary-16}
 
 get_measures(species = "PSMEM") %>%
   make_summary() %>%
@@ -450,7 +450,7 @@ For this to make sense for heights, we will need to predict heights for missing 
 
 Although I refer to proportions here, this is of 100 TPH, so multiplying by 100 gives TPH.
 
-```{r}
+```{r 06-summary-17}
 
 spp_dom_raw <- function(data = d_l, metrics = NULL, years = NULL) {
   if(is.null(years)) years <- c("08", "13", "18")
@@ -495,7 +495,7 @@ spp_dom_pct <- function(...) {
 
 ## Dominance figure
 
-```{r, fig.height=3.5, fig.width=3.5}
+```{r 06-summary-18, fig.height=3.5, fig.width=3.5}
 
 dominance_labels <- as_labeller(
   c(
@@ -571,7 +571,7 @@ ggsave(
 
 Now I need to display the average values for these dominant species, perhaps along with their standard deviations. I think I'll just do this for each treatment in the most recent measurement period.
 
-```{r}
+```{r 06-summary-19}
 
 spp_dom_raw() %>%
   group_by(year, treatment, measure) %>%

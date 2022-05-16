@@ -8,11 +8,11 @@ knitr::knit_hooks$set(time_it = time_it)
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE)
 ```
 
-```{r}
+```{r 09-damage-1}
 print(knitr::current_input())
 ```
 
-```{r}
+```{r 09-damage-2}
 require(tidyverse)
 library(performance)
 ```
@@ -23,7 +23,7 @@ library(performance)
 
 I previously only looked at live trees, this underestimates damage because observations are ommited from counts of cumulative damage. I'm now including all tree records in the analysis, so estimates represent total amounts of post-treatment trees damaged by bears, some of these trees may no longer be in the stand, but they were still damaged by bears at one point.
 
-```{r}
+```{r 09-damage-3}
 d_l$year <- factor(d_l$year, ordered = FALSE)
 bd <- d_l
 ```
@@ -32,7 +32,7 @@ There are trees with "healed over" in the notes, most of these are in 2008. It m
 
 I'm assuming that any tree that goes from bear damaged in 2008 to not bear damaged in 2013 is in fact healed and that any damage in 2018 is new damage.
 
-```{r}
+```{r 09-damage-4}
 
 # # Use this to look at any "healed" trees
 # bd %>% 
@@ -44,7 +44,7 @@ I'm assuming that any tree that goes from bear damaged in 2008 to not bear damag
 
 In looking at notes, trees trees that have "old bear damage" recorded are treated inconsistently, some are recorded with bear damage, some without. I'll assume that trees recorded as not bear damaged are either undamaged or completely healed, and subsequent damage implies a new bear incidence of bear damage.
 
-```{r}
+```{r 09-damage-5}
 
 # # Use this to look at any "old bd" trees
 # bd %>% 
@@ -58,7 +58,7 @@ Are there trees that are recorded as bear damaged in one period and then not in 
 
 There are 77 trees that are dropped (2013 and 2018), of these, 14 are subsequently listed as (re-) damaged (all in 2018). As stated above, I will consider these valid occurrences of new damage. 16 of the "dropped" trees were because of death (no longer recording bear damage).
 
-```{r}
+```{r 09-damage-6}
 
 bear_dropped <- bd %>%
   group_by(tree_id) %>%
@@ -85,7 +85,7 @@ I need to create another variable which indicates if the damage is new for that 
 
 I'll also add a variable indicating whether a tree was damaged in 2013
 
-```{r}
+```{r 09-damage-7}
 
 # this was used for ensuring all bear damage stuck with a tree throughout its life
 # I've since decided to allow trees to "completely heal," as the data seems to suggest this
@@ -117,13 +117,13 @@ bd1 <- make_bd(d_l)
 
 I want to include all trees present after treatment. 38 trees are "lost" due to being dead and downed so I need to re-add them manually as dead trees. I show the difference between this and the incomplete treelist further on.
 
-```{r}
+```{r 09-damage-8}
 
 bd <- d_l |> 
   filter(year != "init") |> 
   droplevels() |>
   complete(nesting(tree_id, plot, treatment, spp), year) |>
-  anti_join(filter(wd, year != "init")) |>
+  anti_join(filter(bd, year != "init")) |>
   mutate(live = FALSE) |>
   bind_rows(bd) |>
   mutate(year = fct_relevel(year, "init")) |>
@@ -139,7 +139,7 @@ Trees killed just by bears.
 
 Bear damaged trees that were alive in 2008 and subsequently died without being broken or uprooted
 
-```{r}
+```{r 09-damage-9}
 
 bd |>
   group_by(tree_id) |>
@@ -151,7 +151,7 @@ bd |>
 
 function for plotting data at the treatment level
 
-```{r}
+```{r 09-damage-10}
 
 bear_plot <- function(data, var, type) {
   if (type == "cnt") .fun <- sum
@@ -172,7 +172,7 @@ bear_plot <- function(data, var, type) {
 
 function for plotting data at the plot level
 
-```{r}
+```{r 09-damage-11}
 
 bd_plot_fig <- function(data, var = bear_new, prop = FALSE) {
   my_sum <- function(d) summarise(d, var = sum( {{var}} ))
@@ -200,7 +200,7 @@ bd_plot_fig <- function(data, var = bear_new, prop = FALSE) {
 
 bar-graph function for plotting species distribution at treatment level, second function shows difference between aggregating at treatment level and averaging across plots (probably how it should be done).
 
-```{r}
+```{r 09-damage-12}
 # This funtion is using "spp2" instead of "spp", this was originally to allow grouping of species
 
 # this function computes total bar height (average) and SE
@@ -288,7 +288,7 @@ After thinking about it some more I found a couple things.
 
 First, there is a subtle difference between aggregating at the treatment level (simple sum of bear damage across plots), and averaging plot level sums.
 
-```{r, animation.hook="gifski", interval=1.7}
+```{r 09-damage-13, animation.hook="gifski", interval=1.7}
 
 dam_bar0(bd1, bear_new, type = "pct",
   title = "Aggregated percent new bear damage pre and post treatment") +
@@ -299,7 +299,7 @@ dam_bar1(bd1, bear_new, type = "pct",
   scale_y_continuous(limits = c(0, .21))
 ```
 
-```{r, animation.hook="gifski", interval=1.7}
+```{r 09-damage-14, animation.hook="gifski", interval=1.7}
 
 dam_bar0(bd1, bear_cum, type = "pct",
   title = "Aggregated cumulative percent new bear damage pre and post treatment") +
@@ -312,7 +312,7 @@ dam_bar1(bd1, bear_cum, type = "pct",
 
 The other thing I figured out is that we can put error bars on the top of the bar indicating the variation in total damage across plots, but in this case we would need to include spruce, otherwise the error bar be centered in empty space.
 
-```{r, animation.hook="gifski"}
+```{r 09-damage-15, animation.hook="gifski"}
 
 dam_bar1(bd1, bear_cum, type = "pct", error = TRUE,
   title = "Average cumulative percent new bear damage pre and post treatment") +
@@ -331,7 +331,7 @@ I think that after talking today, I would want to leave off the spruce as well a
 
 Another thing is that there is a difference between whether we consider only live trees at any given time, or all trees, live or dead that were hit by bears. I think it is most straight forward to consider all post treatment trees, whether they died at some point or not. This is different from my earlier thinking. Perhaps the last panel of the publication bear chart will show existing conditions with live trees only...
 
-```{r, animation.hook="gifski"}
+```{r 09-damage-16, animation.hook="gifski"}
 
 bd_live <- filter(bd1, live)
 
@@ -347,7 +347,7 @@ dam_bar1(bd1, bear_cum, type = "pct",
 
 Finally, If we are trying to characterize the outcome considering all post-treatment trees, then I have to deal with tags that are dropped from observation list because of being dead and down. There are 38 of these trees, some of them bear damaged. I created observations for these "lost" trees to make a complete picture of *all posttreatment trees*
 
-```{r, animation.hook="gifski"}
+```{r 09-damage-17, animation.hook="gifski"}
 
 dam_bar1(bd1, bear_cum, type = "pct",
   title = "Incomplete cumulative percent new bear damage all trees") +
@@ -367,7 +367,7 @@ In the H40 treatment there is a decline in percent new bear damage in two plots,
 
 Error bars represent 1 SE of mean
 
-```{r}
+```{r 09-damage-18}
 bear_plot(bd, bear_new, "pct") +
   labs(title = "Average percent new bear damage for each treatment ±SE")
 
@@ -377,7 +377,7 @@ bear_plot(bd, bear_new, "cnt") +
 
 Here is the same data for individual plots, showing their trajectories
 
-```{r}
+```{r 09-damage-19}
 bd_plot_fig(bd, bear_new)
 
 bd_plot_fig(bd, bear_new, prop = TRUE)
@@ -385,7 +385,7 @@ bd_plot_fig(bd, bear_new, prop = TRUE)
 
 ## Bear bar figure for publication
 
-```{r, fig.width=7.16, fig.height=3.54}
+```{r 09-damage-20, fig.width=7.16, fig.height=3.54}
 
 year_labels <- c(
   init = "Pretreatment damage\nbefore thin",
@@ -522,7 +522,7 @@ summary(bm1.all)$fixef
 This model seems to be working. Now I'll do more model selection, testing for interactions. All of these models will include `plot` as the only random effect. I compare performance metrics using the R package: performance [@ludeckePerformancePackageAssessment2021]
 
 
-```{r}
+```{r 09-damage-21}
 
 fl <- list(
     bear_new ~ treatment + year + spp2 + d_inc2
@@ -587,7 +587,7 @@ Here is the list of models that I am going to test. They include different inter
 
 There are also problems with complete separation, which I attempt to fix by using a bayesian framework. I tried using penalized regression with a fixed effects only glm (bias reduction). I also tried a bayesian model and specified a [prior variance for the fixed effects as a gaussian distribution with a sd of 3](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#penalizationhandling-complete-separation). Ben Bolker [says](https://bbolker.github.io/mixedmodels-misc/ecostats_chap.html#digression-complete-separation) "We can use `bglmer` from the `blme` package to impose zero-mean Normal priors on the fixed effects" 
 
-```{r}
+```{r 09-damage-22}
 # model list
 data.frame(form = sapply(fl, deparse1)) %>% 
   kbl2(row.names = TRUE,
@@ -645,7 +645,7 @@ I'm predicting the confidence interval using fixed effects error only. This is h
 
 while I'm on the topic, it is also possible to get bootstrapped CIs for [model coefficients](https://stackoverflow.com/questions/26417005/odds-ratio-and-confidence-intervals-from-glmer-output)
 
-```{r}
+```{r 09-damage-23}
 
 pred_bd <- function(mod, limit = FALSE) {
   data <- eval(summary(mod)$call[[3]])
@@ -701,7 +701,7 @@ pred_bd <- function(mod, limit = FALSE) {
 
 One column bear damage figure
 
-```{r}
+```{r 09-damage-24}
 
 doj <- position_dodge(width = 20)
 
@@ -773,7 +773,7 @@ ggsave(
 
 2-column bear damage figure
 
-```{r}
+```{r 09-damage-25}
 
 doj <- position_dodge(width = 20)
 
@@ -845,7 +845,7 @@ ggsave(
 
 Here I am able to show that the predictions from emmeans are exactly the same as those I am getting from predicting using my own function. 
 
-```{r}
+```{r 09-damage-26}
 
 ba_incs <- list(
   ba_inc2 = seq(
@@ -869,7 +869,7 @@ emmip(bbdm[[4]],
 
 Redwood is clearly more targeted.
 
-```{r}
+```{r 09-damage-27}
 
 emmeans(bbdm[[4]], pairwise ~ treatment, type = "response")
 
@@ -877,7 +877,7 @@ emmeans(bbdm[[4]], pairwise ~ treatment, type = "response")
 
 Here we can see explicit comparisons between treatments
 
-```{r}
+```{r 09-damage-28}
 
 mean_treat <- emmeans(bbdm[[4]], ~ treatment, type = "response")
 
@@ -891,7 +891,7 @@ mean_treat %>% multcomp::cld(reversed = TRUE)
 
 Finally, here is the expected response over levels of diameter increment.
 
-```{r}
+```{r 09-damage-29}
 
 emmip(bbdm[[4]], treatment ~ ba_inc2 | spp2 + year, at = ba_incs, CIs = TRUE, type = "response") + labs(title = "bayesian new bear damage model")
 
@@ -902,7 +902,7 @@ emmip(bbdm[[4]], treatment ~ ba_inc2 | spp2 + year, at = ba_incs, CIs = TRUE, ty
 
 First I show amount of bear damage predicted (sum of predicted probabilities) for each time period compared to observed.
 
-```{r}
+```{r 09-damage-30}
 ##### Predict new bear damage #######
 
 make_pred_bar_chart <- function() {
@@ -953,7 +953,7 @@ make_pred_bar_chart()
 
 This figure compares the cumulative (post treatment) predicted amount of bear damage to the cumulative observed.
 
-```{r}
+```{r 09-damage-31}
 
 ####### Cumulative prediction from new bear damage model #########
 
@@ -1008,7 +1008,7 @@ make_pred_bar_chart2()
 
 I can check for over dispersion, and [I don't think I need to worry about underdispersion](https://stats.stackexchange.com/questions/568407/how-to-correct-underdispersion-in-logistic-regression)
 
-```{r}
+```{r 09-damage-32}
 
 
 ```
@@ -1077,7 +1077,7 @@ get_dropped(wd, get_cond(32))
 
 Basically I want to know how many trees ended up being damaged over the 10 years since thinning. It might also be useful to compare this to initial damage rates.
 
-```{r}
+```{r 09-damage-33}
 
 bear_plot(wd, bt_new, "pct") +
   labs(title = "Average percent new broken tops for each treatment ±SE")
@@ -1090,7 +1090,7 @@ bear_plot(wd, wt_new, "pct") +
 
 ```
 
-```{r}
+```{r 09-damage-34}
 
 dam_bar1(wd, bt_cum, type = "pct", "Cumulative percent of all trees with broken tops")
 dam_bar1(wd, bs_cum, type = "pct", "Cumulative percent of all trees with broken stems")
@@ -1103,7 +1103,7 @@ wd |>
 ```
 
 
-```{r}
+```{r 09-damage-35}
 
 
 

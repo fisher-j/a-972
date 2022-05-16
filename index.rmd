@@ -13,7 +13,7 @@ Welcome to the webpage for the A-972 10-year data analysis. The following pages 
 
 # Recent work
 
-```{r, child="_work_journal.md"}
+```{r index-1, child="_work_journal.md"}
 
 ```
 
