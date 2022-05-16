@@ -342,7 +342,9 @@ anti_join(ing, ssd1)</code></pre>
 <pre><code>## # A tibble: 0 x 4
 ## # Groups:   treatment, plot, spp [0]
 ## # ... with 4 variables: treatment &lt;chr&gt;, plot &lt;chr&gt;, spp &lt;chr&gt;, ingrowth &lt;int&gt;</code></pre>
-<pre class="r"><code>ssd &lt;- left_join(ssd1, ing) |&gt; replace_na(list(ingrowth = 0)) |&gt;
+<pre class="r"><code>size_classes &lt;- c(&quot;&lt;0&quot;, &quot;0-3.8&quot;, &quot;3.8-6.4&quot;, &quot;6.4-10.2&quot;, &quot;&gt;10.2&quot;)
+
+ssd &lt;- left_join(ssd1, ing) |&gt; replace_na(list(ingrowth = 0)) |&gt;
   pivot_longer(
     contains(c(&quot;seed&quot;, &quot;cls&quot;, &quot;ing&quot;)),
     names_to = &quot;size_class&quot;,
@@ -352,7 +354,7 @@ anti_join(ing, ssd1)</code></pre>
     size_class = factor(
       size_class,
       levels = c(&quot;seedling&quot;, &quot;cls_1&quot;, &quot;cls_2&quot;, &quot;cls_3&quot;, &quot;ingrowth&quot;),
-      labels = c(&quot;&lt;0&quot;, &quot;0-3.8&quot;, &quot;3.8-6.4&quot;, &quot;6.4-10.2&quot;, &quot;Ingrowth&quot;)
+      labels = size_classes
     )
   )</code></pre>
 </div>
@@ -399,6 +401,8 @@ ssdd &lt;- ssd |&gt;
 
 unique_cases &lt;- unique(paste(ssdd$treatment, ssdd$size_class))
 
+# unique_cases &lt;- levels(interaction(ssdd$treatment, ssdd$size_class))
+
 bars &lt;- map(
   unique_cases, 
   ~geom_col_pattern(
@@ -431,7 +435,8 @@ ggplot(mapping = aes(size_class, count)) +
   guides(x = guide_axis(angle = -60)) +
   scale_pattern_manual(values = my_patterns, labels = my_labels) +
   scale_pattern_angle_manual(values = my_angles, labels = my_labels) +
-  scale_y_continuous(expand = c(0, 0, .05, 0))</code></pre>
+  scale_y_continuous(expand = c(0, 0, .05, 0)) +
+  scale_x_discrete(limits = size_classes)</code></pre>
 <p><img src="11_seed_sap_files/figure-html/seed3-1.png" width="960" /></p>
 <pre class="r"><code>ggsave(
   filename = &quot;figs/regen.pdf&quot;,

@@ -37,6 +37,8 @@ ing <- ingrowth |>
 # are all combinations of treatment, plot, spp in ingrowth already in saplings/seedlings?
 anti_join(ing, ssd1)
 
+size_classes <- c("<0", "0-3.8", "3.8-6.4", "6.4-10.2", ">10.2")
+
 ssd <- left_join(ssd1, ing) |> replace_na(list(ingrowth = 0)) |>
   pivot_longer(
     contains(c("seed", "cls", "ing")),
@@ -47,7 +49,7 @@ ssd <- left_join(ssd1, ing) |> replace_na(list(ingrowth = 0)) |>
     size_class = factor(
       size_class,
       levels = c("seedling", "cls_1", "cls_2", "cls_3", "ingrowth"),
-      labels = c("<0", "0-3.8", "3.8-6.4", "6.4-10.2", "Ingrowth")
+      labels = size_classes
     )
   )
 
@@ -99,6 +101,8 @@ ssdd <- ssd |>
 
 unique_cases <- unique(paste(ssdd$treatment, ssdd$size_class))
 
+# unique_cases <- levels(interaction(ssdd$treatment, ssdd$size_class))
+
 bars <- map(
   unique_cases, 
   ~geom_col_pattern(
@@ -131,7 +135,8 @@ ggplot(mapping = aes(size_class, count)) +
   guides(x = guide_axis(angle = -60)) +
   scale_pattern_manual(values = my_patterns, labels = my_labels) +
   scale_pattern_angle_manual(values = my_angles, labels = my_labels) +
-  scale_y_continuous(expand = c(0, 0, .05, 0))
+  scale_y_continuous(expand = c(0, 0, .05, 0)) +
+  scale_x_discrete(limits = size_classes)
 
 ggsave(
   filename = "figs/regen.pdf",
