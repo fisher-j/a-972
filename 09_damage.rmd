@@ -277,6 +277,7 @@ dam_bar0 <- function(data, var, type = "cnt", title = "") {
     group_by(treatment, year, spp2) |>
     my_sum() |>
     filter(var > 0) |>
+    relevel_treatment() |>
     ggplot(aes(treatment, var, fill = spp2)) +
       geom_col(position = "stack", color = "black") +
       facet_wrap(~ year, nrow = 1) +
@@ -1057,7 +1058,7 @@ for code 3, there are 5 dropped trees most of them due to death
 for codes 30 and 31 there are 6. Most of these die, others are recorded differently, ie 31 to 3
 for code 32, there are 2, both are dead at the start
 
-```{r damage34, cache=TRUE, incldue=FALSE}
+```{r damage34, incldue=FALSE}
 
 get_dropped <- function(dat, test_condition) {
   dat %>%
