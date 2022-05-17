@@ -595,13 +595,13 @@ my_dodge <- position_dodge(0.5)
 
 cover_all <- bind_rows(
   Shrub = shrub_cover_mean,
-  Herb = herb_cover_mean,
+  Herbaceous = herb_cover_mean,
   .id = "type"
 )
 
 richness_all <- bind_rows(
   Shrub = shrub_richness_mean,
-  Herb = herb_richness_mean,
+  Herbaceous = herb_richness_mean,
   .id = "type"
 )
 veg_all <- bind_rows(
