@@ -303,3 +303,11 @@ ci <- function(x) {
   UB <- mean(x) + t_crit * sd(x) / sqrt(length(x) - 1)
   data.frame(LB = LB, UB = UB)
 }
+
+
+fig_w <- function(col, unit) {
+  w <- if_else(col == 1, 8.84, 18.2)
+  if_else(unit == "in", w / 2.54, w)
+}
+
+
