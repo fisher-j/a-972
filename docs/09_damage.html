@@ -352,6 +352,8 @@ predictions to observed</a></li>
 </ul></li>
 <li><a href="#wind-damage-and-breakage">Wind damage and
 breakage</a></li>
+<li><a href="#wind-damage-figure-unfinished">Wind damage figure
+<em>unfinished</em></a></li>
 </ul>
 </div>
 
@@ -8269,71 +8271,50 @@ initial damage rates.</p>
 <p><img src="09_damage_files/figure-html/09-damage-34-2.png" width="672" /></p>
 <pre class="r"><code>dam_bar1(wd, wt_cum, type = &quot;pct&quot;, &quot;Cumulative percent of all uprooted trees&quot;)</code></pre>
 <p><img src="09_damage_files/figure-html/09-damage-34-3.png" width="672" /></p>
-<pre class="r"><code>wd1 &lt;- dam_plot(wd, bs_cum, &quot;cnt&quot;) |&gt; complete(nesting(treatment, plot), year, spp2, fill = list(var_true = 0))
-wd2 &lt;- dam_plot(wd, bs_cum, &quot;cnt&quot;) |&gt; filter(var_true &gt; 0)
+</div>
+<div id="wind-damage-figure-unfinished" class="section level1">
+<h1>Wind damage figure <em>unfinished</em></h1>
+<pre class="r"><code>myvars &lt;- list(&quot;Broken Stem&quot; = &quot;bs_cum&quot;, &quot;Brokent top&quot; = &quot;bt_cum&quot;, &quot;Wind-throw&quot; = &quot;wt_cum&quot;)
+myvars &lt;- lapply(myvars, as.name)
 
-mod1 &lt;- lmer(var_true ~ treatment * year + (1 | plot), data = wd1)
-mod2 &lt;- lmer(var_true ~ treatment * year + (1 | plot), data = wd2)
+dam_data &lt;- bind_rows (
+  pcts = map_dfr(myvars, ~ dam_plot(wd, eval(.x), &quot;pct&quot;), .id = &quot;measure&quot;),
+  cnts = map_dfr(myvars, ~ dam_plot(wd, eval(.x), &quot;cnt&quot;), .id = &quot;measure&quot;),
+  .id = &quot;type&quot;
+) |&gt; 
+filter(year == &quot;18&quot;) |&gt;
+relevel_treatment()
 
-summary(mod)</code></pre>
-<pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
-## Formula: val ~ treatment * year + (1 | plot)
-##    Data: shrub_cover_percent
-## 
-## REML criterion at convergence: 363.1
-## 
-## Scaled residuals: 
-##      Min       1Q   Median       3Q      Max 
-## -1.28996 -0.42636  0.01733  0.21956  2.13274 
-## 
-## Random effects:
-##  Groups   Name        Variance Std.Dev.
-##  plot     (Intercept) 34.55    5.878   
-##  Residual             91.60    9.571   
-## Number of obs: 60, groups:  plot, 20
-## 
-## Fixed effects:
-##                       Estimate Std. Error t value
-## (Intercept)          2.500e+00  5.616e+00   0.445
-## treatmentH40        -4.510e-14  7.942e+00   0.000
-## treatmentH80        -3.214e-14  7.942e+00   0.000
-## treatmentL40        -3.486e-14  7.942e+00   0.000
-## treatmentL80        -3.538e-14  7.942e+00   0.000
-## year13              -4.184e-14  6.767e+00   0.000
-## year18               1.187e+01  6.767e+00   1.755
-## treatmentH40:year13  3.000e+01  9.571e+00   3.135
-## treatmentH80:year13  3.125e+00  9.571e+00   0.327
-## treatmentL40:year13  1.250e+01  9.571e+00   1.306
-## treatmentL80:year13  4.461e-14  9.571e+00   0.000
-## treatmentH40:year18  4.188e+01  9.571e+00   4.375
-## treatmentH80:year18  6.250e+00  9.571e+00   0.653
-## treatmentL40:year18  2.938e+01  9.571e+00   3.069
-## treatmentL80:year18  3.125e+00  9.571e+00   0.327</code></pre>
-<pre class="r"><code>emmeans(mod2, ~ treatment + year)</code></pre>
-<pre><code>##  treatment year emmean   SE   df lower.CL upper.CL
-##  C         init  -3.75 1.59 30.1  -6.9909   -0.515
-##  H40       init nonEst   NA   NA       NA       NA
-##  H80       init nonEst   NA   NA       NA       NA
-##  L40       init nonEst   NA   NA       NA       NA
-##  L80       init nonEst   NA   NA       NA       NA
-##  C         08    -3.75 1.59 30.1  -6.9909   -0.515
-##  H40       08     1.58 1.49 29.2  -1.4718    4.632
-##  H80       08   nonEst   NA   NA       NA       NA
-##  L40       08    -1.91 1.49 29.1  -4.9453    1.134
-##  L80       08   nonEst   NA   NA       NA       NA
-##  C         13    -3.75 1.59 30.1  -6.9909   -0.515
-##  H40       13     1.90 1.14 15.0  -0.5386    4.339
-##  H80       13     1.17 1.24 11.9  -1.5386    3.872
-##  L40       13     2.46 1.10 12.8   0.0871    4.826
-##  L80       13     1.00 1.59 14.2  -2.4051    4.405
-##  C         18     3.25 1.12 14.2   0.8422    5.658
-##  H40       18     2.38 1.10 12.8   0.0112    4.753
-##  H80       18     1.50 1.24 11.9  -1.2052    4.205
-##  L40       18     3.12 1.10 12.8   0.7537    5.492
-##  L80       18     1.00 1.59 14.2  -2.4051    4.405
-## 
-## Degrees-of-freedom method: kenward-roger 
-## Confidence level used: 0.95</code></pre>
+dam_data_spp &lt;- dam_data |&gt;
+  group_by(type, measure, treatment, spp2) |&gt;
+  summarise(spp_avg = sum(var_true) / 4) |&gt;
+  filter(spp_avg &gt; 0)
+
+dam_data_treat &lt;- dam_data |&gt;
+  group_by(type, measure, treatment, plot) |&gt;
+  summarize(var1 = sum(var_true)) |&gt;
+  summarise(avg = mean(var1), SE = sd(var1) / sqrt(n()))
+
+error &lt;- TRUE
+
+ggplot(mapping = aes(x = treatment)) +
+  geom_col(
+    data = dam_data_spp,
+    aes(y = spp_avg, fill = spp2),
+    position = &quot;stack&quot;,
+    color = &quot;black&quot;
+  ) +
+  {if (error) {
+    geom_errorbar(
+      data = dam_data_treat,
+      aes(y = avg, ymin = avg - SE, ymax = avg + SE),
+      width = 0.2
+    )
+  }} +
+  facet_grid(type ~ measure, scales = &quot;free_y&quot;) +
+  scale_fill_manual(values = palette()) +
+  labs(y = NULL)</code></pre>
+<p><img src="09_damage_files/figure-html/09-damage-35-1.png" width="672" /></p>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-ludeckePerformancePackageAssessment2021" class="csl-entry">
 Lüdecke, Daniel, Mattan S. Ben-Shachar, Indrajeet Patil, Philip

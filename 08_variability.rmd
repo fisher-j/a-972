@@ -682,6 +682,13 @@ ggsave(
 This figure inlcudes percent cover and change in species richness.
 
 ```{r 08-variability-23, fig.width=3.5, fig.height=3.2}
+
+veg_richness_plot <- veg_species %>%
+  group_by(treatment, year, plot) %>%
+  summarize(val = n())
+
+veg_richness_mean <- var_mean(veg_richness_plot)
+
 veg <- bind_rows(
   `Shrub cover (%)` = shrub_cover_mean,
   `Richness (count)` = veg_richness_mean,

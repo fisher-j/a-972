@@ -8516,19 +8516,25 @@ veg_all |&gt;
   filename = &quot;figs/veg_rich_cover.pdf&quot;,
   device = cairo_pdf,
   width = fig_w(1, &quot;cm&quot;),
-  height = 9,
+  height = 9.5,
   units = &quot;cm&quot;
 )
 
 ggsave(
   filename = &quot;figs/veg_rich_cover.jpg&quot;,
   width = fig_w(1, &quot;cm&quot;),
-  height = 9,
+  height = 9.5,
   units = &quot;cm&quot;
 )</code></pre>
 <p>This figure inlcudes percent cover and change in species
 richness.</p>
-<pre class="r"><code>veg &lt;- bind_rows(
+<pre class="r"><code>veg_richness_plot &lt;- veg_species %&gt;%
+  group_by(treatment, year, plot) %&gt;%
+  summarize(val = n())
+
+veg_richness_mean &lt;- var_mean(veg_richness_plot)
+
+veg &lt;- bind_rows(
   `Shrub cover (%)` = shrub_cover_mean,
   `Richness (count)` = veg_richness_mean,
   .id = &quot;metric&quot;) |&gt;
