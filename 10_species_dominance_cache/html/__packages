@@ -1,3 +1,10 @@
+base
+methods
+datasets
+utils
+grDevices
+graphics
+stats
 magrittr
 dplyr
 tidyverse
@@ -17,7 +24,3 @@ broom.mixed
 patchwork
 rgl
 performance
-blme
-ggpattern
-numDeriv
-ROCR

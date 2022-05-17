@@ -21,10 +21,3 @@ lme4
 emmeans
 MuMIn
 broom.mixed
-patchwork
-rgl
-performance
-blme
-ggpattern
-numDeriv
-ROCR

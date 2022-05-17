@@ -5,7 +5,7 @@ bibliography: ["./reference/a972.bib"]
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE, cache.extra = "monkey")
 ```
 
 ```{r 09-damage-1}
@@ -1031,6 +1031,7 @@ there is only 1 code 12, I think we can ignore it
 
 ```{r damage33, cache=TRUE}
 
+
 wd <- bd
 
 wd <- wd %>%
@@ -1058,7 +1059,7 @@ for code 3, there are 5 dropped trees most of them due to death
 for codes 30 and 31 there are 6. Most of these die, others are recorded differently, ie 31 to 3
 for code 32, there are 2, both are dead at the start
 
-```{r damage34, incldue=FALSE}
+```{r damage34, cache=TRUE, incldue=FALSE}
 
 get_dropped <- function(dat, test_condition) {
   dat %>%
@@ -1102,15 +1103,50 @@ dam_bar1(wd, wt_cum, type = "pct", "Cumulative percent of all uprooted trees")
 
 ```
 
+# Wind damage figure *unfinished*
 
 ```{r 09-damage-35}
 
-wd1 <- dam_plot(wd, bs_cum, "cnt") |> complete(nesting(treatment, plot), year, spp2, fill = list(var_true = 0))
-wd2 <- dam_plot(wd, bs_cum, "cnt") |> filter(var_true > 0)
+myvars <- list("Broken Stem" = "bs_cum", "Brokent top" = "bt_cum", "Wind-throw" = "wt_cum")
+myvars <- lapply(myvars, as.name)
 
-mod1 <- lmer(var_true ~ treatment * year + (1 | plot), data = wd1)
-mod2 <- lmer(var_true ~ treatment * year + (1 | plot), data = wd2)
+dam_data <- bind_rows (
+  pcts = map_dfr(myvars, ~ dam_plot(wd, eval(.x), "pct"), .id = "measure"),
+  cnts = map_dfr(myvars, ~ dam_plot(wd, eval(.x), "cnt"), .id = "measure"),
+  .id = "type"
+) |> 
+filter(year == "18") |>
+relevel_treatment()
 
-summary(mod)
-emmeans(mod2, ~ treatment + year)
+dam_data_spp <- dam_data |>
+  group_by(type, measure, treatment, spp2) |>
+  summarise(spp_avg = sum(var_true) / 4) |>
+  filter(spp_avg > 0)
+
+dam_data_treat <- dam_data |>
+  group_by(type, measure, treatment, plot) |>
+  summarize(var1 = sum(var_true)) |>
+  summarise(avg = mean(var1), SE = sd(var1) / sqrt(n()))
+
+error <- TRUE
+
+ggplot(mapping = aes(x = treatment)) +
+  geom_col(
+    data = dam_data_spp,
+    aes(y = spp_avg, fill = spp2),
+    position = "stack",
+    color = "black"
+  ) +
+  {if (error) {
+    geom_errorbar(
+      data = dam_data_treat,
+      aes(y = avg, ymin = avg - SE, ymax = avg + SE),
+      width = 0.2
+    )
+  }} +
+  facet_grid(type ~ measure, scales = "free_y") +
+  scale_fill_manual(values = palette()) +
+  labs(y = NULL)
+
+
 ```

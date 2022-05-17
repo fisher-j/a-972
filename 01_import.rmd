@@ -25,7 +25,7 @@ time_it <- local({
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE, cache.extra = "monkey")
 ```
 
 ```{r extra-functions, include=FALSE}
@@ -299,7 +299,7 @@ d_l <- d_l %>%
 
 ### Species list
 
-I'll start looking at veg_species, they have different information columns and I'm not sure what
+I'll start looking at veg_species
 
 ```{r 01-import-12}
 
@@ -323,6 +323,8 @@ veg_species <- bind_rows(veg_species_l, .id = "year") %>%
 
 ```
 
+
+
 edit these, I'll also remove tree species as they are covered elsewhere
 
 ```{r 01-import-13}
@@ -343,7 +345,6 @@ fix_sp <- tribble(
 "ANMA1", "ANMA",
 "ATFIC ", "ATFIC",
 "CIRSIUM SP.", "Cirsium sp.",
-"EHEH", "unknown",
 "FESTUCA SP.", "Festuca sp.",
 "OSMORHIZA SP.", "Osmorhiza sp.",
 "OZCH", "OSBE",
@@ -366,6 +367,43 @@ veg_species <- filter(
   veg_species,
   !spp %in% c("PSMEM", "SESE3", "ALRU2", "PISI", "TSHE", "UMCA")
 )
+
+```
+
+Next I'll get the default species table which has common names and shrub/herb designation.
+
+```{r}
+
+default_spp <- read_csv("./original/tblDefaultSpecies.txt") |>
+  select(FAMILY, GENUS, SPECIES, common_name = `COMMON NAME`, PLANT_CODE, COVERTYPE) |>
+  rename_with(tolower)
+
+default_spp$plant_code <- local({
+  to_fix <- match(default_spp$plant_code, fix_sp$old)
+  fixes <- fix_sp$new[to_fix]
+  if_else(is.na(fixes), default_spp$plant_code, fixes)
+})
+
+default_spp[duplicated(default_spp$plant_code), ]
+
+# remove duplicated plant codes (keep first)
+default_spp <- default_spp |>
+  group_by(plant_code) |>
+  filter(!(duplicated(plant_code)))
+
+veg_species <- left_join(veg_species, default_spp, by = c("spp" = "plant_code"))
+
+```
+
+There are tanoak and cascara in the species list but they never show up in tree lists, or regen lists. I remove other tree species from the species list because I am looking at understory diversity but I don't know if these "trees" are accounted for elsewhere. I am calling tanoak and cascara "shrubs".
+
+
+```{r}
+
+veg_species <- mutate(veg_species, covertype = case_when(
+  covertype %in% c("Fern", "HW") | is.na(covertype) ~ "Herb",
+  TRUE                                              ~ covertype
+))
 
 ```
 

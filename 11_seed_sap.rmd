@@ -4,7 +4,7 @@ title: Seedling, sapling, and ingrowth
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE, cache.extra = "monkey")
 ```
 
 ```{r 11-seed-sap-1}
@@ -58,7 +58,7 @@ ssd <- left_join(ssd1, ing) |> replace_na(list(ingrowth = 0)) |>
 
 # Size class distribution by species
 
-```{r seed3, cache=TRUE, fig.width=10, fig.height=6.5, cache.extra=tools::md5sum(knitr::current_input())}
+```{r seed3, cache=TRUE, fig.width=10, fig.height=6.5}
 
 # To control the order of each stacked bar, create each bar separately from a
 # subset of the data, order the common factor in each bar separately with "reorder"

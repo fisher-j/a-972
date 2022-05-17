@@ -363,9 +363,9 @@ ssd &lt;- left_join(ssd1, ing) |&gt; replace_na(list(ingrowth = 0)) |&gt;
 <pre class="r"><code># To control the order of each stacked bar, create each bar separately from a
 # subset of the data, order the common factor in each bar separately with &quot;reorder&quot;
 
-library(ggpattern)
-
-my_patterns &lt;- c(
+library(ggpattern)</code></pre>
+<pre><code>## Warning: package &#39;ggpattern&#39; was built under R version 4.1.3</code></pre>
+<pre class="r"><code>my_patterns &lt;- c(
   ALRU2 = &quot;crosshatch&quot;,
   CONF = &quot;none&quot;,
   PISI = &quot;stripe&quot;,

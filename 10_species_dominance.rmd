@@ -5,7 +5,7 @@ bibliography: [reference/a972.bib]
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE, cache.extra = "monkey")
 ```
 
 ```{r 10-species-dominance-1}
