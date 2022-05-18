@@ -339,6 +339,7 @@ $(document).ready(function () {
 <li><a href="#the-problem-with-the-bear-bars">The problem with the bear
 bars</a>
 <ul>
+<li><a href="#damage-bar-conclusion">Damage bar conclusion</a></li>
 <li><a href="#summary">Summary</a></li>
 <li><a href="#bear-bar-figure-for-publication">Bear bar figure for
 publication</a></li>
@@ -5664,22 +5665,30 @@ make_bd &lt;- function(data) {
     ) %&gt;%
     select(-c(bear_mag, h_dist, azi, x, y)) %&gt;%
     ungroup()
-}
-
-bd1 &lt;- make_bd(d_l)</code></pre>
+}</code></pre>
 <p>I want to include all trees present after treatment. 38 trees are
 “lost” due to being dead and downed so I need to re-add them manually as
 dead trees. I show the difference between this and the incomplete
 treelist further on.</p>
-<pre class="r"><code>bd &lt;- d_l |&gt; 
+<p>I’ll make two datasets, one “complete” with all tag records for all
+periods, and another with the observed records only, so I can compare
+the analysis of each.</p>
+<pre class="r"><code>dam_all &lt;- d_l |&gt; 
   filter(year != &quot;init&quot;) |&gt; 
   droplevels() |&gt;
   complete(nesting(tree_id, plot, treatment, spp), year) |&gt;
-  anti_join(filter(bd, year != &quot;init&quot;)) |&gt;
+  anti_join(filter(d_l, year != &quot;init&quot;)) |&gt;
   mutate(live = FALSE) |&gt;
-  bind_rows(bd) |&gt;
-  mutate(year = fct_relevel(year, &quot;init&quot;)) |&gt;
-  make_bd()</code></pre>
+  bind_rows(d_l) |&gt;
+  mutate(year = fct_relevel(year, &quot;init&quot;))
+
+
+
+# this is the complete dataset
+bd_all &lt;-  make_bd(dam_all)
+
+# This is the naieve dataset w/o dead downed trees (not recorded)
+bd1 &lt;- make_bd(d_l)</code></pre>
 <p>There were about 30 spruce trees before thinning and about half of
 these had bear damage. In 2013, there were 24 spruce and 4 of them
 received damage.</p>
@@ -5817,10 +5826,10 @@ dam_bar0 &lt;- function(data, var, type = &quot;cnt&quot;, title = &quot;&quot;)
 </div>
 <div id="the-problem-with-the-bear-bars" class="section level1">
 <h1>The problem with the bear bars</h1>
-<p>After thinking about it some more I found a couple things.</p>
-<p>First, there is a subtle difference between aggregating at the
-treatment level (simple sum of bear damage across plots), and averaging
-plot level sums.</p>
+<p>Starting with the only observed trees data (no dead downed tags),
+first, there is a subtle difference between aggregating at the treatment
+level (simple sum of bear damage across plots), and averaging plot level
+sums.</p>
 <pre class="r"><code>dam_bar0(bd1, bear_new, type = &quot;pct&quot;,
   title = &quot;Aggregated percent new bear damage pre and post treatment&quot;) +
   scale_y_continuous(limits = c(0, .21))</code></pre>
@@ -5835,10 +5844,10 @@ plot level sums.</p>
   title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;) +
   scale_y_continuous(limits = c(0, .21))</code></pre>
 <p><img src="09_damage_files/figure-html/09-damage-14-.gif" width="672" /></p>
-<p>The other thing I figured out is that we can put error bars on the
-top of the bar indicating the variation in total damage across plots,
-but in this case we would need to include spruce, otherwise the error
-bar be centered in empty space.</p>
+<p>We can put error bars on the top of the bar indicating the variation
+in total damage across plots, but in this case we would need to include
+spruce (or totally omit it from the dataset), otherwise the error bar be
+centered in empty space.</p>
 <pre class="r"><code>dam_bar1(bd1, bear_cum, type = &quot;pct&quot;, error = TRUE,
   title = &quot;Average cumulative percent new bear damage pre and post treatment&quot;) +
   scale_y_continuous(limits = c(0, .24))</code></pre>
@@ -5847,17 +5856,12 @@ bar be centered in empty space.</p>
   scale_fill_manual(values = palette()[2:3]) +
   scale_y_continuous(limits = c(0, .24))</code></pre>
 <p><img src="09_damage_files/figure-html/09-damage-15-.gif" width="672" /></p>
-<p>I think that after talking today, I would want to leave off the
-spruce as well as the error bars, but I wanted to check in to be
-sure.</p>
-<p><strong>AM I USING BD OR BD1 HERE??</strong></p>
-<p>Another thing is that there is a difference between whether we
-consider only live trees at any given time, or all trees, live or dead
-that were hit by bears. I think it is most straight forward to consider
-all post treatment trees, whether they died at some point or not. This
-is different from my earlier thinking. Perhaps the last panel of the
-publication bear chart will show existing conditions with live trees
-only…</p>
+<p>There is a difference between whether we consider only live trees at
+any given time, or all trees, live or dead that were hit by bears. I
+think it is best to consider all post treatment trees, whether they died
+at some point or not. This is different from my earlier thinking.
+Perhaps the last panel of the publication bear chart will show existing
+conditions with live trees only…</p>
 <pre class="r"><code>bd_live &lt;- filter(bd1, live)
 
 dam_bar1(bd_live, bear_cum, type = &quot;pct&quot;,
@@ -5876,10 +5880,34 @@ trees</em></p>
 <pre class="r"><code>dam_bar1(bd1, bear_cum, type = &quot;pct&quot;,
   title = &quot;Incomplete cumulative percent new bear damage all trees&quot;) +
   scale_y_continuous(limits = c(0, .21))</code></pre>
-<pre class="r"><code>dam_bar1(bd, bear_cum, type = &quot;pct&quot;,
+<pre class="r"><code>dam_bar1(bd_all, bear_cum, type = &quot;pct&quot;,
   title = &quot;Complete cumulative percent new bear damage all trees&quot;) +
   scale_y_continuous(limits = c(0, .21))</code></pre>
 <p><img src="09_damage_files/figure-html/09-damage-17-.gif" width="672" /></p>
+<p>Another way of removing spruce would be to omit it from the dataset
+premtively, then instead of proportion of damage to all trees, it would
+proportion of damage to trees other than spruce, this doesn’t really
+make sense, because we are also not really interested in alder and
+hemlock, so if we remove spruce, we should probably also remove these
+species. Then our figure becomes proportion of post-treatment RW and DF,
+which I feel like is consistent with other sections of the analysis.
+Here is what that looks like.</p>
+<pre class="r"><code>dam_bar1(bd_all, bear_cum, type = &quot;pct&quot;,
+  title = &quot;All trees damage&quot;) +
+  scale_y_continuous(limits = c(0, .21)) +
+  scale_fill_manual(values = palette()[c(3, 1, 2)])</code></pre>
+<pre class="r"><code>dam_bar1(filter(bd_all, spp2 %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;)), bear_cum, type = &quot;pct&quot;,
+  title = &quot;DF and RW only damage&quot;) +
+  scale_y_continuous(limits = c(0, .21))</code></pre>
+<p><img src="09_damage_files/figure-html/gif-rw-df-only-.gif" width="672" /></p>
+<div id="damage-bar-conclusion" class="section level2">
+<h2>Damage bar conclusion</h2>
+<p>I will include all RW and DF trees that existed post treatment.
+Cumulative counts and proportions will represent both standing and
+downed trees of these two species. Spruce, hemlock, and alder will be
+excluded entirely.</p>
+<pre class="r"><code>bd &lt;- filter(bd_all, spp2 %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;))</code></pre>
+</div>
 <div id="summary" class="section level2">
 <h2>Summary</h2>
 <p>Here is percent new bear damage over time. The H40 and L40 treatments
@@ -5935,9 +5963,7 @@ bd_p &lt;- bind_rows(
 )
 
 bd_pub &lt;- bind_rows(bd_p, bd_18) |&gt; 
-  mutate(year = factor(year, levels = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;, &quot;final&quot;))) |&gt; 
-  relevel_treatment() |&gt;
-  filter(spp2 %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;))
+  mutate(year = factor(year, levels = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;, &quot;final&quot;)))
 
 bd_pub %&gt;%
   ggplot(aes(treatment, avg_spp, fill = spp2)) +
@@ -5959,7 +5985,9 @@ bd_pub %&gt;%
       legend.position = c(.91, .9),
       legend.title = element_blank(),
       legend.background = element_blank(),
-      axis.text.x = element_text(vjust = 0, angle = -45)
+      axis.text.x = element_text(vjust = 0, angle = -45),
+      axis.title = element_text(size = 11),
+      strip.text.y = element_text(size = 11)
     ) +
     scale_fill_manual(
       values = c(&quot;#969696&quot;, &quot;black&quot;),
@@ -8151,7 +8179,7 @@ don’t think I need to worry about underdispersion</a></p>
 30, 31     = broken stem (below and above dbh)
 32         = windthrow (uprooted)</code></pre>
 <p>there is only 1 code 12, I think we can ignore it</p>
-<pre class="r"><code>wd &lt;- bd
+<pre class="r"><code>wd &lt;- mutate(dam_all, spp2 = spp) |&gt; filter(spp2 %in% c(&quot;PSMEM&quot;, &quot;SESE3&quot;))
 
 wd &lt;- wd %&gt;%
   group_by(tree_id) %&gt;%
@@ -8166,7 +8194,7 @@ wd &lt;- wd %&gt;%
     
     wt_new = get_cond(32) &amp; year %in% c(&quot;init&quot;, &quot;08&quot;) | get_cond(32) &amp; !lag(order_by = year, get_cond(32)),
     wt_new = if_else(is.na(wt_new), FALSE, wt_new),
-    wt_cum = if_else(year == &quot;18&quot; &amp; lag(order_by = year, wt_new), TRUE, wt_new),
+    wt_cum = if_else(year == &quot;18&quot; &amp; lag(order_by = year, wt_new), TRUE, wt_new)
     ) %&gt;%
   ungroup()</code></pre>
 <p>Some damaged trees are listed as damaged and subsequently
@@ -8274,47 +8302,92 @@ initial damage rates.</p>
 </div>
 <div id="wind-damage-figure-unfinished" class="section level1">
 <h1>Wind damage figure <em>unfinished</em></h1>
-<pre class="r"><code>myvars &lt;- list(&quot;Broken Stem&quot; = &quot;bs_cum&quot;, &quot;Brokent top&quot; = &quot;bt_cum&quot;, &quot;Wind-throw&quot; = &quot;wt_cum&quot;)
+<pre class="r"><code>myvars &lt;- list(&quot;Broken~Stem&quot; = &quot;bs_cum&quot;, &quot;Broken~top&quot; = &quot;bt_cum&quot;, &quot;Windthrow&quot; = &quot;wt_cum&quot;)
 myvars &lt;- lapply(myvars, as.name)
 
+
+# First get metric (count/proportion) and variable (broken stem... etc) for each
+# species/plot/year, expand counts to per ha (4 * .08 ha plots)
 dam_data &lt;- bind_rows (
-  pcts = map_dfr(myvars, ~ dam_plot(wd, eval(.x), &quot;pct&quot;), .id = &quot;measure&quot;),
-  cnts = map_dfr(myvars, ~ dam_plot(wd, eval(.x), &quot;cnt&quot;), .id = &quot;measure&quot;),
+  &quot;Proportion&quot; = map_dfr(myvars, ~ dam_plot(wd, eval(.x), &quot;pct&quot;), .id = &quot;measure&quot;),
+  &quot;Stems~ha^-1&quot; = map_dfr(myvars, ~ dam_plot(wd, eval(.x), &quot;cnt&quot;), .id = &quot;measure&quot;),
   .id = &quot;type&quot;
 ) |&gt; 
 filter(year == &quot;18&quot;) |&gt;
+mutate(var_true = if_else(type == &quot;Stems~ha^-1&quot;, var_true * 3.125, var_true)) |&gt;
 relevel_treatment()
 
+# find treatment average for each species for stacked bar
 dam_data_spp &lt;- dam_data |&gt;
   group_by(type, measure, treatment, spp2) |&gt;
   summarise(spp_avg = sum(var_true) / 4) |&gt;
   filter(spp_avg &gt; 0)
 
+# and treatment average and SE for all species for total height of bar,
+# for error bars.
 dam_data_treat &lt;- dam_data |&gt;
   group_by(type, measure, treatment, plot) |&gt;
   summarize(var1 = sum(var_true)) |&gt;
-  summarise(avg = mean(var1), SE = sd(var1) / sqrt(n()))
-
-error &lt;- TRUE
+  summarise(avg = mean(var1), SE = sd(var1) / sqrt(n()))</code></pre>
+<pre class="r"><code>error &lt;- TRUE
 
 ggplot(mapping = aes(x = treatment)) +
   geom_col(
     data = dam_data_spp,
     aes(y = spp_avg, fill = spp2),
     position = &quot;stack&quot;,
-    color = &quot;black&quot;
+    color = &quot;black&quot;,
+    width = 0.8
   ) +
   {if (error) {
     geom_errorbar(
       data = dam_data_treat,
       aes(y = avg, ymin = avg - SE, ymax = avg + SE),
-      width = 0.2
+      width = 0.2,
+      color = &quot;gray30&quot;
     )
   }} +
-  facet_grid(type ~ measure, scales = &quot;free_y&quot;) +
-  scale_fill_manual(values = palette()) +
-  labs(y = NULL)</code></pre>
-<p><img src="09_damage_files/figure-html/09-damage-35-1.png" width="672" /></p>
+  facet_grid(type ~ measure, scales = &quot;free_y&quot;, labeller = label_parsed, switch = &quot;y&quot;) +
+  theme_bw() +
+  theme(
+    plot.margin = unit(c(1, 1, 1, 0), &quot;mm&quot;),
+    panel.spacing = unit(1.5, &quot;mm&quot;),
+    axis.title.y = element_blank(),
+    strip.placement = &quot;outside&quot;,
+    strip.background.y = element_blank(),
+    strip.switch.pad.grid = unit(0, &quot;mm&quot;),
+    legend.position = c(.84, .37),
+    legend.title = element_blank(),
+    legend.key.size = unit(4, &quot;mm&quot;),
+    legend.background = element_blank(),
+    axis.text.x = element_text(vjust = .5, angle = 90),
+    axis.title = element_text(size = 10),
+    strip.text.y = element_text(size = 10),
+  ) +
+  scale_fill_manual(
+    values = c(&quot;#969696&quot;, &quot;black&quot;),
+    labels = c(&quot;Douglas-fir&quot;, &quot;Redwood&quot;)
+  ) + 
+  scale_y_continuous(
+    expand = c(0.0, 0, 0.08, 0), 
+    breaks = scales::breaks_extended(w = c(4, 1, 20, 1), only.loose = TRUE)
+  ) +
+  labs(x = &quot;Treatment&quot;)</code></pre>
+<p><img src="09_damage_files/figure-html/wind-fig-1.png" width="672" /></p>
+<pre class="r"><code>ggsave(
+  filename = &quot;figs/wind_damage.pdf&quot;,
+  device = cairo_pdf,
+  width = fig_w(1, &quot;cm&quot;),
+  height = 9.5,
+  units = &quot;cm&quot;
+)
+
+ggsave(
+  filename = &quot;figs/wind_damage.jpg&quot;,
+  width = fig_w(1, &quot;cm&quot;),
+  height = 9.5,
+  units = &quot;cm&quot;
+)</code></pre>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-ludeckePerformancePackageAssessment2021" class="csl-entry">
 Lüdecke, Daniel, Mattan S. Ben-Shachar, Indrajeet Patil, Philip

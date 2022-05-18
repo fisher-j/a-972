@@ -111,29 +111,34 @@ make_bd <- function(data) {
     ungroup()
 }
 
-bd1 <- make_bd(d_l)
-
 ```
 
 I want to include all trees present after treatment. 38 trees are "lost" due to being dead and downed so I need to re-add them manually as dead trees. I show the difference between this and the incomplete treelist further on.
 
+I'll make two datasets, one "complete" with all tag records for all periods, and another with the observed records only, so I can compare the analysis of each.
+
 ```{r 09-damage-8}
 
-bd <- d_l |> 
+dam_all <- d_l |> 
   filter(year != "init") |> 
   droplevels() |>
   complete(nesting(tree_id, plot, treatment, spp), year) |>
-  anti_join(filter(bd, year != "init")) |>
+  anti_join(filter(d_l, year != "init")) |>
   mutate(live = FALSE) |>
-  bind_rows(bd) |>
-  mutate(year = fct_relevel(year, "init")) |>
-  make_bd()
+  bind_rows(d_l) |>
+  mutate(year = fct_relevel(year, "init"))
+
+
+
+# this is the complete dataset
+bd_all <-  make_bd(dam_all)
+
+# This is the naieve dataset w/o dead downed trees (not recorded)
+bd1 <- make_bd(d_l)
 
 ```
 
-
 There were about 30 spruce trees before thinning and about half of these had bear damage. In 2013, there were 24 spruce and 4 of them received damage.
-
 
 Trees killed just by bears.
 
@@ -288,9 +293,7 @@ dam_bar0 <- function(data, var, type = "cnt", title = "") {
 
 # The problem with the bear bars
 
-After thinking about it some more I found a couple things.
-
-First, there is a subtle difference between aggregating at the treatment level (simple sum of bear damage across plots), and averaging plot level sums.
+Starting with the only observed trees data (no dead downed tags), first, there is a subtle difference between aggregating at the treatment level (simple sum of bear damage across plots), and averaging plot level sums.
 
 ```{r 09-damage-13, animation.hook="gifski", interval=1.7}
 
@@ -314,7 +317,7 @@ dam_bar1(bd1, bear_cum, type = "pct",
   scale_y_continuous(limits = c(0, .21))
 ```
 
-The other thing I figured out is that we can put error bars on the top of the bar indicating the variation in total damage across plots, but in this case we would need to include spruce, otherwise the error bar be centered in empty space.
+We can put error bars on the top of the bar indicating the variation in total damage across plots, but in this case we would need to include spruce (or totally omit it from the dataset), otherwise the error bar be centered in empty space.
 
 ```{r 09-damage-15, animation.hook="gifski"}
 
@@ -329,11 +332,7 @@ dam_bar1(bd1, bear_cum, type = "pct", error = TRUE, nospruce = TRUE,
 
 ```
 
-I think that after talking today, I would want to leave off the spruce as well as the error bars, but I wanted to check in to be sure.
-
-**AM I USING BD OR BD1 HERE??**
-
-Another thing is that there is a difference between whether we consider only live trees at any given time, or all trees, live or dead that were hit by bears. I think it is most straight forward to consider all post treatment trees, whether they died at some point or not. This is different from my earlier thinking. Perhaps the last panel of the publication bear chart will show existing conditions with live trees only...
+There is a difference between whether we consider only live trees at any given time, or all trees, live or dead that were hit by bears. I think it is best to consider all post treatment trees, whether they died at some point or not. This is different from my earlier thinking. Perhaps the last panel of the publication bear chart will show existing conditions with live trees only...
 
 ```{r 09-damage-16, animation.hook="gifski"}
 
@@ -357,9 +356,34 @@ dam_bar1(bd1, bear_cum, type = "pct",
   title = "Incomplete cumulative percent new bear damage all trees") +
   scale_y_continuous(limits = c(0, .21))
 
-dam_bar1(bd, bear_cum, type = "pct",
+dam_bar1(bd_all, bear_cum, type = "pct",
   title = "Complete cumulative percent new bear damage all trees") +
   scale_y_continuous(limits = c(0, .21))
+
+```
+
+Another way of removing spruce would be to omit it from the dataset premtively, then instead of proportion of damage to all trees, it would proportion of damage to trees other than spruce, this doesn't really make sense, because we are also not really interested in alder and hemlock, so if we remove spruce, we should probably also remove these species. Then our figure becomes proportion of post-treatment RW and DF, which I feel like is consistent with other sections of the analysis. Here is what that looks like.
+
+```{r gif-rw-df-only, animation.hook="gifski"}
+
+dam_bar1(bd_all, bear_cum, type = "pct",
+  title = "All trees damage") +
+  scale_y_continuous(limits = c(0, .21)) +
+  scale_fill_manual(values = palette()[c(3, 1, 2)])
+
+dam_bar1(filter(bd_all, spp2 %in% c("PSMEM", "SESE3")), bear_cum, type = "pct",
+  title = "DF and RW only damage") +
+  scale_y_continuous(limits = c(0, .21))
+
+```
+
+## Damage bar conclusion
+
+I will include all RW and DF trees that existed post treatment. Cumulative counts and proportions will represent both standing and downed trees of these two species. Spruce, hemlock, and alder will be excluded entirely.
+
+```{r}
+
+bd <- filter(bd_all, spp2 %in% c("PSMEM", "SESE3"))
 
 ```
 
@@ -422,9 +446,7 @@ bd_p <- bind_rows(
 )
 
 bd_pub <- bind_rows(bd_p, bd_18) |> 
-  mutate(year = factor(year, levels = c("init", "08", "13", "18", "final"))) |> 
-  relevel_treatment() |>
-  filter(spp2 %in% c("PSMEM", "SESE3"))
+  mutate(year = factor(year, levels = c("init", "08", "13", "18", "final")))
 
 bd_pub %>%
   ggplot(aes(treatment, avg_spp, fill = spp2)) +
@@ -446,7 +468,9 @@ bd_pub %>%
       legend.position = c(.91, .9),
       legend.title = element_blank(),
       legend.background = element_blank(),
-      axis.text.x = element_text(vjust = 0, angle = -45)
+      axis.text.x = element_text(vjust = 0, angle = -45),
+      axis.title = element_text(size = 11),
+      strip.text.y = element_text(size = 11)
     ) +
     scale_fill_manual(
       values = c("#969696", "black"),
@@ -1032,7 +1056,7 @@ there is only 1 code 12, I think we can ignore it
 ```{r damage33, cache=TRUE}
 
 
-wd <- bd
+wd <- mutate(dam_all, spp2 = spp) |> filter(spp2 %in% c("PSMEM", "SESE3"))
 
 wd <- wd %>%
   group_by(tree_id) %>%
@@ -1047,7 +1071,7 @@ wd <- wd %>%
     
     wt_new = get_cond(32) & year %in% c("init", "08") | get_cond(32) & !lag(order_by = year, get_cond(32)),
     wt_new = if_else(is.na(wt_new), FALSE, wt_new),
-    wt_cum = if_else(year == "18" & lag(order_by = year, wt_new), TRUE, wt_new),
+    wt_cum = if_else(year == "18" & lag(order_by = year, wt_new), TRUE, wt_new)
     ) %>%
   ungroup()
 
@@ -1107,27 +1131,36 @@ dam_bar1(wd, wt_cum, type = "pct", "Cumulative percent of all uprooted trees")
 
 ```{r 09-damage-35}
 
-myvars <- list("Broken Stem" = "bs_cum", "Brokent top" = "bt_cum", "Wind-throw" = "wt_cum")
+myvars <- list("Broken~Stem" = "bs_cum", "Broken~top" = "bt_cum", "Windthrow" = "wt_cum")
 myvars <- lapply(myvars, as.name)
 
+
+# First get metric (count/proportion) and variable (broken stem... etc) for each
+# species/plot/year, expand counts to per ha (4 * .08 ha plots)
 dam_data <- bind_rows (
-  pcts = map_dfr(myvars, ~ dam_plot(wd, eval(.x), "pct"), .id = "measure"),
-  cnts = map_dfr(myvars, ~ dam_plot(wd, eval(.x), "cnt"), .id = "measure"),
+  "Proportion" = map_dfr(myvars, ~ dam_plot(wd, eval(.x), "pct"), .id = "measure"),
+  "Stems~ha^-1" = map_dfr(myvars, ~ dam_plot(wd, eval(.x), "cnt"), .id = "measure"),
   .id = "type"
 ) |> 
 filter(year == "18") |>
+mutate(var_true = if_else(type == "Stems~ha^-1", var_true * 3.125, var_true)) |>
 relevel_treatment()
 
+# find treatment average for each species for stacked bar
 dam_data_spp <- dam_data |>
   group_by(type, measure, treatment, spp2) |>
   summarise(spp_avg = sum(var_true) / 4) |>
   filter(spp_avg > 0)
 
+# and treatment average and SE for all species for total height of bar,
+# for error bars.
 dam_data_treat <- dam_data |>
   group_by(type, measure, treatment, plot) |>
   summarize(var1 = sum(var_true)) |>
   summarise(avg = mean(var1), SE = sd(var1) / sqrt(n()))
+```
 
+```{r wind-fig}
 error <- TRUE
 
 ggplot(mapping = aes(x = treatment)) +
@@ -1135,18 +1168,57 @@ ggplot(mapping = aes(x = treatment)) +
     data = dam_data_spp,
     aes(y = spp_avg, fill = spp2),
     position = "stack",
-    color = "black"
+    color = "black",
+    width = 0.8
   ) +
   {if (error) {
     geom_errorbar(
       data = dam_data_treat,
       aes(y = avg, ymin = avg - SE, ymax = avg + SE),
-      width = 0.2
+      width = 0.2,
+      color = "gray30"
     )
   }} +
-  facet_grid(type ~ measure, scales = "free_y") +
-  scale_fill_manual(values = palette()) +
-  labs(y = NULL)
+  facet_grid(type ~ measure, scales = "free_y", labeller = label_parsed, switch = "y") +
+  theme_bw() +
+  theme(
+    plot.margin = unit(c(1, 1, 1, 0), "mm"),
+    panel.spacing = unit(1.5, "mm"),
+    axis.title.y = element_blank(),
+    strip.placement = "outside",
+    strip.background.y = element_blank(),
+    strip.switch.pad.grid = unit(0, "mm"),
+    legend.position = c(.84, .37),
+    legend.title = element_blank(),
+    legend.key.size = unit(4, "mm"),
+    legend.background = element_blank(),
+    axis.text.x = element_text(vjust = .5, angle = 90),
+    axis.title = element_text(size = 10),
+    strip.text.y = element_text(size = 10),
+  ) +
+  scale_fill_manual(
+    values = c("#969696", "black"),
+    labels = c("Douglas-fir", "Redwood")
+  ) + 
+  scale_y_continuous(
+    expand = c(0.0, 0, 0.08, 0), 
+    breaks = scales::breaks_extended(w = c(4, 1, 20, 1), only.loose = TRUE)
+  ) +
+  labs(x = "Treatment")
+  
+ggsave(
+  filename = "figs/wind_damage.pdf",
+  device = cairo_pdf,
+  width = fig_w(1, "cm"),
+  height = 9.5,
+  units = "cm"
+)
 
+ggsave(
+  filename = "figs/wind_damage.jpg",
+  width = fig_w(1, "cm"),
+  height = 9.5,
+  units = "cm"
+)
 
 ```

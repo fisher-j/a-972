@@ -829,8 +829,7 @@ names(seedling_sapling_files) &lt;- str_replace(
 seedling_sapling_l &lt;- lapply(seedling_sapling_files, read_csv)
 map(seedling_sapling_l, names) %&gt;% unique</code></pre>
 <pre><code>## [[1]]
-##  [1] &quot;SSID&quot;          &quot;Plot ID&quot;       &quot;Species&quot;       &quot;SpecCode2&quot;     &quot;Resprouts?&quot;    &quot;Seedling&quot;      &quot;DBH class 1&quot;   &quot;DBH class 2&quot;   &quot;DBH class 3&quot;   &quot;DBH class 4&quot;   &quot;TotalStems&quot;    &quot;calc1&quot;         &quot;calcSpecCode2&quot; &quot;calc2&quot;        
-## [15] &quot;SPP&quot;           &quot;Notes&quot;</code></pre>
+##  [1] &quot;SSID&quot;          &quot;Plot ID&quot;       &quot;Species&quot;       &quot;SpecCode2&quot;     &quot;Resprouts?&quot;    &quot;Seedling&quot;      &quot;DBH class 1&quot;   &quot;DBH class 2&quot;   &quot;DBH class 3&quot;   &quot;DBH class 4&quot;   &quot;TotalStems&quot;    &quot;calc1&quot;         &quot;calcSpecCode2&quot; &quot;calc2&quot;         &quot;SPP&quot;           &quot;Notes&quot;</code></pre>
 <pre class="r"><code>seed_sap &lt;- bind_rows(seedling_sapling_l, .id = &quot;year&quot;) %&gt;%
   select(
     year,

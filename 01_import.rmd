@@ -125,6 +125,7 @@ veg_cover_l <- list()
 veg_cover_l$`08` <- read.csv("./original/tblA972_VegCoverPostCut08.txt")
 veg_cover_l$`13` <- read.csv("./original/tblA972_VegCover2013.txt")
 veg_cover_l$`18` <- read.csv("./original/tblA972_VegCover2018.txt")
+
 ```
 
 # Initial data cleaning
@@ -134,6 +135,7 @@ I'll remove bad data indicated by status -99, -999, or -9999. These occur in 201
 
 
 ```{r 01-import-3}
+
 bad_id <- tree_2013$tree_id[tree_2013$status %in% c(-99, -999, -9999)]
 data.frame(id = bad_id,
            notes_08 = tree_2008$notes[tree_2008$tree_id %in% bad_id],
@@ -447,6 +449,7 @@ veg_cover <- bind_rows(veg_cover_l, .id = "year") %>%
     dom_shrub = str_replace(dom_shrub, "BENE2/GASH.*|BENE2/RUSP", "BENE2"),
     dom_herb = str_replace(dom_herb, "(\\w+)/.*", "\\1")
   )
+
 ```
 
 I convert cover classes to percent cover using the following provided information:
@@ -510,4 +513,5 @@ seed_sap <- bind_rows(seedling_sapling_l, .id = "year") %>%
   group_by(plot, spp, year) %>%
   summarise(across(contains(c("seed", "cls", "total")), sum)) |>
   mutate(treatment = str_extract(plot, "H40|L40|H80|L80|C"), .before = 1)
+
 ```
