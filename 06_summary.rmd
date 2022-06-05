@@ -4,7 +4,7 @@ title: "Summary statistics"
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE, cache.extra = "monkey")
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE, cache.extra = "wombat")
 ```
 
 ```{r 06-summary-1}
@@ -115,10 +115,10 @@ For dominant heights, I am using dominant dbh trees *not including broken and de
 ```{r 06-summary-6}
 
 # get ids of trees that have heights in 2018
-ht_id_2018 <- filter(d_l, year == "18", !is.na(ht_p)) %>% pull(tree_id)
+ht_id_2018 <- filter(d_l, year == "18", !is.na(ht)) %>% pull(tree_id)
 
 # average height I AM OMMITING MISSING HEIGHT MEASUREMENTS.
-measures$ht_p <- function(data, species) {
+measures$ht <- function(data, species) {
   if(is.null(species)) species <- unique(data$spp)
   data %>%
     filter(
@@ -126,10 +126,10 @@ measures$ht_p <- function(data, species) {
       live | status %in% c(15, 16),
       !get_cond(c(2, 3)),
       tree_id %in% ht_id_2018,
-      !is.na(ht_p)
+      !is.na(ht)
     ) %>%
   group_by(treatment, year, plot) %>%
-  summarise(plot_mean = mean(ht_p)) %>%
+  summarise(plot_mean = mean(ht)) %>%
   summarise(
     mean = mean(plot_mean),
     n = n(),
@@ -152,9 +152,9 @@ measures$dom_ht <- function(data, species) {
     filter(spp %in% species) %>%
     group_by(treatment, year) %>%
     summarise(
-      mean = mean(ht_p, na.rm = TRUE),
-      n = sum(!is.na(ht_p)),
-      std = sd(ht_p, na.rm = TRUE)
+      mean = mean(ht, na.rm = TRUE),
+      n = sum(!is.na(ht)),
+      std = sd(ht, na.rm = TRUE)
     )
 }
 
@@ -304,7 +304,7 @@ get_measures <- function(data = d_l, species = NULL) {
 
 # takes a long dataset of summary values
 
-make_summary <- function(data, measures = c("dbh", "ht_p", "density", "ba", "sdi")) {
+make_summary <- function(data, measures = c("dbh", "ht", "density", "ba", "sdi")) {
   data %>%
   filter(measure %in% measures) %>%
   relevel_treatment() %>%
@@ -372,7 +372,7 @@ fig_data <- bind_rows(
 )
 
 # choose which stand summary variables to include
-fig_include_vars <- c("density", "dbh", "ba", "ht_p")
+fig_include_vars <- c("density", "dbh", "ba", "ht")
 
 make_fig <- function(data = fig_data) {
   yr_breaks <- c(2008, 2013, 2018)

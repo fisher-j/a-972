@@ -11,7 +11,7 @@
 
 
 
-<title>Height increment model</title>
+<title>04_pred_ht.knit</title>
 
 <script src="site_libs/header-attrs-2.13.3/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
@@ -304,7 +304,6 @@ $(document).ready(function () {
 
 
 
-<h1 class="title toc-ignore">Height increment model</h1>
 
 </div>
 
@@ -343,6 +342,7 @@ predicted heights</a></li>
 </ul>
 </div>
 
+<p>P— title: “Height increment model” —</p>
 <pre class="r"><code>library(lme4)</code></pre>
 <pre><code>## Loading required package: Matrix</code></pre>
 <pre><code>## 
@@ -495,10 +495,10 @@ m2 &lt;- update(m1, ~ . + (1 | tree_id))</code></pre>
 <pre><code>## boundary (singular) fit: see help(&#39;isSingular&#39;)</code></pre>
 <pre class="r"><code>AIC(m0, m1, m2, m3)</code></pre>
 <pre><code>##    df       AIC
-## m0 41 1009.0492
-## m1 42  980.7354
-## m2 43  982.7354
-## m3 44  984.7354</code></pre>
+## m0 41 1009.0206
+## m1 42  980.7057
+## m2 43  982.7057
+## m3 44  984.7057</code></pre>
 <p>The optimal random effects structure, includes the random intercept
 only for <code>plot</code>. I will assume this random effects structure
 in all further height models.</p>
@@ -585,7 +585,7 @@ r2
 ht_inc1 ~ log(dbh) * treatment3 * year + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-836.6
+836.5
 </td>
 <td style="text-align:right;">
 0.311
@@ -602,7 +602,7 @@ ht_inc1 ~ log(dbh) * treatment3 * year + spp + (1 | plot)
 ht_inc1 ~ log(dbh) * treatment4 * year + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-838.2
+837.9
 </td>
 <td style="text-align:right;">
 0.311
@@ -622,7 +622,7 @@ ht_inc1 ~ log(dbh) * treatment * year + spp + (1 | plot)
 839.5
 </td>
 <td style="text-align:right;">
-0.309
+0.310
 </td>
 <td style="text-align:left;">
 0.12 / 0.14
@@ -636,7 +636,7 @@ ht_inc1 ~ log(dbh) * treatment * year + spp + (1 | plot)
 ht_inc1 ~ log(dbh) + spp + treatment * year + (1 | plot)
 </td>
 <td style="text-align:right;">
-842.2
+842.1
 </td>
 <td style="text-align:right;">
 0.312
@@ -653,7 +653,7 @@ ht_inc1 ~ log(dbh) + spp + treatment * year + (1 | plot)
 ht_inc1 ~ log(dbh) * treatment2 * year + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-845.2
+845.0
 </td>
 <td style="text-align:right;">
 0.311
@@ -670,7 +670,7 @@ ht_inc1 ~ log(dbh) * treatment2 * year + spp + (1 | plot)
 ht_inc1 ~ log(dbh) * spp * treatment4 * year + (1 | plot)
 </td>
 <td style="text-align:right;">
-845.3
+845.1
 </td>
 <td style="text-align:right;">
 0.311
@@ -687,7 +687,7 @@ ht_inc1 ~ log(dbh) * spp * treatment4 * year + (1 | plot)
 ht_inc1 ~ log(dbh) + spp + treatment3 * year + (1 | plot)
 </td>
 <td style="text-align:right;">
-845.4
+845.3
 </td>
 <td style="text-align:right;">
 0.313
@@ -704,7 +704,7 @@ ht_inc1 ~ log(dbh) + spp + treatment3 * year + (1 | plot)
 ht_inc1 ~ log(dbh) * spp * treatment2 * year + (1 | plot)
 </td>
 <td style="text-align:right;">
-847.2
+846.9
 </td>
 <td style="text-align:right;">
 0.309
@@ -738,7 +738,7 @@ ht_inc1 ~ log(dbh) + spp + treatment4 * year + (1 | plot)
 ht_inc1 ~ log(dbh) * spp * treatment3 * year + (1 | plot)
 </td>
 <td style="text-align:right;">
-850.9
+850.8
 </td>
 <td style="text-align:right;">
 0.310
@@ -755,7 +755,7 @@ ht_inc1 ~ log(dbh) * spp * treatment3 * year + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment3 + year + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-851.4
+851.3
 </td>
 <td style="text-align:right;">
 0.314
@@ -772,7 +772,7 @@ ht_inc1 ~ log(dbh) + treatment3 + year + spp + (1 | plot)
 ht_inc1 ~ log(dbh) + spp + treatment2 * year + (1 | plot)
 </td>
 <td style="text-align:right;">
-851.7
+851.6
 </td>
 <td style="text-align:right;">
 0.313
@@ -789,7 +789,7 @@ ht_inc1 ~ log(dbh) + spp + treatment2 * year + (1 | plot)
 ht_inc1 ~ log(dbh) * spp + treatment3 + (1 | plot)
 </td>
 <td style="text-align:right;">
-851.9
+851.8
 </td>
 <td style="text-align:right;">
 0.314
@@ -806,7 +806,7 @@ ht_inc1 ~ log(dbh) * spp + treatment3 + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment3 + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-852.3
+852.2
 </td>
 <td style="text-align:right;">
 0.314
@@ -840,7 +840,7 @@ ht_inc1 ~ log(dbh) + spp * year + treatment3 + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment3 * spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-854.1
+854.0
 </td>
 <td style="text-align:right;">
 0.314
@@ -857,7 +857,7 @@ ht_inc1 ~ log(dbh) + treatment3 * spp + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment4 + year + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-854.3
+854.2
 </td>
 <td style="text-align:right;">
 0.314
@@ -874,7 +874,7 @@ ht_inc1 ~ log(dbh) + treatment4 + year + spp + (1 | plot)
 ht_inc1 ~ log(dbh) * spp + treatment4 + (1 | plot)
 </td>
 <td style="text-align:right;">
-854.5
+854.4
 </td>
 <td style="text-align:right;">
 0.314
@@ -891,7 +891,7 @@ ht_inc1 ~ log(dbh) * spp + treatment4 + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment2 * spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-854.6
+854.5
 </td>
 <td style="text-align:right;">
 0.314
@@ -908,7 +908,7 @@ ht_inc1 ~ log(dbh) + treatment2 * spp + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment + year + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-855.0
+854.9
 </td>
 <td style="text-align:right;">
 0.314
@@ -925,7 +925,7 @@ ht_inc1 ~ log(dbh) + treatment + year + spp + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment4 * spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-855.1
+855.0
 </td>
 <td style="text-align:right;">
 0.314
@@ -942,13 +942,30 @@ ht_inc1 ~ log(dbh) + treatment4 * spp + (1 | plot)
 ht_inc1 ~ log(dbh) * spp + treatment + (1 | plot)
 </td>
 <td style="text-align:right;">
-855.2
+855.0
 </td>
 <td style="text-align:right;">
 0.314
 </td>
 <td style="text-align:left;">
 0.09 / 0.12
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+5
+</td>
+<td style="text-align:left;">
+ht_inc1 ~ log(dbh) + treatment + spp + (1 | plot)
+</td>
+<td style="text-align:right;">
+855.6
+</td>
+<td style="text-align:right;">
+0.314
+</td>
+<td style="text-align:left;">
+0.09 / 0.11
 </td>
 </tr>
 <tr>
@@ -970,30 +987,13 @@ ht_inc1 ~ log(dbh) * spp * treatment * year + (1 | plot)
 </tr>
 <tr>
 <td style="text-align:left;">
-5
+15
 </td>
 <td style="text-align:left;">
-ht_inc1 ~ log(dbh) + treatment + spp + (1 | plot)
+ht_inc1 ~ log(dbh) * spp + treatment2 + (1 | plot)
 </td>
 <td style="text-align:right;">
 855.7
-</td>
-<td style="text-align:right;">
-0.314
-</td>
-<td style="text-align:left;">
-0.09 / 0.11
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-21
-</td>
-<td style="text-align:left;">
-ht_inc1 ~ log(dbh) + treatment2 + year + spp + (1 | plot)
-</td>
-<td style="text-align:right;">
-855.9
 </td>
 <td style="text-align:right;">
 0.314
@@ -1004,13 +1004,13 @@ ht_inc1 ~ log(dbh) + treatment2 + year + spp + (1 | plot)
 </tr>
 <tr>
 <td style="text-align:left;">
-15
+21
 </td>
 <td style="text-align:left;">
-ht_inc1 ~ log(dbh) * spp + treatment2 + (1 | plot)
+ht_inc1 ~ log(dbh) + treatment2 + year + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-855.9
+855.7
 </td>
 <td style="text-align:right;">
 0.314
@@ -1027,7 +1027,7 @@ ht_inc1 ~ log(dbh) * spp + treatment2 + (1 | plot)
 ht_inc1 ~ log(dbh) + spp * year + treatment4 + (1 | plot)
 </td>
 <td style="text-align:right;">
-856.1
+856.0
 </td>
 <td style="text-align:right;">
 0.314
@@ -1044,13 +1044,30 @@ ht_inc1 ~ log(dbh) + spp * year + treatment4 + (1 | plot)
 ht_inc1 ~ log(dbh) * treatment4 + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-856.4
+856.3
 </td>
 <td style="text-align:right;">
 0.314
 </td>
 <td style="text-align:left;">
 0.08 / 0.11
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+14
+</td>
+<td style="text-align:left;">
+ht_inc1 ~ log(dbh) + treatment2 + spp + (1 | plot)
+</td>
+<td style="text-align:right;">
+856.6
+</td>
+<td style="text-align:right;">
+0.314
+</td>
+<td style="text-align:left;">
+0.08 / 0.12
 </td>
 </tr>
 <tr>
@@ -1072,30 +1089,13 @@ ht_inc1 ~ log(dbh) + spp * year + treatment + (1 | plot)
 </tr>
 <tr>
 <td style="text-align:left;">
-14
-</td>
-<td style="text-align:left;">
-ht_inc1 ~ log(dbh) + treatment2 + spp + (1 | plot)
-</td>
-<td style="text-align:right;">
-856.7
-</td>
-<td style="text-align:right;">
-0.314
-</td>
-<td style="text-align:left;">
-0.08 / 0.11
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 7
 </td>
 <td style="text-align:left;">
 ht_inc1 ~ log(dbh) + treatment * spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-857.6
+857.5
 </td>
 <td style="text-align:right;">
 0.314
@@ -1112,7 +1112,7 @@ ht_inc1 ~ log(dbh) + treatment * spp + (1 | plot)
 ht_inc1 ~ log(dbh) + spp * year + treatment2 + (1 | plot)
 </td>
 <td style="text-align:right;">
-857.7
+857.6
 </td>
 <td style="text-align:right;">
 0.314
@@ -1129,7 +1129,7 @@ ht_inc1 ~ log(dbh) + spp * year + treatment2 + (1 | plot)
 ht_inc1 ~ log(dbh) * spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-861.4
+861.2
 </td>
 <td style="text-align:right;">
 0.314
@@ -1146,7 +1146,7 @@ ht_inc1 ~ log(dbh) * spp + (1 | plot)
 ht_inc1 ~ log(dbh) + spp + (1 | plot)
 </td>
 <td style="text-align:right;">
-861.7
+861.6
 </td>
 <td style="text-align:right;">
 0.314
@@ -1163,7 +1163,7 @@ ht_inc1 ~ log(dbh) + spp + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment3 + (1 | plot)
 </td>
 <td style="text-align:right;">
-865.0
+864.8
 </td>
 <td style="text-align:right;">
 0.316
@@ -1180,7 +1180,7 @@ ht_inc1 ~ log(dbh) + treatment3 + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment + (1 | plot)
 </td>
 <td style="text-align:right;">
-867.8
+867.6
 </td>
 <td style="text-align:right;">
 0.316
@@ -1197,10 +1197,10 @@ ht_inc1 ~ log(dbh) + treatment + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment4 + (1 | plot)
 </td>
 <td style="text-align:right;">
-867.9
+867.7
 </td>
 <td style="text-align:right;">
-0.316
+0.315
 </td>
 <td style="text-align:left;">
 0.08 / 0.11
@@ -1214,7 +1214,7 @@ ht_inc1 ~ log(dbh) + treatment4 + (1 | plot)
 ht_inc1 ~ log(dbh) + treatment2 + (1 | plot)
 </td>
 <td style="text-align:right;">
-868.7
+868.6
 </td>
 <td style="text-align:right;">
 0.316
@@ -1231,7 +1231,7 @@ ht_inc1 ~ log(dbh) + treatment2 + (1 | plot)
 ht_inc1 ~ log(dbh) + (1 | plot)
 </td>
 <td style="text-align:right;">
-872.9
+872.7
 </td>
 <td style="text-align:right;">
 0.315
@@ -1253,52 +1253,52 @@ summary(lm(ht_inc1 ~ log(dbh) + treatment4 * spp, data = test_d))</code></pre>
 ## 
 ## Residuals:
 ##      Min       1Q   Median       3Q      Max 
-## -1.07861 -0.18844 -0.01071  0.20023  1.16646 
+## -1.07853 -0.18847 -0.01067  0.20025  1.16653 
 ## 
 ## Coefficients:
 ##                              Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)                  -0.18612    0.07916  -2.351   0.0188 *  
-## log(dbh)                      0.18244    0.02407   7.580 5.93e-14 ***
-## treatment4unthinned          -0.14800    0.02058  -7.190 1.00e-12 ***
-## sppSESE3                     -0.08579    0.02075  -4.135 3.74e-05 ***
-## treatment4unthinned:sppSESE3  0.07141    0.04545   1.571   0.1164    
+## (Intercept)                  -0.18679    0.07918  -2.359   0.0185 *  
+## log(dbh)                      0.18264    0.02407   7.587 5.66e-14 ***
+## treatment4unthinned          -0.14797    0.02058  -7.189 1.01e-12 ***
+## sppSESE3                     -0.08569    0.02075  -4.130 3.82e-05 ***
+## treatment4unthinned:sppSESE3  0.07130    0.04545   1.569   0.1169    
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Residual standard error: 0.322 on 1537 degrees of freedom
-## Multiple R-squared:  0.08316,    Adjusted R-squared:  0.08077 
-## F-statistic: 34.85 on 4 and 1537 DF,  p-value: &lt; 2.2e-16</code></pre>
+## Multiple R-squared:  0.08321,    Adjusted R-squared:  0.08083 
+## F-statistic: 34.88 on 4 and 1537 DF,  p-value: &lt; 2.2e-16</code></pre>
 <pre class="r"><code>summary(lmod(fl[[32]]))</code></pre>
 <pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
 ## Formula: ht_inc1 ~ log(dbh) * treatment4 + spp + (1 | plot)
 ##    Data: test_d
 ## 
-## REML criterion at convergence: 869.2
+## REML criterion at convergence: 869.1
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -3.5336 -0.5870 -0.0200  0.6025  3.7332 
+## -3.5332 -0.5872 -0.0202  0.6027  3.7339 
 ## 
 ## Random effects:
 ##  Groups   Name        Variance Std.Dev.
-##  plot     (Intercept) 0.003956 0.06289 
-##  Residual             0.099708 0.31577 
+##  plot     (Intercept) 0.00396  0.06293 
+##  Residual             0.09970  0.31575 
 ## Number of obs: 1542, groups:  plot, 20
 ## 
 ## Fixed effects:
 ##                              Estimate Std. Error t value
-## (Intercept)                  -0.19372    0.09972  -1.943
-## log(dbh)                      0.17961    0.02966   6.056
-## treatment4unthinned          -0.28388    0.17174  -1.653
-## sppSESE3                     -0.07182    0.01867  -3.847
-## log(dbh):treatment4unthinned  0.04983    0.05249   0.949
+## (Intercept)                  -0.19472    0.09974  -1.952
+## log(dbh)                      0.17993    0.02967   6.065
+## treatment4unthinned          -0.28287    0.17175  -1.647
+## sppSESE3                     -0.07174    0.01867  -3.843
+## log(dbh):treatment4unthinned  0.04951    0.05250   0.943
 ## 
 ## Correlation of Fixed Effects:
 ##             (Intr) lg(db) trtmn4 sSESE3
 ## log(dbh)    -0.980                     
 ## trtmnt4nthn -0.582  0.569              
-## sppSESE3    -0.074  0.013  0.054       
-## lg(dbh):tr4  0.556 -0.565 -0.973 -0.038</code></pre>
+## sppSESE3    -0.075  0.014  0.055       
+## lg(dbh):tr4  0.556 -0.566 -0.973 -0.039</code></pre>
 </div>
 <div id="best-model-scrapping-above" class="section level1">
 <h1>Best model (scrapping above)</h1>
@@ -1314,32 +1314,32 @@ summary(ht_inc_mod1)</code></pre>
 ## Formula: ht_inc1 ~ log(dbh) * treatment4 + spp + (1 | plot)
 ##    Data: test_d
 ## 
-## REML criterion at convergence: 869.2
+## REML criterion at convergence: 869.1
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -3.5336 -0.5870 -0.0200  0.6025  3.7332 
+## -3.5332 -0.5872 -0.0202  0.6027  3.7339 
 ## 
 ## Random effects:
 ##  Groups   Name        Variance Std.Dev.
-##  plot     (Intercept) 0.003956 0.06289 
-##  Residual             0.099708 0.31577 
+##  plot     (Intercept) 0.00396  0.06293 
+##  Residual             0.09970  0.31575 
 ## Number of obs: 1542, groups:  plot, 20
 ## 
 ## Fixed effects:
 ##                              Estimate Std. Error t value
-## (Intercept)                  -0.19372    0.09972  -1.943
-## log(dbh)                      0.17961    0.02966   6.056
-## treatment4unthinned          -0.28388    0.17174  -1.653
-## sppSESE3                     -0.07182    0.01867  -3.847
-## log(dbh):treatment4unthinned  0.04983    0.05249   0.949
+## (Intercept)                  -0.19472    0.09974  -1.952
+## log(dbh)                      0.17993    0.02967   6.065
+## treatment4unthinned          -0.28287    0.17175  -1.647
+## sppSESE3                     -0.07174    0.01867  -3.843
+## log(dbh):treatment4unthinned  0.04951    0.05250   0.943
 ## 
 ## Correlation of Fixed Effects:
 ##             (Intr) lg(db) trtmn4 sSESE3
 ## log(dbh)    -0.980                     
 ## trtmnt4nthn -0.582  0.569              
-## sppSESE3    -0.074  0.013  0.054       
-## lg(dbh):tr4  0.556 -0.565 -0.973 -0.038</code></pre>
+## sppSESE3    -0.075  0.014  0.055       
+## lg(dbh):tr4  0.556 -0.566 -0.973 -0.039</code></pre>
 <p>Here is the summary table of the model used for predicting height
 increments and thus heights</p>
 <pre class="r"><code>sjPlot::tab_model(ht_inc_mod1,
@@ -1385,7 +1385,7 @@ p
 0.10
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.052
+0.051
 </td>
 </tr>
 <tr>
@@ -1413,7 +1413,7 @@ treatment4 [unthinned]
 0.17
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.099
+0.100
 </td>
 </tr>
 <tr>
@@ -1441,7 +1441,7 @@ dbh [log] * treatment4<br>[unthinned]
 0.05
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.343
+0.346
 </td>
 </tr>
 <tr>
@@ -1505,7 +1505,7 @@ Model 1
 (Intercept)
 </td>
 <td style="text-align:center;">
--0.194
+-0.195
 </td>
 </tr>
 <tr>
@@ -1535,7 +1535,7 @@ log(dbh)
 treatment4unthinned
 </td>
 <td style="text-align:center;">
--0.284
+-0.283
 </td>
 </tr>
 <tr>
@@ -1596,7 +1596,7 @@ sd__Observation
 AIC
 </td>
 <td style="text-align:center;">
-883.2
+883.1
 </td>
 </tr>
 <tr>
@@ -1604,7 +1604,7 @@ AIC
 BIC
 </td>
 <td style="text-align:center;">
-920.6
+920.5
 </td>
 </tr>
 <tr>
@@ -1612,7 +1612,7 @@ BIC
 Log.Lik.
 </td>
 <td style="text-align:center;">
--434.596
+-434.543
 </td>
 </tr>
 <tr>
@@ -1620,7 +1620,7 @@ Log.Lik.
 REMLcrit
 </td>
 <td style="text-align:center;">
-869.192
+869.085
 </td>
 </tr>
 </tbody>
@@ -1670,11 +1670,11 @@ emmip(
 ## spp = PSMEM:
 ##  treatment4 emmean     SE   df lower.CL upper.CL
 ##  thinned     0.394 0.0200 22.4    0.353    0.436
-##  unthinned   0.274 0.0355 14.9    0.198    0.349
+##  unthinned   0.273 0.0355 14.9    0.198    0.349
 ## 
 ## spp = SESE3:
 ##  treatment4 emmean     SE   df lower.CL upper.CL
-##  thinned     0.322 0.0228 37.0    0.276    0.369
+##  thinned     0.323 0.0228 37.0    0.276    0.369
 ##  unthinned   0.202 0.0385 20.4    0.121    0.282
 ## 
 ## Degrees-of-freedom method: kenward-roger 
@@ -1827,14 +1827,14 @@ d_l &lt;- left_join(d_l, new_heights, by = c(&quot;tree_id&quot;, &quot;year&quo
   mutate(ht_p = if_else(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;), ht_p, ht))</code></pre>
 <pre class="r"><code>head(d_l)</code></pre>
 <pre><code>## # A tibble: 6 x 28
-##   plot  treatment tree_id   spp   h_dist   azi year    dbh    ht    cr status bear  rot   notes                             cc cond     live     ba d_inc2 ht_inc2 ba_inc2 d_inc1 ht_inc1 ba_inc1       x        y sdi_plot  ht_p
-##   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;ord&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;                          &lt;int&gt; &lt;chr&gt;    &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
-## 1 1H40  H40       1H40.1901 SESE3   12.9    10 init   27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*0.005454154)*5    NA &quot;&quot;       TRUE   591. NA       NA      NA     0       0        0    410019. 4567479.    1090. 23.5 
-## 2 1H40  H40       1H40.1901 SESE3   12.9    10 08     27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*0.005454154)*5    NA &quot;&quot;       TRUE   591.  0        0       0     0.102  -3.96     4.42 410019. 4567479.     449. 23.5 
-## 3 1H40  H40       1H40.1901 SESE3   12.9    10 13     27.9  3.66     0      5 FALSE NA    Top blown off, dead standing      -1 &quot;3,7,31&quot; FALSE  613.  0.102   -3.96    4.42 NA      NA       NA    410019. 4567479.     484.  3.66
-## 4 1H40  H40       1H40.1901 SESE3   12.9    10 18     NA   NA       NA     -5 FALSE NA    &lt;NA&gt;                              NA &quot;3,7,31&quot; FALSE   NA  NA       NA      NA    NA      NA       NA    410019. 4567479.     556. NA   
-## 5 1H40  H40       1H40.1902 SESE3   14.2    13 init   37.6 23.2     40      1 TRUE  FALSE X                                 NA &quot;&quot;       TRUE  1110. NA       NA      NA     0       0        0    410020. 4567480.    1090. 23.2 
-## 6 1H40  H40       1H40.1902 SESE3   14.2    13 08     37.6 23.2     40      1 TRUE  FALSE X                                 NA &quot;&quot;       TRUE  1110.  0        0       0     0.559  -0.671   34.2  410020. 4567480.     449. 23.2</code></pre>
+##   plot  treatment tree_id   spp   h_dist   azi year    dbh    ht    cr status bear  rot   notes                cc cond  live     ba d_inc2 ht_inc2 ba_inc2 d_inc1 ht_inc1 ba_inc1      x      y sdi_plot  ht_p
+##   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;ord&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;             &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
+## 1 1H40  H40       1H40.1901 SESE3   12.9    10 init   27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*~    NA &quot;&quot;    TRUE   591. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.5 
+## 2 1H40  H40       1H40.1901 SESE3   12.9    10 08     27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*~    NA &quot;&quot;    TRUE   591.  0        0       0     0.102  -3.96     4.42 4.10e5 4.57e6     449. 23.5 
+## 3 1H40  H40       1H40.1901 SESE3   12.9    10 13     27.9  3.66     0      5 FALSE NA    Top blown off, d~    -1 &quot;3,7~ FALSE  613.  0.102   -3.96    4.42 NA      NA       NA    4.10e5 4.57e6     484.  3.66
+## 4 1H40  H40       1H40.1901 SESE3   12.9    10 18     NA   NA       NA     -5 FALSE NA    &lt;NA&gt;                 NA &quot;3,7~ FALSE   NA  NA       NA      NA    NA      NA       NA    4.10e5 4.57e6     556. NA   
+## 5 1H40  H40       1H40.1902 SESE3   14.2    13 init   37.6 23.2     40      1 TRUE  FALSE X                    NA &quot;&quot;    TRUE  1110. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.2 
+## 6 1H40  H40       1H40.1902 SESE3   14.2    13 08     37.6 23.2     40      1 TRUE  FALSE X                    NA &quot;&quot;    TRUE  1110.  0        0       0     0.559  -0.671   34.2  4.10e5 4.57e6     449. 23.2</code></pre>
 </div>
 
 

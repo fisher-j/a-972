@@ -380,29 +380,6 @@ init
 </tr>
 <tr>
 <td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-22.0 (1.2)
-</td>
-<td style="text-align:left;">
-23.1 (1.1)
-</td>
-<td style="text-align:left;">
-20.2 (0.5)
-</td>
-<td style="text-align:left;">
-20.6 (1.0)
-</td>
-<td style="text-align:left;">
-21.5 (0.8)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
 Density (stems ha<sup>-1</sup>)
 </td>
 <td style="text-align:left;">
@@ -595,11 +572,16 @@ non-parametric significance tests.</p>
 <p><img src="07_initial_conditions_files/figure-html/07-initial-conditions-4-1.png" width="672" /></p>
 <p>In addition to anova and t-tests, I’ll also use Kruskal-Wallis
 rank-sum tests and the Dunn and M-W-Wilcoxon post-hoc tests. I don’t
-think anovas and t-tests are reliable with only 4 data points.</p>
+think anovas and t-tests are reliable with only 4 data points. Also,
+according to <a
+href="https://stats.stackexchange.com/a/95270/332632">this</a>, I should
+not be using the Wilcoxon rank sum test as a post-hoc test for a
+Kruskal-Wallis test because they operate on effectively different data
+sets.</p>
 <pre class="r"><code>plot_sum(d_l, years = &quot;init&quot;) %&gt;% 
   test_sum() %&gt;% 
   select(-c(Tukey, Dunn, Wilcox)) %&gt;%
-  kbl2(caption = &quot;omnibus test, both species&quot;)</code></pre>
+  kbl2(caption = &quot;omnibus test, both species&quot;, digits = 3)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 omnibus test, both species
@@ -629,10 +611,10 @@ init
 ba
 </td>
 <td style="text-align:right;">
-0.6413462
+0.641
 </td>
 <td style="text-align:right;">
-0.4713918
+0.471
 </td>
 </tr>
 <tr>
@@ -643,10 +625,10 @@ init
 density
 </td>
 <td style="text-align:right;">
-0.7131442
+0.713
 </td>
 <td style="text-align:right;">
-0.5330506
+0.533
 </td>
 </tr>
 <tr>
@@ -657,10 +639,10 @@ init
 ht
 </td>
 <td style="text-align:right;">
-0.0038732
+0.024
 </td>
 <td style="text-align:right;">
-0.0133226
+0.053
 </td>
 </tr>
 <tr>
@@ -671,10 +653,10 @@ init
 qmd
 </td>
 <td style="text-align:right;">
-0.4234122
+0.423
 </td>
 <td style="text-align:right;">
-0.4522951
+0.452
 </td>
 </tr>
 </tbody>
@@ -684,7 +666,7 @@ qmd
   filter(KW_p &lt; .05) %&gt;%
   select(-c(aov_p)) %&gt;%
   unnest(c(Tukey, Dunn, Wilcox)) %&gt;% 
-  kbl2(caption = &quot;Post-hoc tests, both species&quot;)</code></pre>
+  kbl2(caption = &quot;Post-hoc tests, both species&quot;, digits = 3)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 Post-hoc tests, both species
@@ -698,351 +680,21 @@ year
 measure
 </th>
 <th style="text-align:left;">
-T_compare
-</th>
-<th style="text-align:right;">
-T_estimate
-</th>
-<th style="text-align:right;">
-T_pvalue
+Tukey
 </th>
 <th style="text-align:right;">
 KW_p
 </th>
 <th style="text-align:left;">
-D_compare
-</th>
-<th style="text-align:right;">
-D_pvalue
+Dunn
 </th>
 <th style="text-align:left;">
-W_compare
-</th>
-<th style="text-align:right;">
-W_pvalue
+Wilcox
 </th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-H40-C
-</td>
-<td style="text-align:right;">
-0.4725702
-</td>
-<td style="text-align:right;">
-0.9520691
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-C - H40
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-<td style="text-align:left;">
-H40-C
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-H80-C
-</td>
-<td style="text-align:right;">
--1.3316493
-</td>
-<td style="text-align:right;">
-0.3176011
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-C - H80
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-<td style="text-align:left;">
-H80-C
-</td>
-<td style="text-align:right;">
-0.5714286
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-L40-C
-</td>
-<td style="text-align:right;">
-1.6296111
-</td>
-<td style="text-align:right;">
-0.1598795
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-C - L40
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-<td style="text-align:left;">
-L40-C
-</td>
-<td style="text-align:right;">
-0.2857143
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-L80-C
-</td>
-<td style="text-align:right;">
--0.9386632
-</td>
-<td style="text-align:right;">
-0.6361634
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-C - L80
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-<td style="text-align:left;">
-L80-C
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-H80-H40
-</td>
-<td style="text-align:right;">
--1.8042195
-</td>
-<td style="text-align:right;">
-0.1023568
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-H40 - H80
-</td>
-<td style="text-align:right;">
-0.3646983
-</td>
-<td style="text-align:left;">
-H80-H40
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-L40-H40
-</td>
-<td style="text-align:right;">
-1.1570409
-</td>
-<td style="text-align:right;">
-0.4478040
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-H40 - L40
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-<td style="text-align:left;">
-L40-H40
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-L80-H40
-</td>
-<td style="text-align:right;">
--1.4112335
-</td>
-<td style="text-align:right;">
-0.2673410
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-H40 - L80
-</td>
-<td style="text-align:right;">
-0.4216493
-</td>
-<td style="text-align:left;">
-L80-H40
-</td>
-<td style="text-align:right;">
-0.5714286
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-L40-H80
-</td>
-<td style="text-align:right;">
-2.9612604
-</td>
-<td style="text-align:right;">
-0.0038542
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-H80 - L40
-</td>
-<td style="text-align:right;">
-0.0412360
-</td>
-<td style="text-align:left;">
-L40-H80
-</td>
-<td style="text-align:right;">
-0.2857143
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-L80-H80
-</td>
-<td style="text-align:right;">
-0.3929861
-</td>
-<td style="text-align:right;">
-0.9750495
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-H80 - L80
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-<td style="text-align:left;">
-L80-H80
-</td>
-<td style="text-align:right;">
-1.0000000
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-ht
-</td>
-<td style="text-align:left;">
-L80-L40
-</td>
-<td style="text-align:right;">
--2.5682744
-</td>
-<td style="text-align:right;">
-0.0120182
-</td>
-<td style="text-align:right;">
-0.0133226
-</td>
-<td style="text-align:left;">
-L40 - L80
-</td>
-<td style="text-align:right;">
-0.0497285
-</td>
-<td style="text-align:left;">
-L80-L40
-</td>
-<td style="text-align:right;">
-0.2857143
-</td>
 </tr>
 </tbody>
 </table>
@@ -1056,7 +708,7 @@ test didn’t detect any significance.</p>
 <pre class="r"><code>plot_sum(d_l, years = &quot;init&quot;, species = &quot;SESE3&quot;) %&gt;% 
   test_sum() %&gt;% 
   select(-c(Tukey, Dunn, Wilcox)) %&gt;%
-  kbl2(caption = &quot;Omnibus tests, redwood&quot;)</code></pre>
+  kbl2(caption = &quot;Omnibus tests, redwood&quot;, digits = 3)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 Omnibus tests, redwood
@@ -1086,10 +738,10 @@ init
 ba
 </td>
 <td style="text-align:right;">
-0.4433559
+0.443
 </td>
 <td style="text-align:right;">
-0.4844247
+0.484
 </td>
 </tr>
 <tr>
@@ -1100,10 +752,10 @@ init
 density
 </td>
 <td style="text-align:right;">
-0.2337894
+0.234
 </td>
 <td style="text-align:right;">
-0.2333623
+0.233
 </td>
 </tr>
 <tr>
@@ -1114,10 +766,10 @@ init
 ht
 </td>
 <td style="text-align:right;">
-0.2165945
+0.634
 </td>
 <td style="text-align:right;">
-0.1949213
+0.691
 </td>
 </tr>
 <tr>
@@ -1128,10 +780,10 @@ init
 qmd
 </td>
 <td style="text-align:right;">
-0.7420638
+0.742
 </td>
 <td style="text-align:right;">
-0.9477593
+0.948
 </td>
 </tr>
 </tbody>
@@ -1141,7 +793,7 @@ qmd
   filter(KW_p &lt; .05) %&gt;%
   select(-c(aov_p)) %&gt;%
   unnest(c(Tukey, Dunn, Wilcox)) %&gt;% 
-  kbl2(caption = &quot;post-hoc tests, redwood&quot;)</code></pre>
+  kbl2(caption = &quot;post-hoc tests, redwood&quot;, digits = 3)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 post-hoc tests, redwood
@@ -1181,7 +833,7 @@ do post-hoc tests.</p>
 <pre class="r"><code>plot_sum(d_l, years = &quot;init&quot;, species = &quot;PSMEM&quot;) %&gt;% 
   test_sum() %&gt;% 
   select(-c(Tukey, Dunn, Wilcox)) %&gt;%
-  kbl2(caption = &quot;Omnibus tests, Douglas-fir&quot;)</code></pre>
+  kbl2(caption = &quot;Omnibus tests, Douglas-fir&quot;, digits = 3)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 Omnibus tests, Douglas-fir
@@ -1211,10 +863,10 @@ init
 ba
 </td>
 <td style="text-align:right;">
-0.0620930
+0.062
 </td>
 <td style="text-align:right;">
-0.0964031
+0.096
 </td>
 </tr>
 <tr>
@@ -1225,10 +877,10 @@ init
 density
 </td>
 <td style="text-align:right;">
-0.3796860
+0.380
 </td>
 <td style="text-align:right;">
-0.2984002
+0.298
 </td>
 </tr>
 <tr>
@@ -1239,10 +891,10 @@ init
 ht
 </td>
 <td style="text-align:right;">
-0.0305357
+0.235
 </td>
 <td style="text-align:right;">
-0.0775284
+0.293
 </td>
 </tr>
 <tr>
@@ -1253,10 +905,10 @@ init
 qmd
 </td>
 <td style="text-align:right;">
-0.5099199
+0.510
 </td>
 <td style="text-align:right;">
-0.5180367
+0.518
 </td>
 </tr>
 </tbody>
@@ -1266,7 +918,7 @@ qmd
   filter(KW_p &lt; .05) %&gt;%
   select(-c(aov_p)) %&gt;%
   unnest(c(Tukey, Dunn, Wilcox)) %&gt;% 
-  kbl2(caption = &quot;post-hoc tests, redwood&quot;)</code></pre>
+  kbl2(caption = &quot;post-hoc tests, redwood&quot;, digits = 3)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 post-hoc tests, redwood

@@ -4,7 +4,7 @@ title: Comparing initial conditions
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE, cache.extra = "monkey")
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE, cache.extra = "wombat")
 ```
 
 
@@ -152,21 +152,21 @@ plot_sum(d_l, years = "init") %>%
 
 ```
 
-In addition to anova and t-tests, I'll also use Kruskal-Wallis rank-sum tests and the Dunn and M-W-Wilcoxon post-hoc tests. I don't think anovas and t-tests are reliable with only 4 data points.
+In addition to anova and t-tests, I'll also use Kruskal-Wallis rank-sum tests and the Dunn and M-W-Wilcoxon post-hoc tests. I don't think anovas and t-tests are reliable with only 4 data points. Also, according to [this](https://stats.stackexchange.com/a/95270/332632), I should not be using the Wilcoxon rank sum test as a post-hoc test for a Kruskal-Wallis test because they operate on effectively different data sets.
 
 ```{r 07-initial-conditions-5}
 
 plot_sum(d_l, years = "init") %>% 
   test_sum() %>% 
   select(-c(Tukey, Dunn, Wilcox)) %>%
-  kbl2(caption = "omnibus test, both species")
+  kbl2(caption = "omnibus test, both species", digits = 3)
 
 plot_sum(d_l, years = "init") %>% 
   test_sum() %>%
   filter(KW_p < .05) %>%
   select(-c(aov_p)) %>%
   unnest(c(Tukey, Dunn, Wilcox)) %>% 
-  kbl2(caption = "Post-hoc tests, both species")
+  kbl2(caption = "Post-hoc tests, both species", digits = 3)
 
 ```
 
@@ -181,14 +181,14 @@ there are no significant differences.
 plot_sum(d_l, years = "init", species = "SESE3") %>% 
   test_sum() %>% 
   select(-c(Tukey, Dunn, Wilcox)) %>%
-  kbl2(caption = "Omnibus tests, redwood")
+  kbl2(caption = "Omnibus tests, redwood", digits = 3)
 
 plot_sum(d_l, years = "init", species = "SESE3") %>% 
   test_sum() %>%
   filter(KW_p < .05) %>%
   select(-c(aov_p)) %>%
   unnest(c(Tukey, Dunn, Wilcox)) %>% 
-  kbl2(caption = "post-hoc tests, redwood")
+  kbl2(caption = "post-hoc tests, redwood", digits = 3)
 
 ```
 
@@ -201,13 +201,14 @@ Differences follow the same pattern as for all trees, which makes sense because 
 plot_sum(d_l, years = "init", species = "PSMEM") %>% 
   test_sum() %>% 
   select(-c(Tukey, Dunn, Wilcox)) %>%
-  kbl2(caption = "Omnibus tests, Douglas-fir")
+  kbl2(caption = "Omnibus tests, Douglas-fir", digits = 3)
 
 plot_sum(d_l, years = "init", species = "PSMEM") %>% 
   test_sum() %>%
   filter(KW_p < .05) %>%
   select(-c(aov_p)) %>%
   unnest(c(Tukey, Dunn, Wilcox)) %>% 
-  kbl2(caption = "post-hoc tests, redwood")
+  kbl2(caption = "post-hoc tests, redwood", digits = 3)
 
 ```
+

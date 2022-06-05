@@ -365,7 +365,7 @@ error. <em>This includes dbh measurements for some downed trees, which
 may or may not be appropriate.</em> Outliers are defined as 1.5 times
 inter-quartile range above Q3 or below Q1, and are determined separately
 for both growth periods, but across all species and treatments. I also
-select anything with more than 1” shrinkage.</p>
+select anything with more than 1” shrinkage over a 5 year period.</p>
 <pre class="r"><code>change_d &lt;- d_l %&gt;%
   filter(year != &quot;init&quot;) %&gt;%
   pivot_wider(id_cols = c(tree_id, spp, plot), names_from = year,
@@ -724,8 +724,8 @@ I’ll manually select entries to remove from the dbh summary.</p>
 <li>If the first or last dbh seems unlikely, project a value using
 either the other periods dbh change or the average change for that
 species/treatment.</li>
-<li>If the tree seems very unhealthy, allow up to 10% shrinkage per
-measurement period with a 15% maximum.</li>
+<li>trees that shrink more than 1” over a 5 year period are
+flagged.</li>
 <li>If the middle measurement seems unlikely:
 <ul>
 <li>consider averaging first and last</li>
@@ -746,7 +746,7 @@ period growth.</p>
 as well as height increment). Salmon highlight indicates edited values
 with new value in parentheses.</p>
 <pre class="r"><code>dbh_problem1 &lt;- out_d %&gt;%
-  reduce(full_join) %&gt;%
+  reduce(union) %&gt;%
   bind_rows(filter(change_d, if_any(starts_with(&quot;status&quot;), ~ .x == 20))) %&gt;%
   select(-plot)
 
@@ -786,10 +786,13 @@ new_dbh &lt;- tribble(
   &quot;3L80.3366&quot;, &quot;18&quot;, 34.5,
   &quot;4L40.3277&quot;, &quot;18&quot;, 40.9,
   &quot;C4.4600&quot;,   &quot;18&quot;, 29.0,
+  &quot;4L40.3274&quot;, &quot;13&quot;, 31.4
   ) %&gt;%
   mutate(year = factor(year, levels = c(&quot;init&quot;, &quot;08&quot;, &quot;13&quot;, &quot;18&quot;), ordered = TRUE))</code></pre>
 <pre class="r"><code># Color the values that are being changed as well as the outlier values
-dbh_color &lt;- split(new_dbh, ~year) %&gt;%
+dbh_color &lt;- filter(new_dbh, year != &quot;init&quot;) |&gt;
+  droplevels() |&gt;
+  split(~year) %&gt;%
   map(&quot;tree_id&quot;) %&gt;%
   map(~ifelse(dbh_problem1$tree_id %in% .x, &quot;Salmon&quot;, &quot;White&quot;))
   
@@ -798,13 +801,15 @@ outlier_color &lt;- map(out_d, &quot;tree_id&quot;) %&gt;%
 
 # prepare replacement data to add to colored table
 problem_wide &lt;- new_dbh %&gt;%
+  filter(year != &quot;init&quot;) |&gt;
+  droplevels() |&gt;
   group_by(tree_id) %&gt;%
   complete(year) %&gt;%
   pivot_wider(names_from = year, values_from = dbh, names_prefix = &quot;dbh_&quot;)
 
 
 show_fix &lt;- function(old, new) {
-  if_else(!is.na(new), paste0(old, &quot; (&quot;, new, &quot;)&quot;), as.character(old))
+  if_else(!is.na(new), paste0(as.character(old), &quot; (&quot;, as.character(new), &quot;)&quot;), as.character(old))
 }
 
 # Make colored table with updated values
@@ -819,11 +824,11 @@ dbh_problem1 %&gt;%
   unite(&quot;status_seq&quot;, starts_with(&quot;status&quot;), sep = &quot;&gt;&quot;) %&gt;%
   kableExtra::kbl() %&gt;%
   kableExtra::kable_styling(bootstrap_options = &quot;hover&quot;) %&gt;%
-  kableExtra::column_spec(3, background = dbh_color[[1]]) %&gt;%
-  kableExtra::column_spec(4, background = dbh_color[[2]]) %&gt;%
-  kableExtra::column_spec(5, background = dbh_color[[3]]) %&gt;%
-  kableExtra::column_spec(12, background = outlier_color[[1]]) %&gt;%
-  kableExtra::column_spec(13, background = outlier_color[[2]])</code></pre>
+  kableExtra::column_spec(3, background = dbh_color$&quot;08&quot;) %&gt;%
+  kableExtra::column_spec(4, background = dbh_color$&quot;13&quot;) %&gt;%
+  kableExtra::column_spec(5, background = dbh_color$&quot;18&quot;) %&gt;%
+  kableExtra::column_spec(12, background = outlier_color$p1) %&gt;%
+  kableExtra::column_spec(13, background = outlier_color$p2)</code></pre>
 <table class="table table-hover" style="margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -865,9 +870,6 @@ p1
 </th>
 <th style="text-align:right;">
 p2
-</th>
-<th style="text-align:right;">
-dbh_init
 </th>
 </tr>
 </thead>
@@ -912,9 +914,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 8.128
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -956,9 +955,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 10.414
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -970,10 +966,10 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 28.956
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 38.1 (31.4)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 33.782
 </td>
 <td style="text-align:left;">
@@ -1000,9 +996,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: Pink !important;">
 -4.318
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1014,7 +1007,7 @@ SESE3
 <td style="text-align:left;background-color: Salmon !important;">
 17.272 (13.3)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 13.462
 </td>
 <td style="text-align:left;background-color: White !important;">
@@ -1043,9 +1036,6 @@ FALSE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: White !important;">
 -0.254
-</td>
-<td style="text-align:right;">
-13.30
 </td>
 </tr>
 <tr>
@@ -1088,9 +1078,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: White !important;">
 6.858
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1131,9 +1118,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 10.668
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -1176,9 +1160,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 12.700
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1190,10 +1171,10 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 32.004
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 39.878 (34.53)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 NA
 </td>
 <td style="text-align:left;">
@@ -1220,9 +1201,6 @@ TRUE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: White !important;">
 NA
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1234,7 +1212,7 @@ PISI
 <td style="text-align:left;background-color: Salmon !important;">
 35.306 (49.5)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 56.896
 </td>
 <td style="text-align:left;background-color: White !important;">
@@ -1263,9 +1241,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 7.366
-</td>
-<td style="text-align:right;">
-49.50
 </td>
 </tr>
 <tr>
@@ -1308,9 +1283,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 7.366
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1351,9 +1323,6 @@ TRUE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: White !important;">
 5.588
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -1396,9 +1365,6 @@ FALSE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 7.366
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1439,9 +1405,6 @@ TRUE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 10.414
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -1484,9 +1447,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 7.874
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1527,9 +1487,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: White !important;">
 6.096
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -1572,9 +1529,6 @@ FALSE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 7.874
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1615,9 +1569,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: White !important;">
 1.016
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -1660,9 +1611,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 7.874
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1703,9 +1651,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 9.398
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -1748,9 +1693,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: White !important;">
 5.588
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1791,9 +1733,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 8.890
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -1836,9 +1775,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 8.636
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1850,7 +1786,7 @@ SESE3
 <td style="text-align:left;background-color: Salmon !important;">
 21.844 (15.3)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 16.256
 </td>
 <td style="text-align:left;background-color: White !important;">
@@ -1879,9 +1815,6 @@ FALSE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: White !important;">
 1.016
-</td>
-<td style="text-align:right;">
-15.30
 </td>
 </tr>
 <tr>
@@ -1924,9 +1857,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: White !important;">
 4.064
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -1967,9 +1897,6 @@ FALSE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 8.636
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -2012,9 +1939,6 @@ FALSE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 10.160
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2056,9 +1980,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: Pink !important;">
 14.224
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2098,9 +2019,6 @@ FALSE&gt;FALSE&gt;FALSE
 -2.540
 </td>
 <td style="text-align:right;background-color: White !important;">
-NA
-</td>
-<td style="text-align:right;">
 NA
 </td>
 </tr>
@@ -2144,9 +2062,6 @@ TRUE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: White !important;">
 0.762
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2187,9 +2102,6 @@ TRUE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 10.414
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -2232,9 +2144,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 8.382
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2246,7 +2155,7 @@ PSMEM
 <td style="text-align:left;background-color: Salmon !important;">
 20.32 (17.6)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 16.002
 </td>
 <td style="text-align:left;background-color: White !important;">
@@ -2276,9 +2185,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: White !important;">
 0.254
 </td>
-<td style="text-align:right;">
-17.60
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2290,10 +2196,10 @@ PSMEM
 <td style="text-align:left;background-color: White !important;">
 19.05
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 14.224 (17.78)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 16.51
 </td>
 <td style="text-align:left;">
@@ -2320,9 +2226,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: White !important;">
 2.286
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2334,7 +2237,7 @@ SESE3
 <td style="text-align:left;background-color: Salmon !important;">
 14.224 (24.4)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 28.194
 </td>
 <td style="text-align:left;background-color: White !important;">
@@ -2363,9 +2266,6 @@ TRUE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: White !important;">
 3.810
-</td>
-<td style="text-align:right;">
-24.40
 </td>
 </tr>
 <tr>
@@ -2408,9 +2308,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: White !important;">
 0.000
 </td>
-<td style="text-align:right;">
-22.14
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2452,9 +2349,6 @@ TRUE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: Pink !important;">
 9.398
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2466,7 +2360,7 @@ PSMEM
 <td style="text-align:left;background-color: Salmon !important;">
 21.844 (17.02)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 17.272
 </td>
 <td style="text-align:left;background-color: White !important;">
@@ -2496,9 +2390,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: White !important;">
 0.254
 </td>
-<td style="text-align:right;">
-17.02
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2513,7 +2404,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 26.67
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 40.64 (31.8)
 </td>
 <td style="text-align:left;">
@@ -2540,9 +2431,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: Pink !important;">
 13.970
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2557,7 +2445,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 31.75
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 46.99 (35.9)
 </td>
 <td style="text-align:left;">
@@ -2583,9 +2471,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 15.240
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -2628,9 +2513,6 @@ FALSE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 8.382
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2671,9 +2553,6 @@ FALSE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 8.128
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -2716,9 +2595,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: Pink !important;">
 8.128
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2760,9 +2636,6 @@ TRUE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 9.144
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2774,7 +2647,7 @@ SESE3
 <td style="text-align:left;background-color: Salmon !important;">
 49.022 (44.83)
 </td>
-<td style="text-align:left;background-color: Salmon !important;">
+<td style="text-align:left;background-color: White !important;">
 49.022
 </td>
 <td style="text-align:left;background-color: White !important;">
@@ -2803,9 +2676,6 @@ TRUE&gt;FALSE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 9.398
-</td>
-<td style="text-align:right;">
-44.83
 </td>
 </tr>
 <tr>
@@ -2848,9 +2718,6 @@ TRUE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 8.382
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2891,9 +2758,6 @@ TRUE&gt;FALSE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 8.636
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -2936,9 +2800,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 12.954
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -2979,9 +2840,6 @@ TRUE&gt;FALSE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 11.684
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3024,9 +2882,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 9.652
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3067,9 +2922,6 @@ TRUE&gt;FALSE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 7.366
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3112,9 +2964,6 @@ TRUE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 7.874
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3129,7 +2978,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 30.734
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 48.768 (36.1)
 </td>
 <td style="text-align:left;">
@@ -3156,9 +3005,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: Pink !important;">
 18.034
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3173,7 +3019,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 47.498
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 72.644 (53.6)
 </td>
 <td style="text-align:left;">
@@ -3199,9 +3045,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 25.146
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3244,9 +3087,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: Pink !important;">
 7.366
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3287,9 +3127,6 @@ FALSE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 8.382
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3332,9 +3169,6 @@ FALSE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 9.652
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3375,9 +3209,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 8.382
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3420,9 +3251,6 @@ TRUE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 8.128
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3463,9 +3291,6 @@ FALSE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 9.144
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3508,9 +3333,6 @@ FALSE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 7.874
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3551,9 +3373,6 @@ FALSE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 10.160
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3596,9 +3415,6 @@ FALSE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 9.144
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3613,7 +3429,7 @@ PSMEM
 <td style="text-align:left;background-color: White !important;">
 28.194
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 50.546 (30.7)
 </td>
 <td style="text-align:left;">
@@ -3640,9 +3456,6 @@ FALSE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 22.352
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3685,9 +3498,6 @@ TRUE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 -4.064
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3729,9 +3539,6 @@ FALSE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 8.890
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3743,8 +3550,8 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 30.988
 </td>
-<td style="text-align:left;background-color: White !important;">
-38.354
+<td style="text-align:left;background-color: Salmon !important;">
+38.354 (31.4)
 </td>
 <td style="text-align:left;background-color: White !important;">
 31.242
@@ -3773,9 +3580,6 @@ FALSE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 -7.112
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3790,7 +3594,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 41.91
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 66.548 (46.25)
 </td>
 <td style="text-align:left;">
@@ -3816,9 +3620,6 @@ FALSE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 24.638
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3861,9 +3662,6 @@ TRUE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: Pink !important;">
 8.128
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3905,9 +3703,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: Pink !important;">
 -2.540
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -3922,7 +3717,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 50.292
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 70.104 (55.37)
 </td>
 <td style="text-align:left;">
@@ -3948,9 +3743,6 @@ FALSE&gt;FALSE&gt;FALSE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 19.812
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -3993,9 +3785,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 8.636
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -4036,9 +3825,6 @@ TRUE&gt;TRUE&gt;TRUE
 </td>
 <td style="text-align:right;background-color: Pink !important;">
 7.366
-</td>
-<td style="text-align:right;">
-NA
 </td>
 </tr>
 <tr>
@@ -4081,9 +3867,6 @@ TRUE&gt;TRUE&gt;TRUE
 <td style="text-align:right;background-color: Pink !important;">
 7.366
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -4098,7 +3881,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 16.764
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 NA (18.8)
 </td>
 <td style="text-align:left;">
@@ -4125,9 +3908,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: White !important;">
 NA
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -4142,7 +3922,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 21.336
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 NA (23.6)
 </td>
 <td style="text-align:left;">
@@ -4169,9 +3949,6 @@ FALSE&gt;FALSE&gt;TRUE
 <td style="text-align:right;background-color: White !important;">
 NA
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -4186,7 +3963,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 34.29
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 NA (37.6)
 </td>
 <td style="text-align:left;">
@@ -4213,9 +3990,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: White !important;">
 NA
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -4230,7 +4004,7 @@ PSMEM
 <td style="text-align:left;background-color: White !important;">
 31.496
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 NA (34.5)
 </td>
 <td style="text-align:left;">
@@ -4258,9 +4032,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: White !important;">
 NA
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -4275,7 +4046,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 34.798
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 NA (40.9)
 </td>
 <td style="text-align:left;">
@@ -4302,9 +4073,6 @@ FALSE&gt;FALSE&gt;FALSE
 <td style="text-align:right;background-color: White !important;">
 NA
 </td>
-<td style="text-align:right;">
-NA
-</td>
 </tr>
 <tr>
 <td style="text-align:left;">
@@ -4319,7 +4087,7 @@ SESE3
 <td style="text-align:left;background-color: White !important;">
 28.956
 </td>
-<td style="text-align:left;background-color: White !important;">
+<td style="text-align:left;background-color: Salmon !important;">
 NA (29)
 </td>
 <td style="text-align:left;">
@@ -4344,9 +4112,6 @@ FALSE&gt;FALSE&gt;FALSE
 0.000
 </td>
 <td style="text-align:right;background-color: White !important;">
-NA
-</td>
-<td style="text-align:right;">
 NA
 </td>
 </tr>

@@ -4,7 +4,7 @@ title: "Detailed data cleaning"
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE, cache.extra = "monkey")
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE, cache.extra = "wombat")
 ```
 
 # Detailed data cleaning
@@ -30,7 +30,7 @@ dbh_out <- boxplot(filter(d_l, year != "init")$dbh, plot = FALSE)$out
 length(dbh_out)
 ```
 
-I check for dbh among all post harvest trees that change dramatically from one observation to the next because this may indicate a measurement error. *This includes dbh measurements for some downed trees, which may or may not be appropriate.* Outliers are defined as 1.5 times inter-quartile range above Q3 or below Q1, and are determined separately for both growth periods, but across all species and treatments. I also select anything with more than 1" shrinkage.
+I check for dbh among all post harvest trees that change dramatically from one observation to the next because this may indicate a measurement error. *This includes dbh measurements for some downed trees, which may or may not be appropriate.* Outliers are defined as 1.5 times inter-quartile range above Q3 or below Q1, and are determined separately for both growth periods, but across all species and treatments. I also select anything with more than 1" shrinkage over a 5 year period.
 
 ```{r 02-data-cleaning-3}
 change_d <- d_l %>%
@@ -76,7 +76,7 @@ change_d %>%
 I'll look at change outliers that occur in p1 or p2, but not both and I'll manually select entries to remove from the dbh summary. 
 
 * If the first or last dbh seems unlikely, project a value using either the other periods dbh change or the average change for that species/treatment.
-* If the tree seems very unhealthy, allow up to 10% shrinkage per measurement period with a 15% maximum.
+* trees that shrink more than 1" over a 5 year period are flagged.
 * If the middle measurement seems unlikely:
   * consider averaging first and last
   * project growth based on other period, or average
@@ -90,7 +90,7 @@ Pink highlight indicates outlier values (for individual measurements as well as 
 
 ```{r 02-data-cleaning-7}
 dbh_problem1 <- out_d %>%
-  reduce(full_join) %>%
+  reduce(union) %>%
   bind_rows(filter(change_d, if_any(starts_with("status"), ~ .x == 20))) %>%
   select(-plot)
 
@@ -130,13 +130,16 @@ new_dbh <- tribble(
   "3L80.3366", "18", 34.5,
   "4L40.3277", "18", 40.9,
   "C4.4600",   "18", 29.0,
+  "4L40.3274", "13", 31.4
   ) %>%
   mutate(year = factor(year, levels = c("init", "08", "13", "18"), ordered = TRUE))
 ```
 
 ```{r 02-data-cleaning-8}
 # Color the values that are being changed as well as the outlier values
-dbh_color <- split(new_dbh, ~year) %>%
+dbh_color <- filter(new_dbh, year != "init") |>
+  droplevels() |>
+  split(~year) %>%
   map("tree_id") %>%
   map(~ifelse(dbh_problem1$tree_id %in% .x, "Salmon", "White"))
   
@@ -145,13 +148,15 @@ outlier_color <- map(out_d, "tree_id") %>%
 
 # prepare replacement data to add to colored table
 problem_wide <- new_dbh %>%
+  filter(year != "init") |>
+  droplevels() |>
   group_by(tree_id) %>%
   complete(year) %>%
   pivot_wider(names_from = year, values_from = dbh, names_prefix = "dbh_")
 
 
 show_fix <- function(old, new) {
-  if_else(!is.na(new), paste0(old, " (", new, ")"), as.character(old))
+  if_else(!is.na(new), paste0(as.character(old), " (", as.character(new), ")"), as.character(old))
 }
 
 # Make colored table with updated values
@@ -166,11 +171,11 @@ dbh_problem1 %>%
   unite("status_seq", starts_with("status"), sep = ">") %>%
   kableExtra::kbl() %>%
   kableExtra::kable_styling(bootstrap_options = "hover") %>%
-  kableExtra::column_spec(3, background = dbh_color[[1]]) %>%
-  kableExtra::column_spec(4, background = dbh_color[[2]]) %>%
-  kableExtra::column_spec(5, background = dbh_color[[3]]) %>%
-  kableExtra::column_spec(12, background = outlier_color[[1]]) %>%
-  kableExtra::column_spec(13, background = outlier_color[[2]])
+  kableExtra::column_spec(3, background = dbh_color$"08") %>%
+  kableExtra::column_spec(4, background = dbh_color$"13") %>%
+  kableExtra::column_spec(5, background = dbh_color$"18") %>%
+  kableExtra::column_spec(12, background = outlier_color$p1) %>%
+  kableExtra::column_spec(13, background = outlier_color$p2)
 ```
 
 ### *Update dbh values in main dataset*

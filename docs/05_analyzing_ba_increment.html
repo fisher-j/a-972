@@ -403,7 +403,7 @@ increment</p>
     treat_method = str_extract(treatment, &quot;C|H|L&quot;),
     treat_density = str_extract(treatment, &quot;C|40|80&quot;),
     treat_status = if_else(str_detect(treatment, &quot;C&quot;), &quot;unthinned&quot;, &quot;thinned&quot;),
-    year = factor(year, ordered = FALSE),
+    year = factor(year, ordered = FALSE, levels = c(&quot;08&quot;, &quot;13&quot;)),
     cr = cr / 100
   ) %&gt;%
   select(-c(h_dist, azi, rot, cc, x, y, live)) %&gt;%
@@ -3524,22 +3524,22 @@ year is close to significant for the higher intensity treatments.</p>
 ## # Groups:   treatment [5]
 ##    treatment estimate parameter p.value
 ##    &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
-##  1 C             14.6      524.  0.0142
-##  2 C             11.5      524.  0.0142
-##  3 H40           40.4      176.  0.0530
-##  4 H40           32.2      176.  0.0530
-##  5 H80           17.0      517.  0.609 
-##  6 H80           16.2      517.  0.609 
-##  7 L40           47.1      149.  0.0451
-##  8 L40           40.9      149.  0.0451
-##  9 L80           17.1      516.  0.305 
-## 10 L80           15.6      516.  0.305</code></pre>
+##  1 C             11.5      524.  0.0142
+##  2 C             14.6      524.  0.0142
+##  3 H40           32.2      176.  0.0530
+##  4 H40           40.4      176.  0.0530
+##  5 H80           16.2      517.  0.609 
+##  6 H80           17.0      517.  0.609 
+##  7 L40           40.9      149.  0.0451
+##  8 L40           47.1      149.  0.0451
+##  9 L80           15.6      516.  0.305 
+## 10 L80           17.1      516.  0.305</code></pre>
 <div id="basic-model-forms" class="section level2">
 <h2>Basic model forms</h2>
 <p>Basal area increment is expected to vary by dbh and crown ratio. We
 hope to see a treatment effect. Because of the interaction with year, I
 will try to model for the most recent increment period only.</p>
-<pre><code>model a: scaled_ba_inc1 = exp((dbh) * treatment * spp),   distribution
+<pre><code>model a: scaled_ba_inc1 = exp((dbh) * treatment * spp), gamma distribution
 model b: scaled_ba_inc1 = exp((dbh) * treatment * spp), gaussian distribution
 model c: log(ba_inc1) = dbh * treatment * spp 
 model d: ba_inc1 = (log(dbh) + dbh) * treatment * spp</code></pre>
@@ -4200,28 +4200,28 @@ summary(ba_inc_lmm)</code></pre>
 ## 
 ## Fixed effects:
 ##              Estimate Std. Error t value
-## (Intercept)  -2.42383    0.12226 -19.824
+## (Intercept)  -2.06670    0.11912 -17.350
 ## log(dbh)      1.48775    0.03912  38.031
 ## treatmentH40  0.54634    0.04639  11.777
 ## treatmentH80  0.17968    0.03261   5.510
 ## treatmentL40  0.53983    0.04900  11.017
 ## treatmentL80  0.16577    0.03193   5.191
-## cr            1.97811    0.17911  11.044
-## year08        0.35713    0.04610   7.747
+## cr            0.83279    0.18242   4.565
+## year13       -0.35713    0.04610  -7.747
 ## sppSESE3      0.23746    0.02934   8.094
-## cr:year08    -1.14532    0.21669  -5.286
+## cr:year13     1.14532    0.21669   5.286
 ## 
 ## Correlation of Fixed Effects:
-##             (Intr) lg(db) trtH40 trtH80 trtL40 trtL80 cr     year08 sSESE3
-## log(dbh)    -0.947                                                        
-## treatmntH40  0.049 -0.108                                                 
-## treatmntH80 -0.080 -0.038  0.326                                          
-## treatmntL40  0.185 -0.246  0.240  0.290                                   
-## treatmntL80 -0.045 -0.081  0.324  0.459  0.310                            
-## cr           0.001 -0.267 -0.060  0.039 -0.043  0.043                     
-## year08      -0.256  0.102 -0.032 -0.016 -0.032  0.013  0.476              
-## sppSESE3    -0.284  0.282 -0.133 -0.211 -0.063 -0.098 -0.147  0.040       
-## cr:year08    0.156  0.009  0.032  0.016  0.020 -0.014 -0.589 -0.951  0.007</code></pre>
+##             (Intr) lg(db) trtH40 trtH80 trtL40 trtL80 cr     year13 sSESE3
+## log(dbh)    -0.932                                                        
+## treatmntH40  0.038 -0.108                                                 
+## treatmntH80 -0.088 -0.038  0.326                                          
+## treatmntL40  0.177 -0.246  0.240  0.290                                   
+## treatmntL80 -0.041 -0.081  0.324  0.459  0.310                            
+## cr          -0.065 -0.251 -0.021  0.057 -0.018  0.025                     
+## year13      -0.124 -0.102  0.032  0.016  0.032 -0.013  0.662              
+## sppSESE3    -0.276  0.282 -0.133 -0.211 -0.063 -0.098 -0.136 -0.040       
+## cr:year13    0.208 -0.009 -0.032 -0.016 -0.020  0.014 -0.609 -0.951 -0.007</code></pre>
 <pre class="r"><code>residual_plot &lt;- function(mod, val = 1) {
   resid &lt;- resid(mod, type = &quot;deviance&quot;)
   plot(
@@ -4291,28 +4291,28 @@ summary(ba_inc_mod)</code></pre>
 ## 
 ## Fixed effects:
 ##              Estimate Std. Error t value
-## (Intercept)  -2.42383    0.12226 -19.824
+## (Intercept)  -2.06670    0.11912 -17.350
 ## log(dbh)      1.48775    0.03912  38.031
 ## treatmentH40  0.54634    0.04639  11.777
 ## treatmentH80  0.17968    0.03261   5.510
 ## treatmentL40  0.53983    0.04900  11.017
 ## treatmentL80  0.16577    0.03193   5.191
-## cr            1.97811    0.17911  11.044
-## year08        0.35713    0.04610   7.747
+## cr            0.83279    0.18242   4.565
+## year13       -0.35713    0.04610  -7.747
 ## sppSESE3      0.23746    0.02934   8.094
-## cr:year08    -1.14532    0.21669  -5.286
+## cr:year13     1.14532    0.21669   5.286
 ## 
 ## Correlation of Fixed Effects:
-##             (Intr) lg(db) trtH40 trtH80 trtL40 trtL80 cr     year08 sSESE3
-## log(dbh)    -0.947                                                        
-## treatmntH40  0.049 -0.108                                                 
-## treatmntH80 -0.080 -0.038  0.326                                          
-## treatmntL40  0.185 -0.246  0.240  0.290                                   
-## treatmntL80 -0.045 -0.081  0.324  0.459  0.310                            
-## cr           0.001 -0.267 -0.060  0.039 -0.043  0.043                     
-## year08      -0.256  0.102 -0.032 -0.016 -0.032  0.013  0.476              
-## sppSESE3    -0.284  0.282 -0.133 -0.211 -0.063 -0.098 -0.147  0.040       
-## cr:year08    0.156  0.009  0.032  0.016  0.020 -0.014 -0.589 -0.951  0.007</code></pre>
+##             (Intr) lg(db) trtH40 trtH80 trtL40 trtL80 cr     year13 sSESE3
+## log(dbh)    -0.932                                                        
+## treatmntH40  0.038 -0.108                                                 
+## treatmntH80 -0.088 -0.038  0.326                                          
+## treatmntL40  0.177 -0.246  0.240  0.290                                   
+## treatmntL80 -0.041 -0.081  0.324  0.459  0.310                            
+## cr          -0.065 -0.251 -0.021  0.057 -0.018  0.025                     
+## year13      -0.124 -0.102  0.032  0.016  0.032 -0.013  0.662              
+## sppSESE3    -0.276  0.282 -0.133 -0.211 -0.063 -0.098 -0.136 -0.040       
+## cr:year13    0.208 -0.009 -0.032 -0.016 -0.020  0.014 -0.609 -0.951 -0.007</code></pre>
 <pre class="r"><code>sjPlot::tab_model(ba_inc_mod,
   dv.labels = &quot;BA increment&quot;,
   show.ci = FALSE,
@@ -4347,7 +4347,7 @@ p
 (Intercept)
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
--2.42
+-2.07
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.12
@@ -4431,7 +4431,7 @@ treatment [L80]
 cr
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.98
+0.83
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.18
@@ -4442,10 +4442,10 @@ cr
 </tr>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
-year [08]
+year [13]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.36
+-0.36
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.05
@@ -4470,10 +4470,10 @@ spp [SESE3]
 </tr>
 <tr>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:left; ">
-cr * year [08]
+cr * year [13]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
--1.15
+1.15
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.22
@@ -4895,20 +4895,17 @@ plot(
 
 points(resid ~ lev, data = filter(ba_inc_d, cooks &gt; 6 * mean(cooks)), pch = 16, col =3)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/05-analyzing-ba-increment-33-1.png" width="960" /></p>
-<pre class="r"><code>plot(ba_inc_d$lev,pch=16,col=&quot;red&quot;,ylim=c(0,1.2),las=1,ylab=&quot;Leverage/Cook&#39;s distance value&quot;)
+<pre class="r"><code>plot(ba_inc_d$lev,pch=16,col=&quot;red&quot;,ylim=c(0,2.75),las=1,ylab=&quot;Leverage/Cook&#39;s distance value&quot;)
 points(ba_inc_d$cooks,pch=17,col=&quot;blue&quot;)
-points(x=1650,y=1,pch=16,col=&quot;red&quot;)
-points(x=1650,y=0.8,pch=17,col=&quot;blue&quot;)
-text(x=1650,y=1,&quot;Leverage&quot;,adj=c(0,0.5))
-text(x=1650,y=0.8,&quot;Cook&#39;s distance&quot;,adj=c(0,0.5))</code></pre>
+legend(100, 2.5, c(&quot;Leverage&quot;, &quot;Cook&#39;s distance&quot;), col = c(&quot;red&quot;, &quot;blue&quot;), pch = c(16, 17))</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/05-analyzing-ba-increment-33-2.png" width="960" /></p>
 </div>
 <div id="random-effects-distribution" class="section level2">
 <h2>Random effects distribution</h2>
 <p>The distribution of random effects (plots) should be roughly normal.
-Here our distribution is skewed, <a href=""
-title="https://stats.stackexchange.com/a/366500">from what I’ve
-read</a>, this should not be a problem for estimates or their std’s.</p>
+Here our distribution is skewed, <a
+href="https://stats.stackexchange.com/a/366500">from what I’ve read</a>,
+this should not be a problem for estimates or their std’s.</p>
 <pre class="r"><code>hist(as.vector(unlist(ranef(ba_inc_mod)$tree_id)), col = 1)</code></pre>
 <p><img src="05_analyzing_ba_increment_files/figure-html/05-analyzing-ba-increment-34-1.png" width="672" /></p>
 </div>
@@ -4924,7 +4921,7 @@ above.</p>
 the linear log log model, the qq plot reveals similarly light tailed
 distribution.</p>
 <pre class="r"><code>glm_mod &lt;- glmer(
-  ba_inc_scaled ~ treatment + scale(dbh) + scale(cr) + spp + year + (1 | plot) + (1 | tree_id),
+  I(ba_inc1 + scale_val) ~ treatment + scale(dbh) + scale(cr) + spp + year + (1 | tree_id),
   data = test_d,
   family = Gamma(link = &quot;log&quot;)
 )
@@ -4934,6 +4931,16 @@ allFit(glm_mod)
 glm_converge &lt;- mixedup::converge_it(glm_mod)
 
 summary(glm_mod)
+
+emmeans(glm_converge, ~ dbh + spp + treatment, at = list(dbh = seq(10, 60, 5)), type = &quot;response&quot;) |&gt;
+  summary() |&gt;
+  as.data.frame() |&gt;
+  ggplot(aes(dbh, response, color = spp)) +
+    geom_line() +
+    facet_wrap(~treatment) +
+    geom_point(data = test_d, aes(dbh, ba_inc1))
+
+
 plot(predict(glm_mod), resid(glm_mod, type = &quot;deviance&quot;))</code></pre>
 </div>
 

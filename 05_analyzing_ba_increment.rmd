@@ -4,7 +4,7 @@ title: "BAI modeling"
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = TRUE, time_it = TRUE, cache.extra = "monkey")
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = TRUE, time_it = TRUE, cache.extra = "wombat")
 ```
 
 ```{r 05-analyzing-ba-increment-1}
@@ -50,7 +50,7 @@ test_d <- d_l %>%
     treat_method = str_extract(treatment, "C|H|L"),
     treat_density = str_extract(treatment, "C|40|80"),
     treat_status = if_else(str_detect(treatment, "C"), "unthinned", "thinned"),
-    year = factor(year, ordered = FALSE),
+    year = factor(year, ordered = FALSE, levels = c("08", "13")),
     cr = cr / 100
   ) %>%
   select(-c(h_dist, azi, rot, cc, x, y, live)) %>%
@@ -365,7 +365,7 @@ test_d %>%
 Basal area increment is expected to vary by dbh and crown ratio. We hope to see a treatment effect. Because of the interaction with year, I will try to model for the most recent increment period only.
 
 ```
-model a: scaled_ba_inc1 = exp((dbh) * treatment * spp),   distribution
+model a: scaled_ba_inc1 = exp((dbh) * treatment * spp), gamma distribution
 model b: scaled_ba_inc1 = exp((dbh) * treatment * spp), gaussian distribution
 model c: log(ba_inc1) = dbh * treatment * spp 
 model d: ba_inc1 = (log(dbh) + dbh) * treatment * spp
@@ -877,20 +877,14 @@ plot(
 
 points(resid ~ lev, data = filter(ba_inc_d, cooks > 6 * mean(cooks)), pch = 16, col =3)
 
-plot(ba_inc_d$lev,pch=16,col="red",ylim=c(0,1.2),las=1,ylab="Leverage/Cook's distance value")
+plot(ba_inc_d$lev,pch=16,col="red",ylim=c(0,2.75),las=1,ylab="Leverage/Cook's distance value")
 points(ba_inc_d$cooks,pch=17,col="blue")
-points(x=1650,y=1,pch=16,col="red")
-points(x=1650,y=0.8,pch=17,col="blue")
-text(x=1650,y=1,"Leverage",adj=c(0,0.5))
-text(x=1650,y=0.8,"Cook's distance",adj=c(0,0.5))
-
+legend(100, 2.5, c("Leverage", "Cook's distance"), col = c("red", "blue"), pch = c(16, 17))
 ```
 
 ## Random effects distribution
 
-The distribution of random effects (plots) should be roughly normal. Here our distribution is skewed, [from what I've read], this should not be a problem for estimates or their std's.
-
-[from what I've read]: (https://stats.stackexchange.com/a/366500)
+The distribution of random effects (plots) should be roughly normal. Here our distribution is skewed, [from what I've read](https://stats.stackexchange.com/a/366500), this should not be a problem for estimates or their std's.
 
 ```{r 05-analyzing-ba-increment-34}
 hist(as.vector(unlist(ranef(ba_inc_mod)$tree_id)), col = 1)
@@ -905,7 +899,7 @@ In looking at the results for the GLM model, it looks very similar to the linear
 ```{r 05-analyzing-ba-increment-35, eval=FALSE}
 
 glm_mod <- glmer(
-  ba_inc_scaled ~ treatment + scale(dbh) + scale(cr) + spp + year + (1 | plot) + (1 | tree_id),
+  I(ba_inc1 + scale_val) ~ treatment + scale(dbh) + scale(cr) + spp + year + (1 | tree_id),
   data = test_d,
   family = Gamma(link = "log")
 )
@@ -915,6 +909,16 @@ allFit(glm_mod)
 glm_converge <- mixedup::converge_it(glm_mod)
 
 summary(glm_mod)
+
+emmeans(glm_converge, ~ dbh + spp + treatment, at = list(dbh = seq(10, 60, 5)), type = "response") |>
+  summary() |>
+  as.data.frame() |>
+  ggplot(aes(dbh, response, color = spp)) +
+    geom_line() +
+    facet_wrap(~treatment) +
+    geom_point(data = test_d, aes(dbh, ba_inc1))
+
+
 plot(predict(glm_mod), resid(glm_mod, type = "deviance"))
 
 ```

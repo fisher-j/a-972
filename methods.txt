@@ -1,0 +1,6 @@
+# Methods outline
+
+We tested for significant differences between initial stand conditions including BA, density, average QMD, and average height. differences between treatments were tested using ANOVA and Kruskal-Wallis tests (n = 4) and followed up with post-hoc Tukey's tests and Dunn tests. Only heights were significantly different (ANOVA p = 0.004, Kruskal-Wallis p = 0.01) and a post-hoc Dunn test with Bonferroni correction revealed differences between initial conditions for plots in the C80 and L40 treatments (p = 0.041), and the L40 and L80 treatments (p = 0.050).
+
+BAI was analyzed using a mixed linear model. In addition to the aforementioned data cleaning, 11 outliers with greater than 2 mm annual negative increment were removed, as well as one outlier exhibiting very high positive annual increment. 
+

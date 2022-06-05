@@ -4531,7 +4531,7 @@ NA
 1105.628
 </td>
 <td style="text-align:right;">
-24.287
+24.289
 </td>
 <td style="text-align:left;">
 FALSE
@@ -5167,7 +5167,7 @@ NA
 4567155
 </td>
 <td style="text-align:right;">
-597.688
+591.037
 </td>
 <td style="text-align:right;">
 20.421
@@ -5262,7 +5262,7 @@ NA
 679.618
 </td>
 <td style="text-align:right;">
-22.382
+22.386
 </td>
 <td style="text-align:left;">
 FALSE
@@ -5533,7 +5533,7 @@ NA
 4567149
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-597.688
+591.037
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
 3.657
@@ -5628,7 +5628,7 @@ NA
 679.618
 </td>
 <td style="text-align:right;background-color: #EEE9E9 !important;">
-4.776
+4.779
 </td>
 <td style="text-align:left;background-color: #EEE9E9 !important;">
 FALSE
@@ -6071,42 +6071,40 @@ summary(bm1)</code></pre>
 ##    Data: bdmd
 ## 
 ##      AIC      BIC   logLik deviance df.resid 
-##    470.6    528.7   -225.3    450.6     2438 
+##    470.5    528.5   -225.2    450.5     2438 
 ## 
 ## Scaled residuals: 
 ##     Min      1Q  Median      3Q     Max 
-## -0.9134 -0.1523 -0.0594 -0.0430 30.2505 
+## -0.9237 -0.1514 -0.0593 -0.0429 30.2571 
 ## 
 ## Random effects:
 ##  Groups  Name        Variance  Std.Dev.
-##  tree_id (Intercept) 3.595e-06 0.001896
-##  plot    (Intercept) 9.947e-02 0.315396
+##  tree_id (Intercept) 1.722e-06 0.001312
+##  plot    (Intercept) 1.022e-01 0.319643
 ## Number of obs: 2448, groups:  tree_id, 1294; plot, 20
 ## 
 ## Fixed effects:
 ##              Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)   -6.9011     0.6398 -10.786  &lt; 2e-16 ***
-## treatmentH40   1.9912     0.6178   3.223 0.001267 ** 
-## treatmentH80   0.5098     0.6331   0.805 0.420658    
-## treatmentL40   2.2874     0.6247   3.661 0.000251 ***
-## treatmentL80   0.3528     0.6761   0.522 0.601744    
-## year18         0.5289     0.2720   1.945 0.051822 .  
-## d_inc2         0.7044     0.2633   2.675 0.007465 ** 
-## spp2SESE3      2.3877     0.3779   6.317 2.66e-10 ***
+## (Intercept)   -6.9036     0.6403 -10.782  &lt; 2e-16 ***
+## treatmentH40   1.9812     0.6193   3.199  0.00138 ** 
+## treatmentH80   0.5068     0.6344   0.799  0.42436    
+## treatmentL40   2.2839     0.6254   3.652  0.00026 ***
+## treatmentL80   0.3516     0.6771   0.519  0.60359    
+## year18         0.5184     0.2720   1.906  0.05669 .  
+## d_inc2         0.7228     0.2663   2.714  0.00665 ** 
+## spp2SESE3      2.3864     0.3779   6.315 2.69e-10 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Correlation of Fixed Effects:
 ##             (Intr) trtH40 trtH80 trtL40 trtL80 year18 d_inc2
-## treatmntH40 -0.657                                          
+## treatmntH40 -0.655                                          
 ## treatmntH80 -0.638  0.734                                   
-## treatmntL40 -0.696  0.762  0.716                            
-## treatmntL80 -0.633  0.683  0.659  0.670                     
-## year18      -0.270  0.031  0.001  0.033  0.002              
-## d_inc2      -0.147 -0.223 -0.056 -0.151 -0.028 -0.047       
-## spp2SESE3   -0.443 -0.042 -0.084  0.031 -0.032  0.033 -0.109
-## optimizer (Nelder_Mead) convergence code: 0 (OK)
-## Model failed to converge with max|grad| = 0.00254843 (tol = 0.002, component 1)</code></pre>
+## treatmntL40 -0.696  0.761  0.716                            
+## treatmntL80 -0.633  0.682  0.658  0.670                     
+## year18      -0.265  0.034  0.002  0.032  0.002              
+## d_inc2      -0.150 -0.225 -0.059 -0.147 -0.028 -0.058       
+## spp2SESE3   -0.442 -0.043 -0.083  0.031 -0.032  0.031 -0.106</code></pre>
 <p>check <code>allFit</code> output to see if this model can be
 considered reliable: The estimated coefficients are very congruent, I
 think we can trust this model.</p>
@@ -6120,13 +6118,13 @@ think we can trust this model.</p>
 ## nloptwrap.NLOPT_LN_BOBYQA : [OK]</code></pre>
 <pre class="r"><code>summary(bm1.all)$fixef</code></pre>
 <pre><code>##                               (Intercept) treatmentH40 treatmentH80 treatmentL40 treatmentL80    year18    d_inc2 spp2SESE3
-## bobyqa                          -6.901056     1.991354    0.5098966     2.287555    0.3527695 0.5289334 0.7041794  2.387779
-## Nelder_Mead                     -6.901244     1.991535    0.5101163     2.287773    0.3530073 0.5289660 0.7041613  2.387763
-## nlminbwrap                      -6.901057     1.991365    0.5098965     2.287560    0.3527662 0.5289365 0.7041867  2.387764
-## nmkbw                           -6.901210     1.991552    0.5101248     2.287759    0.3528862 0.5290002 0.7040826  2.387750
-## optimx.L-BFGS-B                 -6.901063     1.991389    0.5099195     2.287576    0.3527855 0.5289183 0.7041884  2.387755
-## nloptwrap.NLOPT_LN_NELDERMEAD   -6.900983     1.991237    0.5097061     2.287448    0.3525965 0.5288553 0.7041666  2.387926
-## nloptwrap.NLOPT_LN_BOBYQA       -6.896602     1.986645    0.5062966     2.283225    0.3422869 0.5295844 0.7037227  2.388498</code></pre>
+## bobyqa                          -6.903534     1.981188    0.5067545     2.283918    0.3515213 0.5184125 0.7227652  2.386437
+## Nelder_Mead                     -6.903571     1.981203    0.5067819     2.283969    0.3516005 0.5184095 0.7227535  2.386433
+## nlminbwrap                      -6.903526     1.981186    0.5067667     2.283906    0.3515183 0.5184168 0.7227679  2.386431
+## nmkbw                           -6.903210     1.980946    0.5066266     2.283681    0.3514576 0.5183185 0.7227949  2.386259
+## optimx.L-BFGS-B                 -6.903556     1.981222    0.5067796     2.283943    0.3515371 0.5183999 0.7227723  2.386430
+## nloptwrap.NLOPT_LN_NELDERMEAD   -6.903619     1.981097    0.5065997     2.283763    0.3515658 0.5184204 0.7228961  2.386459
+## nloptwrap.NLOPT_LN_BOBYQA       -6.899346     1.975271    0.5002513     2.277868    0.3429832 0.5189579 0.7233367  2.387072</code></pre>
 <p>This model seems to be working. Now I’ll do more model selection,
 testing for interactions. All of these models will include
 <code>plot</code> as the only random effect. I compare performance
@@ -6463,31 +6461,31 @@ p
 treatment [H40]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-7.27
+7.25
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.002</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-3.88
+3.87
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-<strong>0.044</strong>
+<strong>0.047</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-6.92
+6.88
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 <strong>0.002</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-8.11
+8.08
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
 <strong>0.001</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
-7.53
+7.49
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
 <strong>0.001</strong>
@@ -6507,16 +6505,16 @@ treatment [H80]
 0.74
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.693
+0.695
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 1.52
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
-0.514
+0.515
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-1.71
+1.70
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
 0.405
@@ -6525,7 +6523,7 @@ treatment [H80]
 1.66
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
-0.426
+0.428
 </td>
 </tr>
 <tr>
@@ -6533,25 +6531,25 @@ treatment [H80]
 treatment [L40]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-9.74
+9.72
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>&lt;0.001</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-3.72
+3.77
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.063
+0.064
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-8.74
+8.70
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 <strong>0.001</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-11.84
+11.81
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
 <strong>&lt;0.001</strong>
@@ -6577,13 +6575,13 @@ treatment [L80]
 0.49
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.426
+0.434
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.37
+1.36
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
-0.651
+0.652
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
 1.51
@@ -6595,7 +6593,7 @@ treatment [L80]
 1.46
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
-0.577
+0.578
 </td>
 </tr>
 <tr>
@@ -6606,31 +6604,31 @@ year [18]
 0.00
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.931
+0.819
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.00
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.804
+0.996
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 0.00
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
-0.708
+0.833
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
 0.00
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-0.802
+0.785
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
-1.59
+1.58
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
-0.091
+0.098
 </td>
 </tr>
 <tr>
@@ -6638,31 +6636,31 @@ year [18]
 spp2 [SESE3]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-4.68
+4.70
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.004</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-3.19
+3.21
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-<strong>0.008</strong>
+<strong>0.009</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-17.44
+17.45
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 <strong>0.007</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-3.14
+3.16
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
 <strong>0.008</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
-10.94
+10.93
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
 <strong>&lt;0.001</strong>
@@ -6695,7 +6693,7 @@ ba inc2
 <strong>0.001</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
-1.31
+1.32
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
 <strong>0.001</strong>
@@ -6706,28 +6704,28 @@ ba inc2
 year [18] * spp2 [SESE3]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-214489280.52
+207204179.09
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.927
+0.810
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-438073317.74
+430444174.26
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.913
+0.996
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-176408365.13
+176162945.65
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
-0.692
+0.824
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-164197123.42
+162176530.88
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-0.792
+0.774
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
 </td>
@@ -6770,10 +6768,10 @@ treatment [H40] * year<br>[18]
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-158020274.50
+160239149.57
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.881
+0.998
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
@@ -6797,10 +6795,10 @@ treatment [H80] * year<br>[18]
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-193329730.57
+196064554.78
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.879
+0.998
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
@@ -6824,10 +6822,10 @@ treatment [L40] * year<br>[18]
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-373408291.96
+365638658.29
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.875
+0.997
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
@@ -6851,10 +6849,10 @@ treatment [L80] * year<br>[18]
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-308241711.23
+312339568.55
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.877
+0.997
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
@@ -6882,7 +6880,7 @@ d inc2
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-19.14
+19.19
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 <strong>0.010</strong>
@@ -6912,7 +6910,7 @@ spp2 [SESE3] * d inc2
 0.09
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
-<strong>0.041</strong>
+<strong>0.042</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
 </td>
@@ -7042,7 +7040,7 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 0.957 / 0.959
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-0.426 / 0.443
+0.425 / 0.443
 </td>
 </tr>
 <tr>
@@ -7050,19 +7048,19 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 AIC
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-447.030
+447.075
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-447.848
+448.016
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-448.252
+448.281
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-448.313
+448.348
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-465.884
+465.811
 </td>
 </tr>
 </table>
@@ -7167,31 +7165,31 @@ p
 treatment [H40]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-5.37
+5.35
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.006</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-5.85
+5.83
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.004</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-5.24
+5.21
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 <strong>0.007</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-4.02
+4.00
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
 <strong>0.041</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
-5.41
+5.38
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
 <strong>0.005</strong>
@@ -7211,25 +7209,25 @@ treatment [H80]
 1.20
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.779
+0.780
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 1.12
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
-0.862
+0.863
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
 0.77
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-0.731
+0.729
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
 1.16
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
-0.816
+0.819
 </td>
 </tr>
 <tr>
@@ -7237,31 +7235,31 @@ treatment [H80]
 treatment [L40]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-7.06
+7.04
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.002</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-8.34
+8.32
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.001</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-6.64
+6.61
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 <strong>0.003</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-3.94
+3.99
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-0.053
+0.050
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
-7.53
+7.52
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
 <strong>0.001</strong>
@@ -7287,19 +7285,19 @@ treatment [L80]
 1.03
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
-0.967
+0.968
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
 0.58
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-0.516
+0.514
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
 1.07
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
-0.918
+0.919
 </td>
 </tr>
 <tr>
@@ -7331,10 +7329,10 @@ year [18]
 <strong>0.002</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
-1.54
+1.52
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
-0.115
+0.123
 </td>
 </tr>
 <tr>
@@ -7342,13 +7340,13 @@ year [18]
 spp2 [SESE3]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-4.26
+4.28
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-<strong>0.003</strong>
+<strong>0.002</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-3.26
+3.28
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.005</strong>
@@ -7360,13 +7358,13 @@ spp2 [SESE3]
 <strong>0.009</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-3.31
+3.33
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-<strong>0.006</strong>
+<strong>0.005</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
-10.05
+10.04
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
 <strong>&lt;0.001</strong>
@@ -7377,13 +7375,13 @@ spp2 [SESE3]
 ba inc2
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-2.39
+2.38
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.020</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-1.32
+1.33
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.001</strong>
@@ -7399,7 +7397,7 @@ ba inc2
 <strong>0.001</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
-1.33
+1.34
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  1">
 <strong>0.001</strong>
@@ -7410,28 +7408,28 @@ ba inc2
 year [18] * spp2 [SESE3]
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-42.34
+41.98
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.001</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-33.93
+33.61
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 <strong>0.002</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-37.42
+37.04
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 <strong>0.001</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-30.21
+29.78
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-<strong>0.001</strong>
+<strong>0.002</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
 </td>
@@ -7446,7 +7444,7 @@ spp2 [SESE3] * ba inc2
 0.54
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-0.106
+0.107
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
@@ -7478,7 +7476,7 @@ d inc2
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  ">
-6.22
+6.24
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 <strong>0.033</strong>
@@ -7508,7 +7506,7 @@ spp2 [SESE3] * d inc2
 0.30
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
-0.171
+0.175
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
 </td>
@@ -7536,10 +7534,10 @@ treatment [H40] * year<br>[18]
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-3.46
+3.48
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-0.191
+0.189
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
 </td>
@@ -7563,10 +7561,10 @@ treatment [H80] * year<br>[18]
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-4.00
+4.02
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-0.171
+0.170
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
 </td>
@@ -7590,10 +7588,10 @@ treatment [L40] * year<br>[18]
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-7.43
+7.20
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-<strong>0.042</strong>
+<strong>0.045</strong>
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
 </td>
@@ -7617,10 +7615,10 @@ treatment [L80] * year<br>[18]
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col7">
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col8">
-5.75
+5.78
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  col9">
-0.114
+0.113
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; text-align:center;  0">
 </td>
@@ -7743,7 +7741,7 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 0.573 / 0.604
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-0.550 / 0.582
+0.549 / 0.582
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
 0.387 / 0.430
@@ -7754,19 +7752,19 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 AIC
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-449.469
+449.513
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-450.507
+450.540
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-451.569
+451.595
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-452.390
+452.550
 </td>
 <td style=" padding:0.2cm; text-align:left; vertical-align:top; padding-top:0.1cm; padding-bottom:0.1cm; text-align:left;" colspan="2">
-466.854
+466.778
 </td>
 </tr>
 </table>
@@ -7993,10 +7991,10 @@ emmip(bbdm[[4]],
 <pre class="r"><code>emmeans(bbdm[[4]], pairwise ~ treatment, type = &quot;response&quot;)</code></pre>
 <pre><code>## $emmeans
 ##  treatment    prob      SE  df asymp.LCL asymp.UCL
-##  C         0.00502 0.00275 Inf   0.00172    0.0146
-##  H40       0.02869 0.01285 Inf   0.01182    0.0680
+##  C         0.00503 0.00275 Inf   0.00172    0.0146
+##  H40       0.02861 0.01283 Inf   0.01178    0.0678
 ##  H80       0.00601 0.00303 Inf   0.00223    0.0161
-##  L40       0.04042 0.01780 Inf   0.01684    0.0938
+##  L40       0.04035 0.01777 Inf   0.01681    0.0937
 ##  L80       0.00560 0.00299 Inf   0.00196    0.0159
 ## 
 ## Results are averaged over the levels of: year, spp2 
@@ -8005,16 +8003,16 @@ emmip(bbdm[[4]],
 ## 
 ## $contrasts
 ##  contrast  odds.ratio     SE  df null z.ratio p.value
-##  C / H40        0.171 0.1040 Inf    1  -2.903  0.0304
-##  C / H80        0.836 0.5334 Inf    1  -0.281  0.9986
-##  C / L40        0.120 0.0737 Inf    1  -3.450  0.0051
-##  C / L80        0.897 0.5978 Inf    1  -0.164  0.9998
-##  H40 / H80      4.888 2.6567 Inf    1   2.919  0.0289
-##  H40 / L40      0.701 0.3672 Inf    1  -0.678  0.9613
-##  H40 / L80      5.244 3.0995 Inf    1   2.804  0.0404
-##  H80 / L40      0.143 0.0803 Inf    1  -3.468  0.0048
-##  H80 / L80      1.073 0.6636 Inf    1   0.114  1.0000
-##  L40 / L80      7.479 4.4982 Inf    1   3.345  0.0073
+##  C / H40        0.172 0.1045 Inf    1  -2.896  0.0310
+##  C / H80        0.836 0.5340 Inf    1  -0.280  0.9987
+##  C / L40        0.120 0.0739 Inf    1  -3.446  0.0052
+##  C / L80        0.897 0.5979 Inf    1  -0.163  0.9998
+##  H40 / H80      4.875 2.6503 Inf    1   2.914  0.0294
+##  H40 / L40      0.700 0.3670 Inf    1  -0.679  0.9609
+##  H40 / L80      5.227 3.0901 Inf    1   2.797  0.0412
+##  H80 / L40      0.144 0.0805 Inf    1  -3.465  0.0048
+##  H80 / L80      1.072 0.6633 Inf    1   0.113  1.0000
+##  L40 / L80      7.462 4.4874 Inf    1   3.342  0.0074
 ## 
 ## Results are averaged over the levels of: year, spp2 
 ## P value adjustment: tukey method for comparing a family of 5 estimates 
@@ -8024,16 +8022,16 @@ emmip(bbdm[[4]],
 
 pairs(mean_treat)</code></pre>
 <pre><code>##  contrast  odds.ratio     SE  df null z.ratio p.value
-##  C / H40        0.171 0.1040 Inf    1  -2.903  0.0304
-##  C / H80        0.836 0.5334 Inf    1  -0.281  0.9986
-##  C / L40        0.120 0.0737 Inf    1  -3.450  0.0051
-##  C / L80        0.897 0.5978 Inf    1  -0.164  0.9998
-##  H40 / H80      4.888 2.6567 Inf    1   2.919  0.0289
-##  H40 / L40      0.701 0.3672 Inf    1  -0.678  0.9613
-##  H40 / L80      5.244 3.0995 Inf    1   2.804  0.0404
-##  H80 / L40      0.143 0.0803 Inf    1  -3.468  0.0048
-##  H80 / L80      1.073 0.6636 Inf    1   0.114  1.0000
-##  L40 / L80      7.479 4.4982 Inf    1   3.345  0.0073
+##  C / H40        0.172 0.1045 Inf    1  -2.896  0.0310
+##  C / H80        0.836 0.5340 Inf    1  -0.280  0.9987
+##  C / L40        0.120 0.0739 Inf    1  -3.446  0.0052
+##  C / L80        0.897 0.5979 Inf    1  -0.163  0.9998
+##  H40 / H80      4.875 2.6503 Inf    1   2.914  0.0294
+##  H40 / L40      0.700 0.3670 Inf    1  -0.679  0.9609
+##  H40 / L80      5.227 3.0901 Inf    1   2.797  0.0412
+##  H80 / L40      0.144 0.0805 Inf    1  -3.465  0.0048
+##  H80 / L80      1.072 0.6633 Inf    1   0.113  1.0000
+##  L40 / L80      7.462 4.4874 Inf    1   3.342  0.0074
 ## 
 ## Results are averaged over the levels of: year, spp2 
 ## P value adjustment: tukey method for comparing a family of 5 estimates 
@@ -8042,11 +8040,11 @@ pairs(mean_treat)</code></pre>
 <p><img src="09_damage_files/figure-html/09-damage-28-1.png" width="672" /></p>
 <pre class="r"><code>mean_treat %&gt;% multcomp::cld(reversed = TRUE)</code></pre>
 <pre><code>##  treatment    prob      SE  df asymp.LCL asymp.UCL .group
-##  L40       0.04042 0.01780 Inf   0.01684    0.0938  1    
-##  H40       0.02869 0.01285 Inf   0.01182    0.0680  1    
+##  L40       0.04035 0.01777 Inf   0.01681    0.0937  1    
+##  H40       0.02861 0.01283 Inf   0.01178    0.0678  1    
 ##  H80       0.00601 0.00303 Inf   0.00223    0.0161   2   
 ##  L80       0.00560 0.00299 Inf   0.00196    0.0159   2   
-##  C         0.00502 0.00275 Inf   0.00172    0.0146   2   
+##  C         0.00503 0.00275 Inf   0.00172    0.0146   2   
 ## 
 ## Results are averaged over the levels of: year, spp2 
 ## Confidence level used: 0.95 
@@ -8215,72 +8213,75 @@ start</p>
 
 
 get_dropped(wd, get_cond(2)) </code></pre>
-<pre><code>## # A tibble: 8 x 35
+<pre><code>## # A tibble: 8 x 37
 ## # Groups:   tree_id [2]
-##      id tree_id plot  treatment spp   year    dbh    ht    cr status bear  rot   notes         cc cond     live     ba  d_inc2 ht_inc2 ba_inc2  d_inc1 ht_inc1 ba_inc1 sdi_plot  ht_p bear_new bear_cum spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
-##   &lt;int&gt; &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;      &lt;int&gt; &lt;chr&gt;    &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;    &lt;lgl&gt;    &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
-## 1     1 C1.4204 C1    C         SESE3 init   38.9  10.7    10      1 TRUE  FALSE SNAGTOP       NA &quot;&quot;       TRUE  1186. NA       NA       NA     0        0        0       1186.  10.7 TRUE     TRUE     SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 2     1 C1.4204 C1    C         SESE3 08     38.9  10.7    10      1 TRUE  FALSE SNAGTOP       NA &quot;2&quot;      TRUE  1186.  0        0        0     0        0        0       1186.  10.7 TRUE     TRUE     SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 3     1 C1.4204 C1    C         SESE3 13     38.9  10.7    15      1 TRUE  NA    &lt;NA&gt;           4 &quot;2,7,18&quot; TRUE  1186.  0        0        0    -0.0508   0       -3.09    1248.  10.7 FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 4     1 C1.4204 C1    C         SESE3 18     38.6  10.7    NA      1 TRUE  NA    &lt;NA&gt;          NA &quot;3,4,18&quot; TRUE  1171. -0.0508   0       -3.09 NA       NA       NA       1250.  10.7 FALSE    FALSE    SESE3 TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  TRUE   
-## 5     2 C3.4567 C3    C         SESE3 init   26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;          NA &quot;&quot;       TRUE   569. NA       NA       NA     0        0        0       1441.  22.2 FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 6     2 C3.4567 C3    C         SESE3 08     26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;          NA &quot;&quot;       TRUE   569.  0        0        0     0.660   -0.427   29.6     1441.  22.2 FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 7     2 C3.4567 C3    C         SESE3 13     30.2  20.1    20      1 FALSE NA    &lt;NA&gt;           4 &quot;1,2,4&quot;  TRUE   718.  0.660   -0.427   29.6   0.457    0.244   22.5     1416.  20.1 FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 8     2 C3.4567 C3    C         SESE3 18     32.5  21.3    20      1 FALSE NA    Broken Top    NA &quot;3&quot;      TRUE   830.  0.457    0.244   22.5  NA       NA       NA       1358.  21.3 FALSE    FALSE    SESE3 TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  TRUE</code></pre>
+##      id tree_id plot  treatment spp   year  h_dist   azi   dbh    ht    cr status bear  rot   notes    cc cond  live     ba  d_inc2 ht_inc2 ba_inc2  d_inc1 ht_inc1 ba_inc1      x      y sdi_plot  ht_p spp2 
+##   &lt;int&gt; &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;
+## 1     1 C1.4204 C1    C         SESE3 init   15.3    246  38.9  10.7    10      1 TRUE  FALSE SNAG~    NA &quot;&quot;    TRUE  1186. NA       NA       NA     0        0        0    4.10e5 4.57e6    1186.  10.7 SESE3
+## 2     1 C1.4204 C1    C         SESE3 08     15.3    246  38.9  10.7    10      1 TRUE  FALSE SNAG~    NA &quot;2&quot;   TRUE  1186.  0        0        0     0        0        0    4.10e5 4.57e6    1186.  10.7 SESE3
+## 3     1 C1.4204 C1    C         SESE3 13     15.3    246  38.9  10.7    15      1 TRUE  NA    &lt;NA&gt;      4 &quot;2,7~ TRUE  1186.  0        0        0    -0.0508   0       -3.09 4.10e5 4.57e6    1248.  10.7 SESE3
+## 4     1 C1.4204 C1    C         SESE3 18     15.3    246  38.6  10.7    NA      1 TRUE  NA    &lt;NA&gt;     NA &quot;3,4~ TRUE  1171. -0.0508   0       -3.09 NA       NA       NA    4.10e5 4.57e6    1250.  10.7 SESE3
+## 5     2 C3.4567 C3    C         SESE3 init    9.78   326  26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;     NA &quot;&quot;    TRUE   569. NA       NA       NA     0        0        0    4.10e5 4.57e6    1441.  22.2 SESE3
+## 6     2 C3.4567 C3    C         SESE3 08      9.78   326  26.9  22.2    30      1 FALSE FALSE &lt;NA&gt;     NA &quot;&quot;    TRUE   569.  0        0        0     0.660   -0.427   29.6  4.10e5 4.57e6    1441.  22.2 SESE3
+## 7     2 C3.4567 C3    C         SESE3 13      9.78   326  30.2  20.1    20      1 FALSE NA    &lt;NA&gt;      4 &quot;1,2~ TRUE   718.  0.660   -0.427   29.6   0.457    0.244   22.5  4.10e5 4.57e6    1416.  20.1 SESE3
+## 8     2 C3.4567 C3    C         SESE3 18      9.78   326  32.5  21.3    20      1 FALSE NA    Brok~    NA &quot;3&quot;   TRUE   830.  0.457    0.244   22.5  NA       NA       NA    4.10e5 4.57e6    1358.  21.3 SESE3
+## # ... with 7 more variables: bt_new &lt;lgl&gt;, bt_cum &lt;lgl&gt;, bs_new &lt;lgl&gt;, bs_cum &lt;lgl&gt;, wt_new &lt;lgl&gt;, wt_cum &lt;lgl&gt;, dropped &lt;lgl&gt;</code></pre>
 <pre class="r"><code>get_dropped(wd, get_cond(3)) </code></pre>
-<pre><code>## # A tibble: 20 x 35
+<pre><code>## # A tibble: 20 x 37
 ## # Groups:   tree_id [5]
-##       id tree_id   plot  treatment spp   year    dbh    ht    cr status bear  rot   notes                     cc cond  live     ba  d_inc2 ht_inc2 ba_inc2  d_inc1 ht_inc1 ba_inc1 sdi_plot  ht_p bear_new bear_cum spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
-##    &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;                  &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;    &lt;lgl&gt;    &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
-##  1     1 1H40.1908 1H40  H40       SESE3 init   16.8  4.27     5      1 FALSE FALSE BROKEN TOP                NA &quot;&quot;    TRUE   221. NA       NA       NA     0        0        0       1090.  4.27 FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-##  2     1 1H40.1908 1H40  H40       SESE3 08     16.8  4.27     5     31 FALSE FALSE BROKEN TOP                NA &quot;3,3~ TRUE   221.  0        0        0    -0.0508  NA       -1.33     449.  4.27 FALSE    FALSE    SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
-##  3     1 1H40.1908 1H40  H40       SESE3 13     16.5 NA       NA      5 FALSE NA    dead, no sprouts          -1 &quot;&quot;    FALSE  214. -0.0508  NA       -1.33 NA       NA       NA        484. NA    FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  TRUE   
-##  4     1 1H40.1908 1H40  H40       SESE3 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                      NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA        556. NA    FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-##  5     2 2H40.3064 2H40  H40       SESE3 init   34.3 24.1     15      1 TRUE  FALSE X                         NA &quot;&quot;    TRUE   923. NA       NA       NA     0        0        0       1706. 24.1  TRUE     TRUE     SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-##  6     2 2H40.3064 2H40  H40       SESE3 08     34.3 24.1     15      1 TRUE  FALSE X                         NA &quot;&quot;    TRUE   923.  0        0        0     0.0508  -3.84     2.75     711. 24.1  TRUE     TRUE     SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-##  7     2 2H40.3064 2H40  H40       SESE3 13     34.5  4.88     0      6 FALSE NA    Broken tops dead; mea~    -1 &quot;8,3~ FALSE  937.  0.0508  -3.84     2.75 NA       NA       NA        805.  4.88 FALSE    FALSE    SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
-##  8     2 2H40.3064 2H40  H40       SESE3 18     NA   NA       NA      6 FALSE NA    &lt;NA&gt;                      NA &quot;8,3~ FALSE   NA  NA       NA       NA    NA       NA       NA        983. NA    FALSE    FALSE    SESE3 FALSE  TRUE   FALSE  TRUE   FALSE  FALSE  TRUE   
-##  9     3 4H80.3975 4H80  H80       PSMEM init   19.8 18.9     15      1 FALSE FALSE X                         NA &quot;&quot;    TRUE   308. NA       NA       NA     0        0        0       1345. 18.9  FALSE    FALSE    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 10     3 4H80.3975 4H80  H80       PSMEM 08     19.8 18.9     15      1 FALSE FALSE X                         NA &quot;&quot;    TRUE   308.  0        0        0    -0.0508  -1.04    -1.57    1063. 18.9  FALSE    FALSE    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 11     3 4H80.3975 4H80  H80       PSMEM 13     19.6 13.7      0      6 FALSE NA    &lt;NA&gt;                      -1 &quot;3&quot;   FALSE  300. -0.0508  -1.04    -1.57 NA       NA       NA       1162. 13.7  FALSE    FALSE    PSMEM TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  FALSE  
-## 12     3 4H80.3975 4H80  H80       PSMEM 18     NA   NA       NA      6 FALSE NA    &lt;NA&gt;                      NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA       1264. NA    FALSE    FALSE    PSMEM FALSE  TRUE   FALSE  FALSE  FALSE  FALSE  TRUE   
-## 13     4 4H80.4027 4H80  H80       PSMEM init   14.2 17.7     15      1 FALSE FALSE X                         NA &quot;&quot;    TRUE   159. NA       NA       NA     0        0        0       1345. 17.7  FALSE    FALSE    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 14     4 4H80.4027 4H80  H80       PSMEM 08     14.2 17.7     15      1 FALSE FALSE X                         NA &quot;&quot;    TRUE   159.  0        0        0     0.0508  -0.975    1.15    1063. 17.7  FALSE    FALSE    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 15     4 4H80.4027 4H80  H80       PSMEM 13     14.5 12.8      0      5 FALSE NA    &lt;NA&gt;                      -1 &quot;3&quot;   FALSE  165.  0.0508  -0.975    1.15 NA       NA       NA       1162. 12.8  FALSE    FALSE    PSMEM TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  FALSE  
-## 16     4 4H80.4027 4H80  H80       PSMEM 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                      NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA       1264. NA    FALSE    FALSE    PSMEM FALSE  TRUE   FALSE  FALSE  FALSE  FALSE  TRUE   
-## 17     5 C2.4295   C2    C         PSMEM init   30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;                      NA &quot;&quot;    TRUE   730. NA       NA       NA     0        0        0       1192. 24.4  FALSE    FALSE    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 18     5 C2.4295   C2    C         PSMEM 08     30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;                      NA &quot;&quot;    TRUE   730.  0        0        0     0.406   -0.366   20.1     1192. 24.4  FALSE    FALSE    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 19     5 C2.4295   C2    C         PSMEM 13     32.5 22.6     15      1 FALSE NA    frass; potential brok~     3 &quot;3&quot;   TRUE   830.  0.406   -0.366   20.1   0.305   NA       15.9     1246. 22.6  FALSE    FALSE    PSMEM TRUE   TRUE   FALSE  FALSE  FALSE  FALSE  FALSE  
-## 20     5 C2.4295   C2    C         PSMEM 18     34.0 NA       NA      1 FALSE NA    &lt;NA&gt;                      NA &quot;&quot;    TRUE   910.  0.305   NA       15.9  NA       NA       NA       1217. NA    FALSE    FALSE    PSMEM FALSE  TRUE   FALSE  FALSE  FALSE  FALSE  TRUE</code></pre>
+##       id tree_id   plot  treatment spp   year  h_dist   azi   dbh    ht    cr status bear  rot   notes       cc cond  live     ba  d_inc2 ht_inc2 ba_inc2  d_inc1 ht_inc1 ba_inc1      x      y sdi_plot  ht_p
+##    &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;    &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
+##  1     1 1H40.1908 1H40  H40       SESE3 init   14.2     52  16.8  4.27     5      1 FALSE FALSE BROKEN ~    NA &quot;&quot;    TRUE   221. NA       NA       NA     0        0        0    4.10e5 4.57e6    1090.  4.27
+##  2     1 1H40.1908 1H40  H40       SESE3 08     14.2     52  16.8  4.27     5     31 FALSE FALSE BROKEN ~    NA &quot;3,3~ TRUE   221.  0        0        0    -0.0508  NA       -1.33 4.10e5 4.57e6     449.  4.27
+##  3     1 1H40.1908 1H40  H40       SESE3 13     14.2     52  16.5 NA       NA      5 FALSE NA    dead, n~    -1 &quot;&quot;    FALSE  214. -0.0508  NA       -1.33 NA       NA       NA    4.10e5 4.57e6     484. NA   
+##  4     1 1H40.1908 1H40  H40       SESE3 18     14.2     52  NA   NA       NA      5 FALSE NA    &lt;NA&gt;        NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA    4.10e5 4.57e6     556. NA   
+##  5     2 2H40.3064 2H40  H40       SESE3 init   10.7    147  34.3 24.1     15      1 TRUE  FALSE X           NA &quot;&quot;    TRUE   923. NA       NA       NA     0        0        0    4.10e5 4.57e6    1706. 24.1 
+##  6     2 2H40.3064 2H40  H40       SESE3 08     10.7    147  34.3 24.1     15      1 TRUE  FALSE X           NA &quot;&quot;    TRUE   923.  0        0        0     0.0508  -3.84     2.75 4.10e5 4.57e6     711. 24.1 
+##  7     2 2H40.3064 2H40  H40       SESE3 13     10.7    147  34.5  4.88     0      6 FALSE NA    Broken ~    -1 &quot;8,3~ FALSE  937.  0.0508  -3.84     2.75 NA       NA       NA    4.10e5 4.57e6     805.  4.88
+##  8     2 2H40.3064 2H40  H40       SESE3 18     10.7    147  NA   NA       NA      6 FALSE NA    &lt;NA&gt;        NA &quot;8,3~ FALSE   NA  NA       NA       NA    NA       NA       NA    4.10e5 4.57e6     983. NA   
+##  9     3 4H80.3975 4H80  H80       PSMEM init    9.51    68  19.8 18.9     15      1 FALSE FALSE X           NA &quot;&quot;    TRUE   308. NA       NA       NA     0        0        0    4.10e5 4.57e6    1345. 18.9 
+## 10     3 4H80.3975 4H80  H80       PSMEM 08      9.51    68  19.8 18.9     15      1 FALSE FALSE X           NA &quot;&quot;    TRUE   308.  0        0        0    -0.0508  -1.04    -1.57 4.10e5 4.57e6    1063. 18.9 
+## 11     3 4H80.3975 4H80  H80       PSMEM 13      9.51    68  19.6 13.7      0      6 FALSE NA    &lt;NA&gt;        -1 &quot;3&quot;   FALSE  300. -0.0508  -1.04    -1.57 NA       NA       NA    4.10e5 4.57e6    1162. 13.7 
+## 12     3 4H80.3975 4H80  H80       PSMEM 18      9.51    68  NA   NA       NA      6 FALSE NA    &lt;NA&gt;        NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA    4.10e5 4.57e6    1264. NA   
+## 13     4 4H80.4027 4H80  H80       PSMEM init   13.2    295  14.2 17.7     15      1 FALSE FALSE X           NA &quot;&quot;    TRUE   159. NA       NA       NA     0        0        0    4.10e5 4.57e6    1345. 17.7 
+## 14     4 4H80.4027 4H80  H80       PSMEM 08     13.2    295  14.2 17.7     15      1 FALSE FALSE X           NA &quot;&quot;    TRUE   159.  0        0        0     0.0508  -0.975    1.15 4.10e5 4.57e6    1063. 17.7 
+## 15     4 4H80.4027 4H80  H80       PSMEM 13     13.2    295  14.5 12.8      0      5 FALSE NA    &lt;NA&gt;        -1 &quot;3&quot;   FALSE  165.  0.0508  -0.975    1.15 NA       NA       NA    4.10e5 4.57e6    1162. 12.8 
+## 16     4 4H80.4027 4H80  H80       PSMEM 18     13.2    295  NA   NA       NA      5 FALSE NA    &lt;NA&gt;        NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA    4.10e5 4.57e6    1264. NA   
+## 17     5 C2.4295   C2    C         PSMEM init   10.8    164  30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;        NA &quot;&quot;    TRUE   730. NA       NA       NA     0        0        0    4.10e5 4.57e6    1192. 24.4 
+## 18     5 C2.4295   C2    C         PSMEM 08     10.8    164  30.5 24.4     20      1 FALSE FALSE &lt;NA&gt;        NA &quot;&quot;    TRUE   730.  0        0        0     0.406   -0.366   20.1  4.10e5 4.57e6    1192. 24.4 
+## 19     5 C2.4295   C2    C         PSMEM 13     10.8    164  32.5 22.6     15      1 FALSE NA    frass; ~     3 &quot;3&quot;   TRUE   830.  0.406   -0.366   20.1   0.305   NA       15.9  4.10e5 4.57e6    1246. 22.6 
+## 20     5 C2.4295   C2    C         PSMEM 18     10.8    164  34.0 NA       NA      1 FALSE NA    &lt;NA&gt;        NA &quot;&quot;    TRUE   910.  0.305   NA       15.9  NA       NA       NA    4.10e5 4.57e6    1217. NA   
+## # ... with 8 more variables: spp2 &lt;chr&gt;, bt_new &lt;lgl&gt;, bt_cum &lt;lgl&gt;, bs_new &lt;lgl&gt;, bs_cum &lt;lgl&gt;, wt_new &lt;lgl&gt;, wt_cum &lt;lgl&gt;, dropped &lt;lgl&gt;</code></pre>
 <pre class="r"><code>get_dropped(wd, get_cond(30, 31)) </code></pre>
-<pre><code>## # A tibble: 24 x 35
+<pre><code>## # A tibble: 24 x 37
 ## # Groups:   tree_id [6]
-##       id tree_id   plot  treatment spp   year    dbh    ht    cr status bear  rot   notes               cc cond       live     ba  d_inc2 ht_inc2 ba_inc2  d_inc1 ht_inc1 ba_inc1 sdi_plot  ht_p bear_new bear_cum spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
-##    &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;            &lt;int&gt; &lt;chr&gt;      &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;    &lt;lgl&gt;    &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
-##  1     1 1H40.1908 1H40  H40       SESE3 init   16.8  4.27     5      1 FALSE FALSE BROKEN TOP          NA &quot;&quot;         TRUE   221. NA       NA       NA     0        0        0       1090.  4.27 FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-##  2     1 1H40.1908 1H40  H40       SESE3 08     16.8  4.27     5     31 FALSE FALSE BROKEN TOP          NA &quot;3,31&quot;     TRUE   221.  0        0        0    -0.0508  NA       -1.33     449.  4.27 FALSE    FALSE    SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
-##  3     1 1H40.1908 1H40  H40       SESE3 13     16.5 NA       NA      5 FALSE NA    dead, no sprouts    -1 &quot;&quot;         FALSE  214. -0.0508  NA       -1.33 NA       NA       NA        484. NA    FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  TRUE   
-##  4     1 1H40.1908 1H40  H40       SESE3 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                NA &quot;&quot;         FALSE   NA  NA       NA       NA    NA       NA       NA        556. NA    FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-##  5     2 1H80.3625 1H80  H80       SESE3 init   17.0 16.2     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   227. NA       NA       NA     0        0        0       1480. 16.2  FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-##  6     2 1H80.3625 1H80  H80       SESE3 08     17.0 16.2     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   227.  0        0        0     0       -2.38     0       1162. 16.2  FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-##  7     2 1H80.3625 1H80  H80       SESE3 13     17.0  4.27    10     31 FALSE NA    &lt;NA&gt;                 4 &quot;3,4,8,31&quot; TRUE   227.  0       -2.38     0    -0.102    0.244   -2.68    1284.  4.27 FALSE    FALSE    SESE3 TRUE   TRUE   TRUE   TRUE   FALSE  FALSE  FALSE  
-##  8     2 1H80.3625 1H80  H80       SESE3 18     16.5  5.49    NA      1 FALSE NA    &lt;NA&gt;                NA &quot;3,4,8&quot;    TRUE   214. -0.102    0.244   -2.68 NA       NA       NA       1441.  5.49 FALSE    FALSE    SESE3 FALSE  TRUE   FALSE  TRUE   FALSE  FALSE  TRUE   
-##  9     3 2H40.3085 2H40  H40       SESE3 init   21.8 21.6     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   375. NA       NA       NA     0        0        0       1706. 21.6  FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  NA     
-## 10     3 2H40.3085 2H40  H40       SESE3 08     21.8 21.6     15      1 FALSE FALSE X                   NA &quot;&quot;         TRUE   375.  0        0        0     0.254   -3.23     8.97     711. 21.6  FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## # ... with 14 more rows</code></pre>
+##       id tree_id   plot  treatment spp   year  h_dist   azi   dbh    ht    cr status bear  rot   notes       cc cond  live     ba  d_inc2 ht_inc2 ba_inc2  d_inc1 ht_inc1 ba_inc1      x      y sdi_plot  ht_p
+##    &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;    &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
+##  1     1 1H40.1908 1H40  H40       SESE3 init   14.2     52  16.8  4.27     5      1 FALSE FALSE BROKEN ~    NA &quot;&quot;    TRUE   221. NA       NA       NA     0        0        0    4.10e5 4.57e6    1090.  4.27
+##  2     1 1H40.1908 1H40  H40       SESE3 08     14.2     52  16.8  4.27     5     31 FALSE FALSE BROKEN ~    NA &quot;3,3~ TRUE   221.  0        0        0    -0.0508  NA       -1.33 4.10e5 4.57e6     449.  4.27
+##  3     1 1H40.1908 1H40  H40       SESE3 13     14.2     52  16.5 NA       NA      5 FALSE NA    dead, n~    -1 &quot;&quot;    FALSE  214. -0.0508  NA       -1.33 NA       NA       NA    4.10e5 4.57e6     484. NA   
+##  4     1 1H40.1908 1H40  H40       SESE3 18     14.2     52  NA   NA       NA      5 FALSE NA    &lt;NA&gt;        NA &quot;&quot;    FALSE   NA  NA       NA       NA    NA       NA       NA    4.10e5 4.57e6     556. NA   
+##  5     2 1H80.3625 1H80  H80       SESE3 init    5.79   335  17.0 16.2     15      1 FALSE FALSE X           NA &quot;&quot;    TRUE   227. NA       NA       NA     0        0        0    4.10e5 4.57e6    1480. 16.2 
+##  6     2 1H80.3625 1H80  H80       SESE3 08      5.79   335  17.0 16.2     15      1 FALSE FALSE X           NA &quot;&quot;    TRUE   227.  0        0        0     0       -2.38     0    4.10e5 4.57e6    1162. 16.2 
+##  7     2 1H80.3625 1H80  H80       SESE3 13      5.79   335  17.0  4.27    10     31 FALSE NA    &lt;NA&gt;         4 &quot;3,4~ TRUE   227.  0       -2.38     0    -0.102    0.244   -2.68 4.10e5 4.57e6    1284.  4.27
+##  8     2 1H80.3625 1H80  H80       SESE3 18      5.79   335  16.5  5.49    NA      1 FALSE NA    &lt;NA&gt;        NA &quot;3,4~ TRUE   214. -0.102    0.244   -2.68 NA       NA       NA    4.10e5 4.57e6    1441.  5.49
+##  9     3 2H40.3085 2H40  H40       SESE3 init    2.86   292  21.8 21.6     15      1 FALSE FALSE X           NA &quot;&quot;    TRUE   375. NA       NA       NA     0        0        0    4.10e5 4.57e6    1706. 21.6 
+## 10     3 2H40.3085 2H40  H40       SESE3 08      2.86   292  21.8 21.6     15      1 FALSE FALSE X           NA &quot;&quot;    TRUE   375.  0        0        0     0.254   -3.23     8.97 4.10e5 4.57e6     711. 21.6 
+## # ... with 14 more rows, and 8 more variables: spp2 &lt;chr&gt;, bt_new &lt;lgl&gt;, bt_cum &lt;lgl&gt;, bs_new &lt;lgl&gt;, bs_cum &lt;lgl&gt;, wt_new &lt;lgl&gt;, wt_cum &lt;lgl&gt;, dropped &lt;lgl&gt;</code></pre>
 <pre class="r"><code>get_dropped(wd, get_cond(32))</code></pre>
-<pre><code>## # A tibble: 8 x 35
+<pre><code>## # A tibble: 8 x 37
 ## # Groups:   tree_id [2]
-##      id tree_id   plot  treatment spp   year    dbh    ht    cr status bear  rot   notes                      cc cond  live     ba d_inc2  ht_inc2 ba_inc2 d_inc1  ht_inc1 ba_inc1 sdi_plot  ht_p bear_new bear_cum spp2  bt_new bt_cum bs_new bs_cum wt_new wt_cum dropped
-##   &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;                   &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;    &lt;lgl&gt;    &lt;chr&gt; &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  &lt;lgl&gt;  
-## 1     1 4L40.3246 4L40  L40       SESE3 18     NA   NA       NA     NA NA    NA    &lt;NA&gt;                       NA  &lt;NA&gt; FALSE   NA      NA NA            NA     NA NA            NA      NA  NA    FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  TRUE   FALSE  FALSE  NA     
-## 2     1 4L40.3246 4L40  L40       SESE3 init   27.4 20.1     20     32 FALSE FALSE Blow down                  NA &quot;32&quot;  FALSE  591.     NA NA            NA      0  0             0    1422. 20.1  FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  TRUE   TRUE   FALSE  
-## 3     1 4L40.3246 4L40  L40       SESE3 08     27.4 20.1     20     32 FALSE FALSE Blow down                  NA &quot;32&quot;  FALSE  591.      0  0             0     NA NA            NA     563. 20.1  FALSE    FALSE    SESE3 FALSE  FALSE  FALSE  FALSE  TRUE   TRUE   FALSE  
-## 4     1 4L40.3246 4L40  L40       SESE3 13     NA   NA       NA     30 FALSE NA    &lt;NA&gt;                       -1 &quot;30&quot;  FALSE   NA      NA NA            NA     NA NA            NA     598. NA    FALSE    FALSE    SESE3 FALSE  FALSE  TRUE   TRUE   FALSE  FALSE  TRUE   
-## 5     2 4L40.3283 4L40  L40       PSMEM init   33.3 24.1     30     32 FALSE FALSE Blow down                  NA &quot;32&quot;  FALSE  870.     NA NA            NA      0 -3.12          0    1422. 24.1  FALSE    FALSE    PSMEM FALSE  FALSE  FALSE  FALSE  TRUE   TRUE   FALSE  
-## 6     2 4L40.3283 4L40  L40       PSMEM 08     33.3  8.5     30     31 FALSE FALSE Blow down                  NA &quot;31&quot;  FALSE  870.      0 -3.12          0      0  0.00680       0     563.  8.5  FALSE    FALSE    PSMEM FALSE  FALSE  TRUE   TRUE   FALSE  FALSE  TRUE   
-## 7     2 4L40.3283 4L40  L40       PSMEM 13     33.3  8.53     0      5 FALSE NA    frass; broken top; dead    -1 &quot;&quot;    FALSE  870.      0  0.00680       0     NA NA            NA     598.  8.53 FALSE    FALSE    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  
-## 8     2 4L40.3283 4L40  L40       PSMEM 18     NA   NA       NA      5 FALSE NA    &lt;NA&gt;                       NA &quot;&quot;    FALSE   NA      NA NA            NA     NA NA            NA     680. NA    FALSE    FALSE    PSMEM FALSE  FALSE  FALSE  FALSE  FALSE  FALSE  FALSE</code></pre>
+##      id tree_id   plot  treatment spp   year  h_dist   azi   dbh    ht    cr status bear  rot   notes      cc cond  live     ba d_inc2  ht_inc2 ba_inc2 d_inc1  ht_inc1 ba_inc1       x       y sdi_plot  ht_p
+##   &lt;int&gt; &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt; &lt;fct&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;   &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
+## 1     1 4L40.3246 4L40  L40       SESE3 18     NA       NA  NA   NA       NA     NA NA    NA    &lt;NA&gt;       NA  &lt;NA&gt; FALSE   NA      NA NA            NA     NA NA            NA     NA  NA           NA  NA   
+## 2     1 4L40.3246 4L40  L40       SESE3 init    4.69    57  27.4 20.1     20     32 FALSE FALSE Blow d~    NA &quot;32&quot;  FALSE  591.     NA NA            NA      0  0             0 410056.  4.57e6    1422. 20.1 
+## 3     1 4L40.3246 4L40  L40       SESE3 08      4.69    57  27.4 20.1     20     32 FALSE FALSE Blow d~    NA &quot;32&quot;  FALSE  591.      0  0             0     NA NA            NA 410056.  4.57e6     563. 20.1 
+## 4     1 4L40.3246 4L40  L40       SESE3 13      4.69    57  NA   NA       NA     30 FALSE NA    &lt;NA&gt;       -1 &quot;30&quot;  FALSE   NA      NA NA            NA     NA NA            NA 410056.  4.57e6     591. NA   
+## 5     2 4L40.3283 4L40  L40       PSMEM init    3.90   309  33.3 24.1     30     32 FALSE FALSE Blow d~    NA &quot;32&quot;  FALSE  870.     NA NA            NA      0 -3.12          0 410049.  4.57e6    1422. 24.1 
+## 6     2 4L40.3283 4L40  L40       PSMEM 08      3.90   309  33.3  8.5     30     31 FALSE FALSE Blow d~    NA &quot;31&quot;  FALSE  870.      0 -3.12          0      0  0.00680       0 410049.  4.57e6     563.  8.5 
+## 7     2 4L40.3283 4L40  L40       PSMEM 13      3.90   309  33.3  8.53     0      5 FALSE NA    frass;~    -1 &quot;&quot;    FALSE  870.      0  0.00680       0     NA NA            NA 410049.  4.57e6     591.  8.53
+## 8     2 4L40.3283 4L40  L40       PSMEM 18      3.90   309  NA   NA       NA      5 FALSE NA    &lt;NA&gt;       NA &quot;&quot;    FALSE   NA      NA NA            NA     NA NA            NA 410049.  4.57e6     680. NA   
+## # ... with 8 more variables: spp2 &lt;chr&gt;, bt_new &lt;lgl&gt;, bt_cum &lt;lgl&gt;, bs_new &lt;lgl&gt;, bs_cum &lt;lgl&gt;, wt_new &lt;lgl&gt;, wt_cum &lt;lgl&gt;, dropped &lt;lgl&gt;</code></pre>
 <p>Basically I want to know how many trees ended up being damaged over
 the 10 years since thinning. It might also be useful to compare this to
 initial damage rates.</p>

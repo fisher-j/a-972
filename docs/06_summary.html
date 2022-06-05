@@ -451,10 +451,10 @@ looking at 1,929 over the the three measurement periods.</p>
 broken and dead tops</em>. Not all of these have heights. For this
 reason, there are fewer than 4 trees per plot.</p>
 <pre class="r"><code># get ids of trees that have heights in 2018
-ht_id_2018 &lt;- filter(d_l, year == &quot;18&quot;, !is.na(ht_p)) %&gt;% pull(tree_id)
+ht_id_2018 &lt;- filter(d_l, year == &quot;18&quot;, !is.na(ht)) %&gt;% pull(tree_id)
 
 # average height I AM OMMITING MISSING HEIGHT MEASUREMENTS.
-measures$ht_p &lt;- function(data, species) {
+measures$ht &lt;- function(data, species) {
   if(is.null(species)) species &lt;- unique(data$spp)
   data %&gt;%
     filter(
@@ -462,10 +462,10 @@ measures$ht_p &lt;- function(data, species) {
       live | status %in% c(15, 16),
       !get_cond(c(2, 3)),
       tree_id %in% ht_id_2018,
-      !is.na(ht_p)
+      !is.na(ht)
     ) %&gt;%
   group_by(treatment, year, plot) %&gt;%
-  summarise(plot_mean = mean(ht_p)) %&gt;%
+  summarise(plot_mean = mean(ht)) %&gt;%
   summarise(
     mean = mean(plot_mean),
     n = n(),
@@ -488,9 +488,9 @@ measures$dom_ht &lt;- function(data, species) {
     filter(spp %in% species) %&gt;%
     group_by(treatment, year) %&gt;%
     summarise(
-      mean = mean(ht_p, na.rm = TRUE),
-      n = sum(!is.na(ht_p)),
-      std = sd(ht_p, na.rm = TRUE)
+      mean = mean(ht, na.rm = TRUE),
+      n = sum(!is.na(ht)),
+      std = sd(ht, na.rm = TRUE)
     )
 }</code></pre>
 </div>
@@ -598,8 +598,8 @@ get_ba(d_l) %&gt;%
 ## 12 H80       18     75.6 10.1       0.148 
 ## 13 L40       init   71.6  4.00     NA     
 ## 14 L40       08     31.8  0.850    -0.557 
-## 15 L40       13     35.7  4.49      0.125 
-## 16 L40       18     42.3  6.40      0.185 
+## 15 L40       13     35.6  4.50      0.122 
+## 16 L40       18     42.3  6.40      0.189 
 ## 17 L80       init   68.4 13.0      NA     
 ## 18 L80       08     54.6 10.6      -0.202 
 ## 19 L80       13     62.3 12.5       0.141 
@@ -736,7 +736,7 @@ QMD (cm)
 34.7 (4.3)
 </td>
 <td style="text-align:left;">
-35.6 (1.5)
+35.5 (1.5)
 </td>
 <td style="text-align:left;">
 27.7 (1.4)
@@ -769,98 +769,6 @@ QMD (cm)
 </td>
 <td style="text-align:left;">
 29.5 (1.0)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-22.0 (1.2)
-</td>
-<td style="text-align:left;">
-23.1 (1.1)
-</td>
-<td style="text-align:left;">
-20.2 (0.5)
-</td>
-<td style="text-align:left;">
-20.6 (1.0)
-</td>
-<td style="text-align:left;">
-21.5 (0.8)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:left;">
-21.9 (1.2)
-</td>
-<td style="text-align:left;">
-23.1 (1.1)
-</td>
-<td style="text-align:left;">
-20.2 (0.6)
-</td>
-<td style="text-align:left;">
-20.7 (1.1)
-</td>
-<td style="text-align:left;">
-21.5 (0.7)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:left;">
-23.6 (1.1)
-</td>
-<td style="text-align:left;">
-25.7 (0.9)
-</td>
-<td style="text-align:left;">
-22.7 (0.7)
-</td>
-<td style="text-align:left;">
-23.2 (1.2)
-</td>
-<td style="text-align:left;">
-23.1 (0.3)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:left;">
-25.3 (1.1)
-</td>
-<td style="text-align:left;">
-27.7 (0.8)
-</td>
-<td style="text-align:left;">
-24.4 (0.8)
-</td>
-<td style="text-align:left;">
-25.2 (1.4)
-</td>
-<td style="text-align:left;">
-24.5 (0.7)
 </td>
 </tr>
 <tr>
@@ -1012,7 +920,7 @@ Basal area (m<sup>2</sup>/ha)
 39.8 (8.8)
 </td>
 <td style="text-align:left;">
-35.7 (4.5)
+35.6 (4.5)
 </td>
 <td style="text-align:left;">
 65.9 (7.9)
@@ -1104,7 +1012,7 @@ SDI
 685.9 (141.1)
 </td>
 <td style="text-align:left;">
-625.6 (84.2)
+623.9 (84.6)
 </td>
 <td style="text-align:left;">
 1229.1 (131.9)
@@ -1137,6 +1045,98 @@ SDI
 </td>
 <td style="text-align:left;">
 1313.8 (62.7)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+22.2 (1.0)
+</td>
+<td style="text-align:left;">
+22.9 (0.7)
+</td>
+<td style="text-align:left;">
+20.2 (0.8)
+</td>
+<td style="text-align:left;">
+21.1 (1.9)
+</td>
+<td style="text-align:left;">
+21.0 (0.6)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+22.2 (0.9)
+</td>
+<td style="text-align:left;">
+22.9 (0.7)
+</td>
+<td style="text-align:left;">
+20.2 (0.8)
+</td>
+<td style="text-align:left;">
+21.3 (1.8)
+</td>
+<td style="text-align:left;">
+21.1 (0.5)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+23.6 (1.0)
+</td>
+<td style="text-align:left;">
+25.1 (0.7)
+</td>
+<td style="text-align:left;">
+22.9 (1.2)
+</td>
+<td style="text-align:left;">
+23.8 (1.7)
+</td>
+<td style="text-align:left;">
+22.6 (0.8)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+25.3 (0.8)
+</td>
+<td style="text-align:left;">
+27.0 (0.5)
+</td>
+<td style="text-align:left;">
+24.7 (1.1)
+</td>
+<td style="text-align:left;">
+26.0 (2.2)
+</td>
+<td style="text-align:left;">
+24.5 (0.6)
 </td>
 </tr>
 </tbody>
@@ -1243,7 +1243,7 @@ QMD (cm)
 35.0 (4.8)
 </td>
 <td style="text-align:left;">
-31.2 (2.6)
+31.0 (2.3)
 </td>
 <td style="text-align:left;">
 27.1 (2.1)
@@ -1276,98 +1276,6 @@ QMD (cm)
 </td>
 <td style="text-align:left;">
 31.8 (5.9)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-19.8 (2.1)
-</td>
-<td style="text-align:left;">
-19.9 (1.5)
-</td>
-<td style="text-align:left;">
-18.0 (1.1)
-</td>
-<td style="text-align:left;">
-17.8 (1.8)
-</td>
-<td style="text-align:left;">
-18.0 (1.6)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:left;">
-19.7 (2.0)
-</td>
-<td style="text-align:left;">
-19.9 (1.5)
-</td>
-<td style="text-align:left;">
-18.2 (1.0)
-</td>
-<td style="text-align:left;">
-18.2 (2.0)
-</td>
-<td style="text-align:left;">
-18.1 (1.6)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:left;">
-21.3 (2.7)
-</td>
-<td style="text-align:left;">
-21.9 (1.3)
-</td>
-<td style="text-align:left;">
-20.0 (0.9)
-</td>
-<td style="text-align:left;">
-20.2 (2.1)
-</td>
-<td style="text-align:left;">
-19.5 (1.9)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:left;">
-22.3 (3.8)
-</td>
-<td style="text-align:left;">
-22.8 (1.5)
-</td>
-<td style="text-align:left;">
-21.5 (1.1)
-</td>
-<td style="text-align:left;">
-21.9 (2.5)
-</td>
-<td style="text-align:left;">
-21.2 (3.2)
 </td>
 </tr>
 <tr>
@@ -1519,7 +1427,7 @@ Basal area (m<sup>2</sup>/ha)
 21.7 (16.1)
 </td>
 <td style="text-align:left;">
-8.6 (4.0)
+8.4 (3.9)
 </td>
 <td style="text-align:left;">
 27.2 (8.5)
@@ -1611,7 +1519,7 @@ SDI
 363.1 (255.6)
 </td>
 <td style="text-align:left;">
-155.1 (68.6)
+153.4 (66.5)
 </td>
 <td style="text-align:left;">
 503.3 (148.8)
@@ -1644,6 +1552,98 @@ SDI
 </td>
 <td style="text-align:left;">
 319.5 (123.5)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+20.1 (2.6)
+</td>
+<td style="text-align:left;">
+20.0 (1.5)
+</td>
+<td style="text-align:left;">
+18.2 (0.7)
+</td>
+<td style="text-align:left;">
+19.2 (2.7)
+</td>
+<td style="text-align:left;">
+19.0 (1.6)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+20.1 (2.6)
+</td>
+<td style="text-align:left;">
+20.0 (1.5)
+</td>
+<td style="text-align:left;">
+18.2 (0.7)
+</td>
+<td style="text-align:left;">
+19.8 (2.9)
+</td>
+<td style="text-align:left;">
+19.1 (1.5)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+20.9 (3.0)
+</td>
+<td style="text-align:left;">
+22.0 (1.3)
+</td>
+<td style="text-align:left;">
+20.8 (1.3)
+</td>
+<td style="text-align:left;">
+22.1 (2.7)
+</td>
+<td style="text-align:left;">
+20.4 (1.9)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+21.9 (3.9)
+</td>
+<td style="text-align:left;">
+22.9 (1.6)
+</td>
+<td style="text-align:left;">
+22.6 (1.8)
+</td>
+<td style="text-align:left;">
+24.2 (3.7)
+</td>
+<td style="text-align:left;">
+22.7 (2.3)
 </td>
 </tr>
 </tbody>
@@ -1783,98 +1783,6 @@ QMD (cm)
 </td>
 <td style="text-align:left;">
 28.7 (1.1)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-init
-</td>
-<td style="text-align:left;">
-23.2 (0.5)
-</td>
-<td style="text-align:left;">
-24.1 (1.1)
-</td>
-<td style="text-align:left;">
-22.0 (1.1)
-</td>
-<td style="text-align:left;">
-21.8 (1.2)
-</td>
-<td style="text-align:left;">
-22.8 (0.9)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-08
-</td>
-<td style="text-align:left;">
-23.2 (0.5)
-</td>
-<td style="text-align:left;">
-24.1 (1.1)
-</td>
-<td style="text-align:left;">
-22.0 (1.1)
-</td>
-<td style="text-align:left;">
-21.8 (1.2)
-</td>
-<td style="text-align:left;">
-22.8 (0.9)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-13
-</td>
-<td style="text-align:left;">
-24.8 (0.5)
-</td>
-<td style="text-align:left;">
-26.3 (1.1)
-</td>
-<td style="text-align:left;">
-24.3 (1.0)
-</td>
-<td style="text-align:left;">
-24.0 (1.5)
-</td>
-<td style="text-align:left;">
-24.1 (0.7)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Height (m)
-</td>
-<td style="text-align:left;">
-18
-</td>
-<td style="text-align:left;">
-26.9 (0.7)
-</td>
-<td style="text-align:left;">
-28.3 (0.9)
-</td>
-<td style="text-align:left;">
-26.2 (1.1)
-</td>
-<td style="text-align:left;">
-26.2 (1.7)
-</td>
-<td style="text-align:left;">
-25.5 (0.9)
 </td>
 </tr>
 <tr>
@@ -2151,6 +2059,98 @@ SDI
 </td>
 <td style="text-align:left;">
 902.4 (109.3)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+init
+</td>
+<td style="text-align:left;">
+23.4 (0.4)
+</td>
+<td style="text-align:left;">
+24.0 (1.5)
+</td>
+<td style="text-align:left;">
+22.2 (1.3)
+</td>
+<td style="text-align:left;">
+22.7 (1.3)
+</td>
+<td style="text-align:left;">
+22.5 (1.1)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+08
+</td>
+<td style="text-align:left;">
+23.4 (0.4)
+</td>
+<td style="text-align:left;">
+24.0 (1.5)
+</td>
+<td style="text-align:left;">
+22.2 (1.3)
+</td>
+<td style="text-align:left;">
+22.7 (1.3)
+</td>
+<td style="text-align:left;">
+22.5 (1.1)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+13
+</td>
+<td style="text-align:left;">
+25.2 (0.5)
+</td>
+<td style="text-align:left;">
+25.9 (1.9)
+</td>
+<td style="text-align:left;">
+24.4 (1.6)
+</td>
+<td style="text-align:left;">
+24.7 (1.7)
+</td>
+<td style="text-align:left;">
+24.0 (1.5)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ht
+</td>
+<td style="text-align:left;">
+18
+</td>
+<td style="text-align:left;">
+27.4 (0.7)
+</td>
+<td style="text-align:left;">
+27.7 (1.1)
+</td>
+<td style="text-align:left;">
+26.5 (2.1)
+</td>
+<td style="text-align:left;">
+27.1 (1.9)
+</td>
+<td style="text-align:left;">
+26.0 (1.3)
 </td>
 </tr>
 </tbody>
