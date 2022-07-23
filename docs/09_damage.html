@@ -6195,8 +6195,8 @@ outcome because most trees that are damaged are only damaged once. This
 seems to show up in the model as with <code>tree_id</code> absorbing
 most of the variance.</p>
 <p>There are also problems with complete separation, which I attempt to
-fix by using a bayesian framework. I tried using penalized regression
-with a fixed effects only glm (bias reduction). I also tried a bayesian
+fix by using a Bayesian framework. I tried using penalized regression
+with a fixed effects only glm (bias reduction). I also tried a Bayesian
 model and specified a <a
 href="https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#penalizationhandling-complete-separation">prior
 variance for the fixed effects as a gaussian distribution with a sd of
@@ -6343,6 +6343,8 @@ high variance, while those that do not have very low variance.</p>
 period, but here are only 3 trees that receive “new” damage in both
 periods. I doubt that these are having a huge effect. For the most part,
 trees are only damaged in one period or the other.</p>
+<p><strong>For our purposes, we are using Bayesian GLMM model
+4</strong></p>
 <pre class="r"><code>show_regression_table &lt;- function(mod, cap = cap) {
   mod_list &lt;- do.call(compare_performance, c(mod, metrics = &quot;common&quot;)) %&gt;%
     arrange(AIC)
@@ -8303,7 +8305,7 @@ initial damage rates.</p>
 </div>
 <div id="wind-damage-figure-unfinished" class="section level1">
 <h1>Wind damage figure <em>unfinished</em></h1>
-<pre class="r"><code>myvars &lt;- list(&quot;Broken~Stem&quot; = &quot;bs_cum&quot;, &quot;Broken~top&quot; = &quot;bt_cum&quot;, &quot;Windthrow&quot; = &quot;wt_cum&quot;)
+<pre class="r"><code>myvars &lt;- list(&quot;Broken~stem&quot; = &quot;bs_cum&quot;, &quot;Broken~top&quot; = &quot;bt_cum&quot;, &quot;Windthrow&quot; = &quot;wt_cum&quot;)
 myvars &lt;- lapply(myvars, as.name)
 
 
@@ -8351,7 +8353,7 @@ ggplot(mapping = aes(x = treatment)) +
   facet_grid(type ~ measure, scales = &quot;free_y&quot;, labeller = label_parsed, switch = &quot;y&quot;) +
   theme_bw() +
   theme(
-    plot.margin = unit(c(1, 1, 1, 0), &quot;mm&quot;),
+    plot.margin = unit(c(1, 2.4, 1, 0), &quot;mm&quot;),
     panel.spacing = unit(1.5, &quot;mm&quot;),
     axis.title.y = element_blank(),
     strip.placement = &quot;outside&quot;,
@@ -8361,7 +8363,7 @@ ggplot(mapping = aes(x = treatment)) +
     legend.title = element_blank(),
     legend.key.size = unit(4, &quot;mm&quot;),
     legend.background = element_blank(),
-    axis.text.x = element_text(vjust = .5, angle = 90),
+    axis.text.x = element_text(vjust = 0, angle = -45),
     axis.title = element_text(size = 10),
     strip.text.y = element_text(size = 10),
   ) +

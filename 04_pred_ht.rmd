@@ -211,6 +211,8 @@ summary(lmod(fl[[32]]))
 
 While these models are interesting, there is reason to believe that our height measurements are not precise enough to capture the small height differences between treatments (around 3 feet). For this reason, I will default to a simple additive model that includes spp and treatment.
 
+**This is for model 32 above**
+
 ```{r 04-pred-ht-6}
 
 ht_inc_mod1 <- lmod(fl[[32]])
@@ -219,7 +221,9 @@ summary(ht_inc_mod1)
 
 ```
 
-Here is the summary table of the model used for predicting height increments and thus heights
+Here is the summary table of the model used for predicting height increments and thus heights.
+
+`treatment4` refers to a binary classification: treated plots or untreated plots.
 
 ```{r 04-pred-ht-7}
 
@@ -230,7 +234,6 @@ sjPlot::tab_model(ht_inc_mod1,
   show.icc = FALSE
 )
 
-modelsummary::modelsummary(ht_inc_mod1)
 ```
 
 ## Best model estimated means

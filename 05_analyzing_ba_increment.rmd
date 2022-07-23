@@ -569,6 +569,8 @@ dd
 
 First I choose a model from above based on parsimony and AICc:
 
+**Using model 18 above**
+
 ```{r 05-analyzing-ba-increment-23}
 
 ba_inc_mod <- ba_inc_lmm

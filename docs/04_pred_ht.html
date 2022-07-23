@@ -343,14 +343,8 @@ predicted heights</a></li>
 </div>
 
 <p>P— title: “Height increment model” —</p>
-<pre class="r"><code>library(lme4)</code></pre>
-<pre><code>## Loading required package: Matrix</code></pre>
-<pre><code>## 
-## Attaching package: &#39;Matrix&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
-## 
-##     expand, pack, unpack</code></pre>
-<pre class="r"><code>library(emmeans)
+<pre class="r"><code>library(lme4)
+library(emmeans)
 library(MuMIn)
 palette(&quot;Tableau 10&quot;)
 library(broom.mixed)</code></pre>
@@ -1307,6 +1301,7 @@ our height measurements are not precise enough to capture the small
 height differences between treatments (around 3 feet). For this reason,
 I will default to a simple additive model that includes spp and
 treatment.</p>
+<p><strong>This is for model 32 above</strong></p>
 <pre class="r"><code>ht_inc_mod1 &lt;- lmod(fl[[32]])
 
 summary(ht_inc_mod1)</code></pre>
@@ -1341,16 +1336,15 @@ summary(ht_inc_mod1)</code></pre>
 ## sppSESE3    -0.075  0.014  0.055       
 ## lg(dbh):tr4  0.556 -0.566 -0.973 -0.039</code></pre>
 <p>Here is the summary table of the model used for predicting height
-increments and thus heights</p>
+increments and thus heights.</p>
+<p><code>treatment4</code> refers to a binary classification: treated
+plots or untreated plots.</p>
 <pre class="r"><code>sjPlot::tab_model(ht_inc_mod1,
   dv.labels = &quot;Height increment&quot;,
   show.ci = FALSE,
   show.se = TRUE,
   show.icc = FALSE
 )</code></pre>
-<pre><code>## Registered S3 method overwritten by &#39;parameters&#39;:
-##   method                         from      
-##   format.parameters_distribution datawizard</code></pre>
 <table style="border-collapse:collapse; border:none;">
 <tr>
 <th style="border-top: double; text-align:center; font-style:normal; font-weight:bold; padding:0.2cm;  text-align:left; ">
@@ -1487,143 +1481,6 @@ Marginal R<sup>2</sup> / Conditional R<sup>2</sup>
 0.083 / 0.118
 </td>
 </tr>
-</table>
-<pre class="r"><code>modelsummary::modelsummary(ht_inc_mod1)</code></pre>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th style="text-align:left;">
-</th>
-<th style="text-align:center;">
-Model 1
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-(Intercept)
-</td>
-<td style="text-align:center;">
--0.195
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.100)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-log(dbh)
-</td>
-<td style="text-align:center;">
-0.180
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.030)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-treatment4unthinned
-</td>
-<td style="text-align:center;">
--0.283
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.172)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-sppSESE3
-</td>
-<td style="text-align:center;">
--0.072
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.019)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-log(dbh) × treatment4unthinned
-</td>
-<td style="text-align:center;">
-0.050
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-</td>
-<td style="text-align:center;">
-(0.052)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-sd__(Intercept)
-</td>
-<td style="text-align:center;">
-0.063
-</td>
-</tr>
-<tr>
-<td style="text-align:left;box-shadow: 0px 1px">
-sd__Observation
-</td>
-<td style="text-align:center;box-shadow: 0px 1px">
-0.316
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-AIC
-</td>
-<td style="text-align:center;">
-883.1
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-BIC
-</td>
-<td style="text-align:center;">
-920.5
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Log.Lik.
-</td>
-<td style="text-align:center;">
--434.543
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-REMLcrit
-</td>
-<td style="text-align:center;">
-869.085
-</td>
-</tr>
-</tbody>
 </table>
 <div id="best-model-estimated-means" class="section level2">
 <h2>Best model estimated means</h2>
@@ -1827,14 +1684,15 @@ d_l &lt;- left_join(d_l, new_heights, by = c(&quot;tree_id&quot;, &quot;year&quo
   mutate(ht_p = if_else(spp %in% c(&quot;SESE3&quot;, &quot;PSMEM&quot;), ht_p, ht))</code></pre>
 <pre class="r"><code>head(d_l)</code></pre>
 <pre><code>## # A tibble: 6 x 28
-##   plot  treatment tree_id   spp   h_dist   azi year    dbh    ht    cr status bear  rot   notes                cc cond  live     ba d_inc2 ht_inc2 ba_inc2 d_inc1 ht_inc1 ba_inc1      x      y sdi_plot  ht_p
-##   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;ord&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt;             &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
-## 1 1H40  H40       1H40.1901 SESE3   12.9    10 init   27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*~    NA &quot;&quot;    TRUE   591. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.5 
-## 2 1H40  H40       1H40.1901 SESE3   12.9    10 08     27.4 23.5     30      1 FALSE FALSE BA_ac_ft2=(H2^2*~    NA &quot;&quot;    TRUE   591.  0        0       0     0.102  -3.96     4.42 4.10e5 4.57e6     449. 23.5 
-## 3 1H40  H40       1H40.1901 SESE3   12.9    10 13     27.9  3.66     0      5 FALSE NA    Top blown off, d~    -1 &quot;3,7~ FALSE  613.  0.102   -3.96    4.42 NA      NA       NA    4.10e5 4.57e6     484.  3.66
-## 4 1H40  H40       1H40.1901 SESE3   12.9    10 18     NA   NA       NA     -5 FALSE NA    &lt;NA&gt;                 NA &quot;3,7~ FALSE   NA  NA       NA      NA    NA      NA       NA    4.10e5 4.57e6     556. NA   
-## 5 1H40  H40       1H40.1902 SESE3   14.2    13 init   37.6 23.2     40      1 TRUE  FALSE X                    NA &quot;&quot;    TRUE  1110. NA       NA      NA     0       0        0    4.10e5 4.57e6    1090. 23.2 
-## 6 1H40  H40       1H40.1902 SESE3   14.2    13 08     37.6 23.2     40      1 TRUE  FALSE X                    NA &quot;&quot;    TRUE  1110.  0        0       0     0.559  -0.671   34.2  4.10e5 4.57e6     449. 23.2</code></pre>
+##   plot  treatment tree_id  spp   h_dist   azi year    dbh    ht    cr status bear  rot   notes    cc cond  live     ba d_inc2 ht_inc2 ba_inc2 d_inc1 ht_inc1 ba_inc1
+##   &lt;chr&gt; &lt;chr&gt;     &lt;chr&gt;    &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;ord&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;int&gt; &lt;lgl&gt; &lt;lgl&gt; &lt;chr&gt; &lt;int&gt; &lt;chr&gt; &lt;lgl&gt; &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+## 1 1H40  H40       1H40.19~ SESE3   12.9    10 init   27.4 23.5     30      1 FALSE FALSE BA_a~    NA &quot;&quot;    TRUE   591. NA       NA      NA     0       0        0   
+## 2 1H40  H40       1H40.19~ SESE3   12.9    10 08     27.4 23.5     30      1 FALSE FALSE BA_a~    NA &quot;&quot;    TRUE   591.  0        0       0     0.102  -3.96     4.42
+## 3 1H40  H40       1H40.19~ SESE3   12.9    10 13     27.9  3.66     0      5 FALSE NA    Top ~    -1 &quot;3,7~ FALSE  613.  0.102   -3.96    4.42 NA      NA       NA   
+## 4 1H40  H40       1H40.19~ SESE3   12.9    10 18     NA   NA       NA     -5 FALSE NA    &lt;NA&gt;     NA &quot;3,7~ FALSE   NA  NA       NA      NA    NA      NA       NA   
+## 5 1H40  H40       1H40.19~ SESE3   14.2    13 init   37.6 23.2     40      1 TRUE  FALSE X        NA &quot;&quot;    TRUE  1110. NA       NA      NA     0       0        0   
+## 6 1H40  H40       1H40.19~ SESE3   14.2    13 08     37.6 23.2     40      1 TRUE  FALSE X        NA &quot;&quot;    TRUE  1110.  0        0       0     0.559  -0.671   34.2 
+## # ... with 4 more variables: x &lt;dbl&gt;, y &lt;dbl&gt;, sdi_plot &lt;dbl&gt;, ht_p &lt;dbl&gt;</code></pre>
 </div>
 
 

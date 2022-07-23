@@ -46,9 +46,9 @@ Here is the graphing function and emmeans generating function I'll use for visua
 my_dodge <- position_dodge(0.4)
 
 var_fig <- function(data) {
-  data %>%
-    filter(year != "init") %>%
-    relevel_treatment() %>%
+  data |>
+    filter(year != "init") |>
+    relevel_treatment() |>
     ggplot(aes(year, emmean, color = treatment, group = treatment)) +
       geom_line(size = 1, position = my_dodge) +
       geom_point(position = my_dodge) +
@@ -63,7 +63,7 @@ var_fig <- function(data) {
 
 var_mean <- function(plot_data) {
   mod <- lmer(val ~ treatment * year + (1 | plot), data = plot_data)
-  emmeans(mod,  ~ treatment + year) %>% as.data.frame()
+  emmeans(mod,  ~ treatment + year) |> as.data.frame()
 }
 
 var_sig <- function(plot_data) {
@@ -72,11 +72,22 @@ var_sig <- function(plot_data) {
 }
 
 var_table <- function(mean_data, caption) {
-  mean_data %>%
-    # filter(year != "13") %>%
-    group_by(treatment) %>%
-    arrange(treatment) %>%
+  mean_data |>
+    # filter(year != "13") |>
+    group_by(treatment) |>
+    arrange(treatment) |>
     color_groups(digits = 2, caption)
+}
+
+var_mod <- function(plot_data, cap) {
+  mod <- lmer(val ~ treatment * year + (1 | plot), data = plot_data)
+  sjPlot::tab_model(
+  mod,
+  show.ci = FALSE,
+  show.aic = TRUE,
+  # dv.labels = paste("Formula", to_compare),
+  title = cap
+  )
 }
 
 ```
@@ -102,6 +113,8 @@ sci_mean <- var_mean(sci_plot)
 var_table(sci_mean, caption = "Average SCI and confidence interval for all live trees including ingrowth")
 
 var_fig(sci_mean)
+
+var_mod(sci_plot, "Model for SCI")
 ```
 
 Some of these trajectories look interesting, but They don't look unique, given the error bars.
@@ -127,6 +140,8 @@ mdi_mean <- var_mean(mdi_plot)
 var_table(mdi_mean, caption = "Average mean directional index (0: grid, 4:complete aggregation")
 
 var_fig(mdi_mean)
+
+var_mod(mdi_plot, "model for MDI")
 ```
 
 # DBH differentiation (TD)
@@ -151,6 +166,8 @@ var_table(TD_mean, caption = "Average DBH differentiation, 0: similar tree sizes
 
 var_fig(TD_mean)
 
+var_mod(TD_plot, "Model for TD")
+
 ```
 
 # DBH~sd~
@@ -168,6 +185,8 @@ dbhsd_mean <- var_mean(dbhsd_plot)
 var_table(dbhsd_mean, caption = "Standard deviation of DBH")
 
 var_fig(dbhsd_mean)
+
+var_mod(dbhsd_plot, "Model for dbh sd")
 
 ```
 
@@ -210,9 +229,11 @@ dbhm_plot <- sci_d %>%
 
 dbhm_mean <- var_mean(dbhm_plot)
   
-var_table(dbhm_mean, caption = "Standard deviation of DBH")
+var_table(dbhm_mean, caption = "Mean of DBH")
 
 var_fig(dbhm_mean)
+
+var_mod(dbhm_plot, "Model for mean of DBH")
 
 ```
 
@@ -235,6 +256,8 @@ var_sig(ducey_plot)
 var_table(ducey_mean, caption = "Ratio of SDI* to SDI")
 
 var_fig(ducey_mean)
+
+var_mod(ducey_plot, "Model for Ducey's ratio")
 ```
 
 # Coefficient of variation
@@ -242,6 +265,8 @@ var_fig(ducey_mean)
 The coefficient of variation for a plot tells us about variation in tree size relative to the mean. Plots with smaller average tree size, but similar ranges of variation should result in higher CV. 
 
 ## DBH
+
+*We used the simple model with just `treatment * year` (m1) for this metric*
 
 ```{r 08-variability-11}
 
@@ -273,6 +298,7 @@ bind_rows(m1 = m1mean, m2 = m2mean, .id = "mod") |>
   var_fig() +
   facet_wrap(~ mod) +
   labs(title = "Compare m1 and m2 (w/o & w DFp) for CVdbh")
+
 
 ```
 
@@ -392,7 +418,7 @@ ggsave(
 
 Species richness is just the count of unique species. I'll do this separately for shrub and herb species. The pattern here might suggest that crews had different skill levels in identifying herbs, or it could have to do with different seasons of observation. It is unexpected that the control has the same trend.
 
-I used a random slope linear model here, I'm not sure this is appropriate as we are dealing with count data. I did run a glmmm with poisson family (various links) and these all had a significantly higher BIC.
+I used a random slope linear model here, I'm not sure this is appropriate as we are dealing with count data. I did run a glmmm with Poisson family (various links) and these all had a significantly higher BIC.
 
 ```{r 08-variability-15}
 
@@ -461,7 +487,7 @@ spp_common_name <- function(species) {
     species == "CLSI2"    ~ "Candyflower",
     species == "VAOV2"    ~ "Evergreen huckleberry",
     species == "Fireweed" ~ "Fireweed",
-    species == "RUSP"     ~ "Salmon berry",
+    species == "RUSP"     ~ "Salmonberry",
     species == "GASH"     ~ "Salal",
     species == "BENE2"    ~ "Oregon grape", 
     species == "SARA"     ~ "Red elderberry"
