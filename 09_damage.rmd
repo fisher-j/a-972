@@ -659,7 +659,14 @@ show_regression_table <- function(mod, cap = cap) {
   title = cap
   )
 }
-  
+
+sjPlot::tab_model(
+  bbdm[4],
+  show.ci = FALSE,
+  show.aic = TRUE,
+  dv.labels = "model 4",
+  title = "Bayesian bear damage model #4"
+  )
 
 show_regression_table(bdm1, "GLMM models with random plot only")
 # examine_bdmod(bdm1_tree, "GLMM models with random plot and tree_id")
