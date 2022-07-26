@@ -662,8 +662,9 @@ show_regression_table <- function(mod, cap = cap) {
 
 sjPlot::tab_model(
   bbdm[4],
+  show.se = TRUE,
+  show.p = TRUE,
   show.ci = FALSE,
-  show.aic = TRUE,
   dv.labels = "model 4",
   title = "Bayesian bear damage model #4"
   )

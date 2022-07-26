@@ -5,7 +5,7 @@ bibliography: [reference/a972.bib]
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, time_it = TRUE, cache.extra = "wombat")
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE, cache.extra = "wombat")
 ```
 
 ```{r 08-variability-1}
@@ -28,13 +28,14 @@ Details for calculations can be found on the [Define new data](03_define.html) p
 ingrowth <- mutate(ingrowth,
   define_xy(ingrowth),
   ba = pi * (dbh / 2)^2,
-  ht_p = ht
+  ht_p = ht,
+  year = factor(year, ordered = FALSE)
 )
 
 sci_d <- d_l %>%
+  mutate(year = factor(year, ordered = FALSE)) %>%
   filter(live) %>%
   bind_rows(ingrowth, .id = "cohort") %>%
-  mutate(year = factor(year, ordered = FALSE)) %>%
   filter(year != "init")
 
 ```
@@ -84,7 +85,8 @@ var_mod <- function(plot_data, cap) {
   sjPlot::tab_model(
   mod,
   show.ci = FALSE,
-  show.aic = TRUE,
+  show.se = TRUE,
+  show.p = TRUE,
   # dv.labels = paste("Formula", to_compare),
   title = cap
   )
@@ -433,6 +435,9 @@ var_table(shrub_richness_mean, caption = "Average understory shrub species count
 
 var_fig(shrub_richness_mean)
 
+var_mod(shrub_richness_plot, "Model for shrub richness")
+
+
 
 herb_richness_plot <- veg_species %>%
   filter(covertype == "Herb") |>
@@ -444,6 +449,8 @@ herb_richness_mean <- var_mean(herb_richness_plot)
 var_table(herb_richness_mean, caption = "Average understory herb species counts")
 
 var_fig(herb_richness_mean)
+
+var_mod(herb_richness_plot, "Model for herb richness")
 
 ```
 
@@ -458,6 +465,8 @@ shrub_cover_mean <- var_mean(shrub_cover_percent)
 
 var_fig(shrub_cover_mean)
 
+var_mod(shrub_cover_percent, "Model for shrub cover")
+
 
 herb_cover_percent <- veg_cover |>
   rename(val = cl_herb)
@@ -465,6 +474,9 @@ herb_cover_percent <- veg_cover |>
 herb_cover_mean <- var_mean(herb_cover_percent)
 
 var_fig(herb_cover_mean)
+
+var_mod(herb_cover_percent, "Model for herb cover")
+
 
 ```
 
