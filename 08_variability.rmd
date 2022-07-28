@@ -426,8 +426,8 @@ I used a random slope linear model here, I'm not sure this is appropriate as we 
 
 shrub_richness_plot <- veg_species %>%
   filter(covertype == "Shrub") |>
-  group_by(treatment, year, plot) %>%
-  summarize(val = n())
+  count(name = "val", treatment, year, plot) |>
+  rbind(list("L40", "08", "2L40", 0))
 
 shrub_richness_mean <- var_mean(shrub_richness_plot)
   
@@ -437,12 +437,15 @@ var_fig(shrub_richness_mean)
 
 var_mod(shrub_richness_plot, "Model for shrub richness")
 
+```
 
+
+
+```{r}
 
 herb_richness_plot <- veg_species %>%
   filter(covertype == "Herb") |>
-  group_by(treatment, year, plot) %>%
-  summarize(val = n())
+  count(name = "val", treatment, year, plot)
 
 herb_richness_mean <- var_mean(herb_richness_plot)
   
@@ -452,6 +455,42 @@ var_fig(herb_richness_mean)
 
 var_mod(herb_richness_plot, "Model for herb richness")
 
+```
+
+
+```{r richness-testing, eval=FALSE}
+mm <- lmer(
+  val ~ treatment * year + (1 | plot),
+  data = herb_richness_plot
+  # ,family = poisson(link = "log")
+)
+
+mm1 <- glmer(
+  val ~ treatment * year + (1 | plot),
+  data = herb_richness_plot
+  , family = poisson(link = "log")
+)
+
+mm2 <- lm(
+  val ~ treatment * year,
+  data = herb_richness_plot
+)
+
+emmeans(mm2, ~ treatment + year, type = "response") |>
+  as.data.frame() |>
+  # rename(emmean = rate) |>
+  var_fig()
+
+emmeans(mm1, ~ treatment + year, type = "response") |>
+  as.data.frame() |>
+  # rename(emmean = rate) |>
+  var_fig()
+
+summary(mm2)
+
+shrub_richness_plot |>
+  group_by(treatment, year) |>
+  summarise(emmean = mean(val), SE = sd(val) / sqrt(n()))
 ```
 
 ## Percent cover
@@ -476,7 +515,6 @@ herb_cover_mean <- var_mean(herb_cover_percent)
 var_fig(herb_cover_mean)
 
 var_mod(herb_cover_percent, "Model for herb cover")
-
 
 ```
 
