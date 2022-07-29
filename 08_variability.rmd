@@ -268,8 +268,6 @@ The coefficient of variation for a plot tells us about variation in tree size re
 
 ## DBH
 
-*We used the simple model with just `treatment * year` (m1) for this metric*
-
 ```{r 08-variability-11}
 
 CVdbh_plot <- sci_d %>%
@@ -301,6 +299,16 @@ bind_rows(m1 = m1mean, m2 = m2mean, .id = "mod") |>
   facet_wrap(~ mod) +
   labs(title = "Compare m1 and m2 (w/o & w DFp) for CVdbh")
 
+
+```
+
+### CVdbh model
+
+*We used the simple model with just `treatment * year` (m1) for this metric*
+
+```{r}
+
+var_mod(CVdbh_plot, "Model for CVdbh")
 
 ```
 
