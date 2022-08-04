@@ -281,6 +281,28 @@ measures$sdi <- function(data, species) {
 
 ```
 
+## Percent redwood by BA
+
+```{r}
+
+measures$p_redwood <- function(data, species) {
+  if(is.null(species)) species <- unique(data$spp)
+  data %>%
+    filter(spp %in% species, live | status %in% c(15, 16)) %>%
+    group_by(treatment, year, plot) %>%
+    mutate(redwood_ba = if_else(spp == "SESE3", ba, 0)) %>%
+    summarise(
+      p_redwood_plot = 100 * sum(redwood_ba) / sum(ba)
+    ) %>%
+    summarize(
+      mean = mean(p_redwood_plot),
+      n = n(),
+      std = sd(p_redwood_plot)
+    )
+}
+
+```
+
 ## Density of dominant
 
 ```{r 06-summary-12}

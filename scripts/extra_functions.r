@@ -232,7 +232,8 @@ relabel_measure <- function(data, measure = measure, fig = FALSE) {
         mort = "New mortality (tph)",
         dom_dbh = "Dominant DBH (cm)",
         dom_ht = "Dominant height (m)",
-        sdi = "SDI"
+        sdi = "SDI",
+        p_redwood = "Percent redwood (BA)"
       )
     ) %>%
     arrange({{ measure }})

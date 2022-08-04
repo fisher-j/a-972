@@ -322,6 +322,7 @@ $(document).ready(function () {
 (2016)</a></li>
 </ul></li>
 <li><a href="#sdi">SDI</a></li>
+<li><a href="#percent-redwood-by-ba">Percent redwood by BA</a></li>
 <li><a href="#density-of-dominant">Density of dominant</a></li>
 </ul></li>
 <li><a href="#initial-summary-tables">Initial summary tables</a>
@@ -626,6 +627,24 @@ any(nrow(filter(d_l, status %in% c(1, 2, 3, 15, 16), is.na(dbh))))</code></pre>
       mean = mean(sdi_plot),
       n = n(),
       std = sd(sdi_plot)
+    )
+}</code></pre>
+</div>
+<div id="percent-redwood-by-ba" class="section level2">
+<h2>Percent redwood by BA</h2>
+<pre class="r"><code>measures$p_redwood &lt;- function(data, species) {
+  if(is.null(species)) species &lt;- unique(data$spp)
+  data %&gt;%
+    filter(spp %in% species, live | status %in% c(15, 16)) %&gt;%
+    group_by(treatment, year, plot) %&gt;%
+    mutate(redwood_ba = if_else(spp == &quot;SESE3&quot;, ba, 0)) %&gt;%
+    summarise(
+      p_redwood_plot = 100 * sum(redwood_ba) / sum(ba)
+    ) %&gt;%
+    summarize(
+      mean = mean(p_redwood_plot),
+      n = n(),
+      std = sd(p_redwood_plot)
     )
 }</code></pre>
 </div>

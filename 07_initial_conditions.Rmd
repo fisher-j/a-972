@@ -17,7 +17,7 @@ First, here is the summary table with just the initial conditions. These do not 
 d_l %>%
   filter(year == "init") %>%
   get_measures() %>%
-  make_summary(measures = c("dbh", "ht_p", "density", "ba", "dom_dbh")) %>%
+  make_summary(measures = c("dbh", "ht_p", "density", "ba", "dom_dbh", "p_redwood")) %>%
   kbl2(caption = "Initial summmary for all species")
 
 ```
@@ -50,8 +50,7 @@ I'll run some anovas to test if there are significant differences in initial dat
 # for each measure of interest
 
 plot_sum <- function(data, species = unique(data$spp),
-                     years = unique(data$year)) 
-{
+                     years = unique(data$year)) {
   a <- data %>%
     filter(
       spp %in% species,
@@ -61,6 +60,7 @@ plot_sum <- function(data, species = unique(data$spp),
     group_by(treatment, year, plot) %>%
     summarise(
       # I'm calculating BA (m^2/ha) by plot
+      p_redwood = sum(ba[spp == "SESE3"]) / sum(ba),
       ba = sum(dbh^2 * pi / 40000, na.rm = TRUE) * 12.5,
       qmd = sqrt(mean(dbh^2)),
       density = n() * 12.5
@@ -78,7 +78,7 @@ plot_sum <- function(data, species = unique(data$spp),
   summarise(ht = mean(ht_p))
   left_join(a, b) %>%
   ungroup() %>%
-  pivot_longer(c(ba, qmd, density, ht), names_to = "measure")
+  pivot_longer(c(ba, qmd, density, ht, p_redwood), names_to = "measure")
 }
 
 # Run Dunn test and sort contrast the same as a Tukey test
