@@ -17,7 +17,10 @@ I'll start by taking a look at the dbh quartiles. There are zeros. They only occ
 
 ```{r 02-data-cleaning-1}
 summary(d_l$dbh)
-d_l %>% filter(dbh == 0) %>% pull(status) %>% unique()
+d_l %>%
+  filter(dbh == 0) %>%
+  pull(status) %>%
+  unique()
 d_l$dbh[d_l$dbh == 0] <- NA
 ```
 
@@ -35,10 +38,13 @@ I check for dbh among all post harvest trees that change dramatically from one o
 ```{r 02-data-cleaning-3}
 change_d <- d_l %>%
   filter(year != "init") %>%
-  pivot_wider(id_cols = c(tree_id, spp, plot), names_from = year,
-              values_from = c(dbh, notes, bear, cr, status)) %>%
+  pivot_wider(
+    id_cols = c(tree_id, spp, plot), names_from = year,
+    values_from = c(dbh, notes, bear, cr, status)
+  ) %>%
   mutate(p1 = dbh_13 - dbh_08, p2 = dbh_18 - dbh_13)
 ```
+
 ```{r 02-data-cleaning-4}
 # Period one summary
 summary(change_d$p1)
@@ -51,7 +57,7 @@ summary(change_d$p2)
 # Get diameter change outliers in both periods
 out_d <- change_d %>%
   select(p1, p2) %>%
-  map(~filter(change_d, .x %in% boxplot(.x, plot = FALSE)$out | .x < -2.54))
+  map(~ filter(change_d, .x %in% boxplot(.x, plot = FALSE)$out | .x < -2.54))
 ```
 
 Average growth by *species and treatment* to be used to help identify and fix problems with dbh's. I looked at grouping by *species and plot*, but there were often too few trees for a good average. I'm assuming here that the response of species to treatment captures the most meaningful data for our purposes. 
@@ -60,15 +66,18 @@ Average growth by *species and treatment* to be used to help identify and fix pr
 
 change_d %>%
   group_by(treatment = str_extract(plot, "L40|L80|H40|H80|C"), spp) %>%
-  summarise(p1_mean = signif(mean(p1, na.rm = TRUE), 3),
-            p2_mean = signif(mean(p2, na.rm = TRUE), 3),
-            .groups = "drop") %>%
+  summarise(
+    p1_mean = signif(mean(p1, na.rm = TRUE), 3),
+    p2_mean = signif(mean(p2, na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
   rbind(rep(NA, 4)) %>%
-  {bind_cols(.[1:11, ], .[12:22, ], .name_repair = "minimal")} %>%
+  {
+    bind_cols(.[1:11, ], .[12:22, ], .name_repair = "minimal")
+  } %>%
   ungroup() %>%
   kableExtra::kbl() %>%
   kableExtra::kable_styling()
-
 ```
 
 ### Identify dbh to fix
@@ -131,7 +140,7 @@ new_dbh <- tribble(
   "4L40.3277", "18", 40.9,
   "C4.4600",   "18", 29.0,
   "4L40.3274", "13", 31.4
-  ) %>%
+) %>%
   mutate(year = factor(year, levels = c("init", "08", "13", "18"), ordered = TRUE))
 ```
 
@@ -141,10 +150,10 @@ dbh_color <- filter(new_dbh, year != "init") |>
   droplevels() |>
   split(~year) %>%
   map("tree_id") %>%
-  map(~ifelse(dbh_problem1$tree_id %in% .x, "Salmon", "White"))
-  
+  map(~ ifelse(dbh_problem1$tree_id %in% .x, "Salmon", "White"))
+
 outlier_color <- map(out_d, "tree_id") %>%
-  map(~if_else(dbh_problem1$tree_id %in% .x, "Pink", "White"))
+  map(~ if_else(dbh_problem1$tree_id %in% .x, "Pink", "White"))
 
 # prepare replacement data to add to colored table
 problem_wide <- new_dbh %>%
@@ -162,9 +171,11 @@ show_fix <- function(old, new) {
 # Make colored table with updated values
 dbh_problem1 %>%
   left_join(problem_wide, by = "tree_id", suffix = c("", "_new")) %>%
-  mutate(dbh_08 = show_fix(dbh_08, dbh_08_new),
-         dbh_13 = show_fix(dbh_13, dbh_13_new),
-         dbh_18 = show_fix(dbh_18, dbh_18_new)) %>%
+  mutate(
+    dbh_08 = show_fix(dbh_08, dbh_08_new),
+    dbh_13 = show_fix(dbh_13, dbh_13_new),
+    dbh_18 = show_fix(dbh_18, dbh_18_new)
+  ) %>%
   select(!ends_with("new")) %>%
   unite("bear_seq", starts_with("bear"), sep = ">") %>%
   unite("cr_seq", starts_with("cr"), sep = ">") %>%
@@ -199,13 +210,15 @@ I'll start by identifying and eliminating zeros and bad data (-30.2m = -99ft) fr
 ```{r 02-data-cleaning-10}
 d_l %>%
   group_by(year, treatment) %>%
-    summarize(min = min(ht, na.rm = TRUE),
-            `1st qu.` = quantile(ht, .25, na.rm = TRUE),
-            median = median(ht, na.rm = TRUE),
-            mean = mean(ht, na.rm = TRUE),
-            `3rd qu.` = quantile(ht, .75, na.rm = TRUE),
-            max = max(ht, na.rm = TRUE),
-            na = sum(is.na(ht)))
+  summarize(
+    min = min(ht, na.rm = TRUE),
+    `1st qu.` = quantile(ht, .25, na.rm = TRUE),
+    median = median(ht, na.rm = TRUE),
+    mean = mean(ht, na.rm = TRUE),
+    `3rd qu.` = quantile(ht, .75, na.rm = TRUE),
+    max = max(ht, na.rm = TRUE),
+    na = sum(is.na(ht))
+  )
 
 d_l <- d_l %>%
   mutate(ht = if_else(ht * 3.281 == -99 | ht == 0, NA_real_, ht))
@@ -217,7 +230,7 @@ Here I make changes to status and condition codes. I add condition codes to, and
 
 ```{r 02-data-cleaning-11}
 
-  # New condition codes
+# New condition codes
 cond_new <- tribble(
   ~tree_id, ~year, ~cond,
   "1H40.1908", "08", "3",
@@ -229,14 +242,14 @@ cond_new <- tribble(
   "4H80.4005", "08", "3",
   "4H80.4011", "08", "3",
   "4H80.4027", "13", "3",
-  "C1.4204",   "08", "2",
-  "C2.4295",   "13", "3",
+  "C1.4204", "08", "2",
+  "C2.4295", "13", "3",
   "1L80.3399", "08", "3",
   "1L80.3399", "13", "3",
 )
 
 # Update condition codes
-key <- map(list(d_l, cond_new), ~paste(.x$tree_id, .x$year))
+key <- map(list(d_l, cond_new), ~ paste(.x$tree_id, .x$year))
 vals_to_change <- match(key[[2]], key[[1]])
 new_vals <- paste(d_l$cond[vals_to_change], cond_new$cond, sep = ",") %>%
   str_remove("^,|,$")
@@ -250,7 +263,7 @@ status_new <- tribble(
   "3L40.3207", "13", 31,
   "3L40.3207", "18", 31,
   "4L40.3283", "08", 31,
-  "C3.4530",   "13", 31,
+  "C3.4530", "13", 31,
   "1H80.3581", "18", 31,
   "4L40.3255", "18", 31,
   "4L40.3262", "18", 31,
@@ -281,7 +294,6 @@ ht_outlier_resid <- plot_ht(p_h, mag = 2.5)
 
 # Get tree id and year for each outlier
 ht_outlier_resid <- p_h[ht_outlier_resid, c("tree_id", "year")]
-
 ```
 
 I also want to look at extreme changes in height. I'll combine these two sets of outliers and look for height values that need fixing. I'm looking at outlier height increments that are 2 times above or below the IQR. Pink highlight indicates outlier values (for individual measurements as well as height increments). Salmon highlight indicates edited values with new value in parentheses. 
@@ -289,8 +301,10 @@ I also want to look at extreme changes in height. I'll combine these two sets of
 ```{r 02-data-cleaning-12}
 # Define the delta-height dataset in wide format
 change_h <- p_h %>%
-  pivot_wider(id_cols = c(tree_id, spp, plot), names_from = year,
-              values_from = c(ht, dbh, notes, bear, cr, status, cond)) %>%
+  pivot_wider(
+    id_cols = c(tree_id, spp, plot), names_from = year,
+    values_from = c(ht, dbh, notes, bear, cr, status, cond)
+  ) %>%
   mutate(p1 = ht_13 - ht_08, p2 = ht_18 - ht_13) %>%
   mutate(across(where(is.double), round, 2))
 
@@ -302,56 +316,54 @@ ht_outlier <- select(change_h, p1:p2) %>%
 
 # Define height problem dataset
 problem_ht <- filter(change_h, tree_id %in% reduce(ht_outlier, union))
-
 ```
 
 
 ```{r 02-data-cleaning-13}
 # New tree heights
 new_ht <- tribble(
-  ~tree_id,    ~year, ~ht,
-  "1L80.3400", "08",  21,
-  "1L80.3402", "13",  15.8,
-  "2H40.3049", "08",  15,
-  "2H40.3073", "18",  24,
-  "2H40.3075", "13",  17,
-  "2H80.3094", "18",  18,
-  "2H80.3099", "18",  15,
-  "2H80.3175", "18",  30,
-  "2H80.4105", "13",  26,
-  "2H80.4111", "13",  22,
-  "3H40.1859", "18",  21,
-  "3H80.3790", "13",  16,
-  "3L80.3320", "08",  15,
-  "3L80.3374", "18",  21,
-  "4H80.4000", "18",  26.5,
-  "4L40.3278", "18",  18,
-  "4L40.3283", "08",  8.5,
-  "C1.4146",   "18",  21,
-  "C1.4197",   "13",  19,
-  "C4.4676",   "18",  28,
-  "C1.4164",   "18",  22.0,
-  ) %>%
+  ~tree_id, ~year, ~ht,
+  "1L80.3400", "08", 21,
+  "1L80.3402", "13", 15.8,
+  "2H40.3049", "08", 15,
+  "2H40.3073", "18", 24,
+  "2H40.3075", "13", 17,
+  "2H80.3094", "18", 18,
+  "2H80.3099", "18", 15,
+  "2H80.3175", "18", 30,
+  "2H80.4105", "13", 26,
+  "2H80.4111", "13", 22,
+  "3H40.1859", "18", 21,
+  "3H80.3790", "13", 16,
+  "3L80.3320", "08", 15,
+  "3L80.3374", "18", 21,
+  "4H80.4000", "18", 26.5,
+  "4L40.3278", "18", 18,
+  "4L40.3283", "08", 8.5,
+  "C1.4146", "18", 21,
+  "C1.4197", "13", 19,
+  "C4.4676", "18", 28,
+  "C1.4164", "18", 22.0,
+) %>%
   mutate(
     year = factor(year, levels = c("init", "08", "13", "18"), ordered = TRUE)
   )
-
 ```
 
 ```{r 02-data-cleaning-14}
 # Color the values that are being changed as well as the
 # height increment outlier values and the residual outliers
 
-ht_resid_color <- split(ht_outlier_resid, ~ year, drop = TRUE) %>%
+ht_resid_color <- split(ht_outlier_resid, ~year, drop = TRUE) %>%
   map("tree_id") %>%
-  map(~if_else(problem_ht$tree_id %in% .x, "Pink", "White"))
+  map(~ if_else(problem_ht$tree_id %in% .x, "Pink", "White"))
 
 ht_fix_color <- split(new_ht, ~year, drop = TRUE) %>%
   map("tree_id") %>%
-  map2(ht_resid_color, ~ifelse(problem_ht$tree_id %in% .x, "Salmon", .y))
+  map2(ht_resid_color, ~ ifelse(problem_ht$tree_id %in% .x, "Salmon", .y))
 
 ht_change_color <- ht_outlier[c("p1", "p2")] %>%
-  map(~if_else(problem_ht$tree_id %in% .x, "Pink", "White"))
+  map(~ if_else(problem_ht$tree_id %in% .x, "Pink", "White"))
 
 # prepare replacement data to add to colored table
 new_ht_wide <- new_ht %>%
@@ -363,9 +375,11 @@ new_ht_wide <- new_ht %>%
 
 problem_ht %>%
   left_join(new_ht_wide, by = "tree_id", suffix = c("", "_new")) %>%
-  mutate(ht_08 = show_fix(ht_08, ht_08_new),
-         ht_13 = show_fix(ht_13, ht_13_new),
-         ht_18 = show_fix(ht_18, ht_18_new)) %>%
+  mutate(
+    ht_08 = show_fix(ht_08, ht_08_new),
+    ht_13 = show_fix(ht_13, ht_13_new),
+    ht_18 = show_fix(ht_18, ht_18_new)
+  ) %>%
   select(!c(ends_with("new"), plot)) %>%
   unite("bear_seq", starts_with("bear"), sep = ">") %>%
   unite("cr_seq", starts_with("cr"), sep = ">") %>%
@@ -379,7 +393,6 @@ problem_ht %>%
   kableExtra::column_spec(5, background = ht_fix_color[[3]]) %>%
   kableExtra::column_spec(14, background = ht_change_color[[1]]) %>%
   kableExtra::column_spec(15, background = ht_change_color[[2]])
-
 ```
 
 
@@ -401,7 +414,7 @@ p_h %>%
   filter(
     !is.na(ht * dbh),
     status != 1 |
-    get_cond(c(2, 3)) & ht < 12
+      get_cond(c(2, 3)) & ht < 12
   ) %>%
   select(dbh, ht) %>%
   points(col = "firebrick1", pch = 4)
@@ -409,13 +422,15 @@ p_h %>%
 p_h %>%
   filter(
     !is.na(ht * dbh),
-    status != 1 | get_cond(c(2, 3))) %>%
+    status != 1 | get_cond(c(2, 3))
+  ) %>%
   nrow()
 
 p_h %>%
   filter(
     !is.na(ht * dbh),
-    status != 1 | (get_cond(c(2, 3)) & ht < 12)) %>%
+    status != 1 | (get_cond(c(2, 3)) & ht < 12)
+  ) %>%
   nrow()
 ```
 
@@ -435,7 +450,9 @@ filter(p_h, status %in% c(1, 2, 3, 15, 16)) %>%
   group_by(year, measured = !is.na(ht)) %>%
   summarise(n = n()) %>%
   mutate(freq = n / sum(n), .keep = "unused") %>%
-  filter(measured) %>% kableExtra::kbl() %>% kableExtra::kable_styling()
+  filter(measured) %>%
+  kableExtra::kbl() %>%
+  kableExtra::kable_styling()
 
 # what proportion of trees in 2018 by treatment and plot DO have height data?
 filter(d_l, status %in% c(1, 2, 3, 15, 16), year == "18") %>%
@@ -451,14 +468,13 @@ filter(d_l, status %in% c(1, 2, 3, 15, 16), year == "18") %>%
   mutate(freq = round(n / sum(n), 2)) %>%
   filter(measured) %>%
   select(treatment, freq)
-
-
 ```
 
 It looks like the 643, 2018 height observations are somewhat distributed across plots and treatments (although treatment L80 and plot C3 are underrepresented). Now, I want to check if heights were observed across dbh and height classes. Because trees are expected to grow from one year to the next, I will compare samples based on 2013 heights (90% of inventoried trees have heights in 2013). It appears as though the 2018 heights are relatively unbiased across the inventory. There still may be some bias within treatments, but we can burn that bridge later.
 
 ```{r compare-heights}
-ht_18_id <- p_h %>% filter(year == "18" & !is.na(ht)) %>%
+ht_18_id <- p_h %>%
+  filter(year == "18" & !is.na(ht)) %>%
   pull(tree_id)
 
 ht_18_13 <- p_h %>%
@@ -478,12 +494,14 @@ ht_08_08 <- p_h %>%
   pull(ht)
 
 mycols <- palette.colors(palette = "Classic Tableau", alpha = .25)
-hist(ht_13_13, col = mycols[1],
-     ylim = c(0, 0.12),
-     xlim = range(c(ht_13_13, ht_18_13)),
-     prob = TRUE,
-     main = "Sample distirbution comparison",
-     xlab = "2013 heights (m)")
+hist(ht_13_13,
+  col = mycols[1],
+  ylim = c(0, 0.12),
+  xlim = range(c(ht_13_13, ht_18_13)),
+  prob = TRUE,
+  main = "Sample distirbution comparison",
+  xlab = "2013 heights (m)"
+)
 hist(ht_18_13, col = mycols[2], prob = TRUE, add = TRUE, breaks = 12)
 legend(5, .1,
   legend = c("All 2013 heights", "2018 subset"),
@@ -491,7 +509,8 @@ legend(5, .1,
   pch = 15,
   bty = "n",
   cex = 1.2,
-  y.intersp = 1.7)
+  y.intersp = 1.7
+)
 ```
 
 My plan is to calculate height metrics (for comparison) based just on those trees which have heights measured in 2018. This means that I would only be looking at 1911 of the 3488 total height measurements (status 1 trees only). 
@@ -524,10 +543,14 @@ p_h %>%
   summarize(
     ht_na = sum(is.na(ht) & rank <= 4),
     na_dbh_mean = paste(
-      mean(dbh[rank <= 4 & is.na(ht)], na.rm = TRUE), collapse = ", "),
+      mean(dbh[rank <= 4 & is.na(ht)], na.rm = TRUE),
+      collapse = ", "
+    ),
     have_ht = sum(!is.na(ht)),
     have_dbh_range = paste(
-      range(dbh[!is.na(ht)], na.rm = TRUE), collapse = ", ")
+      range(dbh[!is.na(ht)], na.rm = TRUE),
+      collapse = ", "
+    )
   ) %>%
   filter(ht_na > 0) %>%
   color_groups()
@@ -557,13 +580,13 @@ p_h %>%
 These trees are leaning trees without broken or dead tops that have a loss in height greater than 2 meters in one 5 year period. They may be falling over, or the fact that they are leaning may lead to greater error in height measurements.
 
 ```{r 02-data-cleaning-21}
-p_h %>% 
+p_h %>%
   group_by(tree_id) %>%
   filter(
     any(get_cond(5)),
     any(ht - lag(ht, order_by = year) < -2),
-    !any(get_cond(2, 3)) 
-    ) %>%
+    !any(get_cond(2, 3))
+  ) %>%
   select(-c(azi, h_dist, treatment)) %>%
   color_groups()
 ```
@@ -581,7 +604,6 @@ badrow <- with(d_l, tree_id == "2H40.3064" & year %in% c("13", "18"))
 oldval <- d_l$cond[badrow]
 newval <- paste0(oldval, ",31")
 d_l$cond[badrow] <- newval
-
 ```
 
 Trees with status code 30, 31, 32 but no condition code: ensure condition code reflects status code as well.
@@ -601,5 +623,4 @@ d_l <- d_l |>
     status %in% c(30, 31, 32) & !get_cond(30, 31, 32) & cond != "" ~ paste0(cond, ",", status),
     TRUE ~ cond
   ))
-
 ```
