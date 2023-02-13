@@ -2,6 +2,10 @@
 
 # original
 
+# Don't include databse files
+*.laccdb
+*.accdb
+
 # don't include hard copy of working dataset
 
 working
