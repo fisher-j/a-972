@@ -4,7 +4,13 @@ title: "Define new data"
 
 ```{r setup, include=FALSE}
 knitr::knit_hooks$set(time_it = time_it)
-knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = FALSE, time_it = TRUE, cache.extra = "wombat")
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = TRUE,
+  message = FALSE,
+  time_it = TRUE,
+  cache.extra = "wombat"
+)
 ```
 
 # Defining live/dead trees
@@ -23,18 +29,17 @@ Status and condition codes provided do not necessarily define mortality, because
 d_l <- d_l %>%
   mutate(
     live = case_when(
-      status %in% c(5:9, -5:-9, -1)                              ~ FALSE,
-      status %in% c(30, 32)                                      ~ FALSE,
-      (spp %in% c("PSMEM", "PISI") & status == 31)               ~ FALSE,
-      (spp %in% c("SESE3", "ALRU") & status == 31 & ht < 3)      ~ FALSE,
+      status %in% c(5:9, -5:-9, -1) ~ FALSE,
+      status %in% c(30, 32) ~ FALSE,
+      (spp %in% c("PSMEM", "PISI") & status == 31) ~ FALSE,
+      (spp %in% c("SESE3", "ALRU") & status == 31 & ht < 3) ~ FALSE,
       (spp %in% c("SESE3", "ALRU") & status == 31 & lag(ht) < 3) ~ FALSE,
-      TRUE                                                       ~ TRUE
+      TRUE ~ TRUE
     )
   )
 
 # Do any trees go from being dead to being alive?
 nrow(filter(group_by(d_l, tree_id), any(!live & lead(live))))
-
 ```
 
 # Define diameter, basal area, and height increment
@@ -64,15 +69,14 @@ d_l <- d_l %>%
 
 define_xy <- function(data) {
   data %>%
-  left_join(plot_info[, c("plot", "utm_x", "utm_y")], by = "plot") %>%
-  mutate(
-    circular2xy(h_dist, azi, center.x = utm_x, center.y = utm_y)
-  ) %>%
-  select(-c(utm_x, utm_y))
+    left_join(plot_info[, c("plot", "utm_x", "utm_y")], by = "plot") %>%
+    mutate(
+      circular2xy(h_dist, azi, center.x = utm_x, center.y = utm_y)
+    ) %>%
+    select(-c(utm_x, utm_y))
 }
 
 d_l <- define_xy(d_l)
-
 ```
 
 # Diversity measures
@@ -88,9 +92,9 @@ First, here is my code for defining SCI. The area of a triangle is equal to 1/2 
 ```{r 03-define-3}
 
 cross_product <- function(a, b) {
-  if(length(a)!=3 || length(b)!=3){
-        stop("Cross product is only defined for 3D vectors.")
-    }
+  if (length(a) != 3 || length(b) != 3) {
+    stop("Cross product is only defined for 3D vectors.")
+  }
   i1 <- c(2, 3, 1)
   i2 <- c(3, 1, 2)
   a[i1] * b[i2] - a[i2] * b[i1]
@@ -113,7 +117,6 @@ calc_sci <- function(x, y, z) {
   area2d <- sum(deln_obj$areas)
   area3d / area2d
 }
-
 ```
 
 
@@ -126,7 +129,6 @@ calc_sh <- function(spp, val = 1) {
   pro <- aggregate(val ~ spp, data = d, function(x) sum(x) / sum(d$val))[[2]]
   -sum(pro * log(pro))
 }
-
 ```
 
 ## Mean directional index
@@ -160,7 +162,7 @@ remove_coincident <- function(DF) {
 }
 
 # find index of k nearest neighbors given data frame with x and y
-nearest <- function(DF, k) {  
+nearest <- function(DF, k) {
   # get matrix of distances
   distances <- as.matrix(dist(DF[c("x", "y")]))
   # get index of k neighbors for each row (excluding self)
@@ -177,7 +179,6 @@ calc_mdi <- function(x, y) {
   idx <- nearest(trees, k = 4)
   sapply(1:nrow(trees), function(x) mdi_tree(trees[x, ], trees[idx[[x]], ]))
 }
-
 ```
 
 ## DBH differentiation (TD)
@@ -192,7 +193,6 @@ calc_TD <- function(x, y, dbh) {
   DBH_ij <- matrix(c(dbh, dbh[idx]), ncol = 2)
   apply(DBH_ij, 1, function(x) 1 - min(x) / max(x))
 }
-
 ```
 
 ## Hui species dominance
@@ -221,7 +221,6 @@ sdi_r <- function(dbh) {
 sdi_sum <- function(dbh) {
   sum(12.5 * (dbh / 25.4)**1.605)
 }
-
 ```
 
 # Standardize crown ratio
@@ -231,13 +230,13 @@ d_l <- d_l %>%
   mutate(
     cr = case_when(
       cr %in% c(-999, -99) ~ NA_real_,
-      cr == 0 & is.na(ht)  ~ NA_real_,
-      cr %in% 1:5          ~ 5,
-      cr %in% 21:25        ~ 25,
-      cr %in% 31:35        ~ 35,
-      cr %in% 41:50        ~ 50,
-      cr %in% 55:80        ~ 60,
-      TRUE                 ~ cr
+      cr == 0 & is.na(ht) ~ NA_real_,
+      cr %in% 1:5 ~ 5,
+      cr %in% 21:25 ~ 25,
+      cr %in% 31:35 ~ 35,
+      cr %in% 41:50 ~ 50,
+      cr %in% 55:80 ~ 60,
+      TRUE ~ cr
     )
   )
 ```
