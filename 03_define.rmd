@@ -15,7 +15,9 @@ knitr::opts_chunk$set(
 
 # Defining live/dead trees
 
-Status and condition codes provided do not necessarily define mortality, because a broken tree, depending on species may still be alive or dead. I'll define dead trees as:
+Status and condition codes provided do not necessarily define mortality,
+because a broken tree, depending on species may still be alive or dead. I'll
+define dead trees as:
 
 1. snags or down snags (status -9 to -5, and 5 to 9)
 2. trees broken below dbh and uprooted trees (status 30, 32)
@@ -44,7 +46,14 @@ nrow(filter(group_by(d_l, tree_id), any(!live & lead(live))))
 
 # Define diameter, basal area, and height increment
 
-Here I will add annual height, diameter and basal area increments to the dataset. Increment will be defined on the observation level, meaning that it must apply to either the first or second measurement. This is significant for modeling, as I will be predicting an increment based on one period's dbh observation. I'll add increment data to both the beginning and ending observations to facilitate modeling based on either observation. *_inc1 will be assigned to the first measurement (refers to subsequent measurement) and *_inc2 will be assigned to the second (refers to previous measurement).
+Here I will add annual height, diameter and basal area increments to the
+dataset. Increment will be defined on the observation level, meaning that it
+must apply to either the first or second measurement. This is significant for
+modeling, as I will be predicting an increment based on one period's dbh
+observation. I'll add increment data to both the beginning and ending
+observations to facilitate modeling based on either observation. *_inc1 will be
+assigned to the first measurement (refers to subsequent measurement) and *_inc2
+will be assigned to the second (refers to previous measurement).
 
 ```{r 03-define-1}
 # Add diameter increment data and update post-harvest data
@@ -83,11 +92,18 @@ d_l <- define_xy(d_l)
 
 ## Structural diversity SCI
 
-After some experimentation, I determined that ingrowth does have an effect on SCI, especially for the more intense thinnings, supposedly because they let in more light and encourage more understory initiation. 
+After some experimentation, I determined that ingrowth does have an effect on
+SCI, especially for the more intense thinnings, supposedly because they let in
+more light and encourage more understory initiation. 
 
-I also confirmed that the SCI function works the same regardless of whether coordinates are plot coordinates or UTM coordinates.
+I also confirmed that the SCI function works the same regardless of whether
+coordinates are plot coordinates or UTM coordinates.
 
-First, here is my code for defining SCI. The area of a triangle is equal to 1/2 the magnitude of the cross product of two vectors representing sides of a triangle. The magnitude of a vector is the square root of the the sum of its values squared. This is also known as the norm and is denoted with single or double vertical bars.
+First, here is my code for defining SCI. The area of a triangle is equal to 1/2
+the magnitude of the cross product of two vectors representing sides of a
+triangle. The magnitude of a vector is the square root of the the sum of its
+values squared. This is also known as the norm and is denoted with single or
+double vertical bars.
 
 ```{r 03-define-3}
 

@@ -108,9 +108,15 @@ measures$dom_dbh <- function(data, species) {
 
 Heights will be determined using only trees with unbroken, live crowns.
 
-Because there are about 14 observations in 2008 and 2013 that do not have height measurements, I am omitting these from analysis for now. Also, I am only looking at trees that have height measurements in 2018. This means that of the 3,538 total height observations, I am only looking at 1,929 over the the three measurement periods.
+Because there are about 14 observations in 2008 and 2013 that do not have
+height measurements, I am omitting these from analysis for now. Also, I am only
+looking at trees that have height measurements in 2018. This means that of the
+3,538 total height observations, I am only looking at 1,929 over the the three
+measurement periods.
 
-For dominant heights, I am using dominant dbh trees *not including broken and dead tops*. Not all of these have heights. For this reason, there are fewer than 4 trees per plot.
+For dominant heights, I am using dominant dbh trees *not including broken and
+dead tops*. Not all of these have heights. For this reason, there are fewer
+than 4 trees per plot.
 
 ```{r 06-summary-6}
 
@@ -335,7 +341,7 @@ make_summary <- function(data, measures = c("dbh", "ht", "density", "ba", "sdi")
   mutate(across(where(is.double), ~ sprintf("%.1f", .x))) %>%
   mutate(mean = paste0(mean, " (", std, ")")) %>%
   select(measure, treatment, year, mean) %>%
-  pivot_wider(names_from = treatment, values_from = mean, names_sort = TRUE) 
+  pivot_wider(names_from = treatment, values_from = mean, names_sort = TRUE)
 }
 
 ```

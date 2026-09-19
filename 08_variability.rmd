@@ -148,7 +148,7 @@ var_mod(mdi_plot, "model for MDI")
 
 # DBH differentiation (TD)
 
-This index is defined by @fuldnerStrukturbeschreibungBuchenEdellaubholzMischwaldern1995 as:
+This index is defined by @fuldnerStrukturbeschreibungBuchenEdellaubholzMischwaldern1995 (cited in @motzSamplingMeasuresTree2010) as:
 
 $$ TD_i = 1 - \frac{min(DBH_i, DBH_j)}{max(DBH_i, DBH_j)} $$
 
